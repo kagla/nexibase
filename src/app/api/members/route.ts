@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import bcrypt from 'bcryptjs';
-import crypto from 'crypto';
+import { generatePBKDF2Hash, generateUniqueId } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
@@ -75,22 +74,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 비밀번호 해시화 (그누보드5 PBKDF2 형식)
-    const generatePBKDF2Hash = (password: string): string => {
-      // 32바이트 랜덤 솔트 생성
-      const salt = crypto.randomBytes(24);
-      const iterations = 12000;
-      
-      // PBKDF2-HMAC-SHA256으로 해시 생성 (32바이트)
-      const hash = crypto.pbkdf2Sync(password, salt, iterations, 32, 'sha256');
-      
-      // 그누보드5 형식: sha256:반복횟수:솔트(base64):해시(base64)
-      const saltBase64 = salt.toString('base64');
-      const hashBase64 = hash.toString('base64');
-      
-      return `sha256:${iterations}:${saltBase64}:${hashBase64}`;
-    };
-
+    // 비밀번호 해시화 (공통 함수 사용)
     const hashedPassword = generatePBKDF2Hash(password);
 
     // 클라이언트 IP 주소 가져오기
@@ -98,21 +82,15 @@ export async function POST(request: NextRequest) {
                       request.headers.get('x-real-ip') || 
                       '127.0.0.1';
 
-    // 이메일을 이용해서 20글자 unique ID 생성
-    const generateUniqueId = (email: string): string => {
-      const hash = crypto.createHash('sha256').update(email.toLowerCase()).digest('hex');
-      return hash.substring(0, 20);
-    };
-
     // 회원 정보 저장
     const newMember = await prisma.g5Member.create({
       data: {
-        mb_id: generateUniqueId(email), // 이메일을 이용한 20글자 unique ID
+        mb_id: generateUniqueId(email), // 공통 함수 사용
         mb_password: hashedPassword,
-        mb_name: nickname, // 이름 필드에도 닉네임 저장 (필요시 수정)
+        mb_name: nickname,
         mb_nick: nickname,
         mb_email: email.toLowerCase(),
-        mb_level: 2, // 기본 회원 레벨 (필요에 따라 조정)
+        mb_level: 2,
         mb_datetime: new Date(),
         mb_ip: clientIP,
         mb_nick_date: new Date(),

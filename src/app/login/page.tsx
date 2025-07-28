@@ -21,15 +21,33 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      // 여기에 실제 로그인 로직을 구현하세요
-      // 예시: API 호출, 인증 처리 등
-      console.log("로그인 시도:", { email, password });
-      
-      // 임시로 2초 후 메인 페이지로 리다이렉트
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      router.push("/");
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // 로그인 성공
+        console.log('로그인 성공:', data);
+        router.push("/");
+      } else {
+        // 로그인 실패
+        console.error('로그인 실패:', data.error);
+        
+        if (data.requireEmailVerification) {
+          alert('이메일 인증이 필요합니다. 이메일을 확인해주세요.');
+        } else {
+          alert(data.error || '로그인에 실패했습니다.');
+        }
+      }
     } catch (error) {
       console.error("로그인 에러:", error);
+      alert('네트워크 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
     }
