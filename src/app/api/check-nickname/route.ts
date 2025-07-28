@@ -1,13 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-// 임시 데이터베이스 (실제로는 데이터베이스 연결 필요)
-const existingNicknames = [
-  'admin',
-  'user123',
-  'test_user',
-  '관리자',
-  '사용자'
-];
+import { prisma } from '@/lib/prisma';
 
 export async function POST(request: NextRequest) {
   try {
@@ -38,8 +30,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 닉네임 중복 확인 (실제로는 데이터베이스 쿼리)
-    const isNicknameTaken = existingNicknames.includes(nickname.toLowerCase());
+    // 데이터베이스에서 닉네임 중복 확인
+    const existingMember = await prisma.g5Member.findFirst({
+      where: {
+        mb_nick: nickname
+      },
+      select: {
+        mb_nick: true
+      }
+    });
+
+    const isNicknameTaken = !!existingMember;
 
     return NextResponse.json({
       available: !isNicknameTaken,
@@ -54,5 +55,7 @@ export async function POST(request: NextRequest) {
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }
     );
+  } finally {
+    await prisma.$disconnect();
   }
 } 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,6 +34,10 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+
+  // 디바운스를 위한 ref
+  const emailTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const nicknameTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // 이메일 중복 확인 함수
   const checkEmailAvailability = async (emailValue: string) => {
@@ -121,31 +125,49 @@ export default function SignupPage() {
     }
   };
 
-  // 이메일 입력 필드 수정
+  // 이메일 입력 핸들러 (개선된 디바운스)
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newEmail = e.target.value;
     setEmail(newEmail);
     
-    // 디바운스를 위해 타이머 사용
-    setTimeout(() => {
-      if (newEmail === email) {  // 아직 변경되지 않았다면
-        checkEmailAvailability(newEmail);
-      }
+    // 기존 타이머가 있다면 클리어
+    if (emailTimeoutRef.current) {
+      clearTimeout(emailTimeoutRef.current);
+    }
+    
+    // 새 타이머 설정
+    emailTimeoutRef.current = setTimeout(() => {
+      checkEmailAvailability(newEmail);
     }, 500);
   };
 
-  // 닉네임 입력 필드 수정
+  // 닉네임 입력 핸들러 (개선된 디바운스)
   const handleNicknameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newNickname = e.target.value;
     setNickname(newNickname);
     
-    // 디바운스를 위해 타이머 사용
-    setTimeout(() => {
-      if (newNickname === nickname) {  // 아직 변경되지 않았다면
-        checkNicknameAvailability(newNickname);
-      }
+    // 기존 타이머가 있다면 클리어
+    if (nicknameTimeoutRef.current) {
+      clearTimeout(nicknameTimeoutRef.current);
+    }
+    
+    // 새 타이머 설정
+    nicknameTimeoutRef.current = setTimeout(() => {
+      checkNicknameAvailability(newNickname);
     }, 500);
   };
+
+  // 컴포넌트 언마운트 시 타이머 정리
+  useEffect(() => {
+    return () => {
+      if (emailTimeoutRef.current) {
+        clearTimeout(emailTimeoutRef.current);
+      }
+      if (nicknameTimeoutRef.current) {
+        clearTimeout(nicknameTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -297,3 +319,4 @@ export default function SignupPage() {
     </div>
   );
 }
+
