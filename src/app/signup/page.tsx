@@ -39,10 +39,21 @@ export default function SignupPage() {
   const emailTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const nicknameTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 이메일 중복 확인 함수
+  // 이메일 형식 검증 함수 추가
+  const isValidEmail = (email: string): boolean => {
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return emailRegex.test(email);
+  };
+
+  // 이메일 중복 확인 함수 (개선됨)
   const checkEmailAvailability = async (emailValue: string) => {
-    if (!emailValue || !emailValue.includes('@')) {
-      setEmailStatus({ available: null, message: "", checking: false });
+    // 이메일 형식이 유효하지 않으면 중복 확인하지 않음
+    if (!emailValue || !isValidEmail(emailValue)) {
+      setEmailStatus({ 
+        available: null, 
+        message: emailValue && !isValidEmail(emailValue) ? "올바른 이메일 형식을 입력하세요" : "", 
+        checking: false 
+      });
       return;
     }
 
@@ -171,18 +182,54 @@ export default function SignupPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // 제출 전 최종 검증
+    if (!isValidEmail(email)) {
+      alert('올바른 이메일 형식을 입력하세요.');
+      return;
+    }
+    
+    if (emailStatus.available !== true) {
+      alert('이메일 중복 확인을 완료하세요.');
+      return;
+    }
+    
+    if (nicknameStatus.available !== true) {
+      alert('닉네임 중복 확인을 완료하세요.');
+      return;
+    }
+
+    if (password.length < 6) {
+      alert('비밀번호는 최소 6자 이상이어야 합니다.');
+      return;
+    }
+    
     setIsLoading(true);
 
     try {
-      // 여기에 실제 회원가입 로직을 구현하세요
-      // 예시: API 호출, 사용자 등록 등
-      console.log("회원가입 시도:", { email, password, nickname });
-      
-      // 임시로 2초 후 로그인 페이지로 리다이렉트
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      router.push("/login");
+      const response = await fetch('/api/members', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password,
+          nickname
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert('회원가입이 성공적으로 완료되었습니다!');
+        router.push('/login');
+      } else {
+        alert(data.error || '회원가입 중 오류가 발생했습니다.');
+      }
     } catch (error) {
-      console.error("회원가입 에러:", error);
+      console.error('회원가입 에러:', error);
+      alert('네트워크 오류가 발생했습니다. 다시 시도해주세요.');
     } finally {
       setIsLoading(false);
     }
@@ -253,7 +300,7 @@ export default function SignupPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-3 h-4 w-4 text-gray-400 hover:text-gray-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 hover:text-gray-600"
                   >
                     {showPassword ? <EyeOff /> : <Eye />}
                   </button>
@@ -297,7 +344,15 @@ export default function SignupPage() {
               <Button
                 type="submit"
                 className="w-full"
-                disabled={isLoading || !email || !password || !nickname || emailStatus.available === false || nicknameStatus.available === false}
+                disabled={
+                  isLoading || 
+                  !email || 
+                  !password || 
+                  !nickname || 
+                  !isValidEmail(email) || 
+                  emailStatus.available !== true || 
+                  nicknameStatus.available !== true
+                }
               >
                 {isLoading ? "가입 중..." : "회원가입"}
               </Button>
