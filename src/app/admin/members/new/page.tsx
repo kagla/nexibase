@@ -25,6 +25,8 @@ export default function NewMemberPage() {
     message: "",
     checked: false
   })
+  const [setTodayLeave, setSetTodayLeave] = useState(false)
+  const [setTodayIntercept, setSetTodayIntercept] = useState(false)
   
   const [formData, setFormData] = useState<MemberCreateForm>({
     mb_id: "",
@@ -36,8 +38,8 @@ export default function NewMemberPage() {
     mb_hp: "",
     mb_tel: "",
     mb_level: 2,
-    mb_certify: "",
-    mb_adult: 0,
+    mb_certify: "phone", // 기본값: 휴대폰
+    mb_adult: 0, // 기본값: 아니오
     mb_mailling: 1,
     mb_sms: 1,
     mb_open: 1,
@@ -54,7 +56,7 @@ export default function NewMemberPage() {
     mb_leave_date: "",
     mb_intercept_date: "",
     mb_1: "",
-    mb_2: "",
+    mb_2: "no", // 기본값: 아니오 (본인확인)
     mb_3: "",
     mb_4: "",
     mb_5: "",
@@ -146,6 +148,23 @@ export default function NewMemberPage() {
 
   const handleInputChange = (field: keyof MemberCreateForm, value: string | number) => {
     setFormData(prev => ({ ...prev, [field]: value }))
+  }
+
+  // 오늘 날짜로 설정하는 함수들
+  const handleTodayLeave = (checked: boolean) => {
+    setSetTodayLeave(checked)
+    if (checked) {
+      const today = new Date().toISOString().split('T')[0].replace(/-/g, '')
+      setFormData(prev => ({ ...prev, mb_leave_date: today }))
+    }
+  }
+
+  const handleTodayIntercept = (checked: boolean) => {
+    setSetTodayIntercept(checked)
+    if (checked) {
+      const today = new Date().toISOString().split('T')[0].replace(/-/g, '')
+      setFormData(prev => ({ ...prev, mb_intercept_date: today }))
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -453,31 +472,41 @@ export default function NewMemberPage() {
                 {/* 본인확인방법 / 성인인증 */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label className="text-xs font-medium">본인확인방법</Label>
-                    <div className="flex gap-4">
-                      <label className="flex items-center">
-                        <input type="radio" name="certify_method" value="simple" className="mr-2" />
-                        <span className="text-xs">간편인증</span>
-                      </label>
-                      <label className="flex items-center">
-                        <input type="radio" name="certify_method" value="phone" checked className="mr-2" />
-                        <span className="text-xs">휴대폰</span>
-                      </label>
-                      <label className="flex items-center">
-                        <input type="radio" name="certify_method" value="ipin" className="mr-2" />
-                        <span className="text-xs">아이핀</span>
-                      </label>
-                    </div>
+                    <Label htmlFor="mb_certify" className="text-xs font-medium block">본인확인방법</Label>
+                    <select
+                      id="mb_certify"
+                      value={formData.mb_certify}
+                      onChange={(e) => handleInputChange('mb_certify', e.target.value)}
+                      className="w-1/2 border border-gray-300 rounded-md px-3 py-2 bg-white text-xs block"
+                    >
+                      <option value="simple">간편인증</option>
+                      <option value="phone">휴대폰</option>
+                      <option value="ipin">아이핀</option>
+                    </select>
                   </div>
                   <div className="space-y-2">
                     <Label className="text-xs font-medium">성인인증</Label>
                     <div className="flex gap-4">
                       <label className="flex items-center">
-                        <input type="radio" name="adult" value="yes" className="mr-2" />
+                        <input 
+                          type="radio" 
+                          name="adult" 
+                          value="1" 
+                          checked={formData.mb_adult === 1}
+                          onChange={(e) => handleInputChange('mb_adult', parseInt(e.target.value))}
+                          className="mr-2" 
+                        />
                         <span className="text-xs">예</span>
                       </label>
                       <label className="flex items-center">
-                        <input type="radio" name="adult" value="no" checked className="mr-2" />
+                        <input 
+                          type="radio" 
+                          name="adult" 
+                          value="0" 
+                          checked={formData.mb_adult === 0}
+                          onChange={(e) => handleInputChange('mb_adult', parseInt(e.target.value))}
+                          className="mr-2" 
+                        />
                         <span className="text-xs">아니오</span>
                       </label>
                     </div>
@@ -489,11 +518,25 @@ export default function NewMemberPage() {
                   <Label className="text-xs font-medium">본인확인</Label>
                   <div className="flex gap-4">
                     <label className="flex items-center">
-                      <input type="radio" name="certify" value="yes" className="mr-2" />
+                      <input 
+                        type="radio" 
+                        name="certify" 
+                        value="yes" 
+                        checked={formData.mb_2 === "yes"}
+                        onChange={(e) => handleInputChange('mb_2', e.target.value)}
+                        className="mr-2" 
+                      />
                       <span className="text-xs">예</span>
                     </label>
                     <label className="flex items-center">
-                      <input type="radio" name="certify" value="no" checked className="mr-2" />
+                      <input 
+                        type="radio" 
+                        name="certify" 
+                        value="no" 
+                        checked={formData.mb_2 === "no"}
+                        onChange={(e) => handleInputChange('mb_2', e.target.value)}
+                        className="mr-2" 
+                      />
                       <span className="text-xs">아니오</span>
                     </label>
                   </div>
@@ -709,7 +752,12 @@ export default function NewMemberPage() {
                       className="text-sm"
                     />
                     <label className="flex items-center text-xs">
-                      <input type="checkbox" className="mr-1" />
+                      <input 
+                        type="checkbox" 
+                        checked={setTodayLeave}
+                        onChange={(e) => handleTodayLeave(e.target.checked)}
+                        className="mr-1" 
+                      />
                       탈퇴일을 오늘로 지정
                     </label>
                   </div>
@@ -728,7 +776,12 @@ export default function NewMemberPage() {
                       className="text-sm"
                     />
                     <label className="flex items-center text-xs">
-                      <input type="checkbox" className="mr-1" />
+                      <input 
+                        type="checkbox" 
+                        checked={setTodayIntercept}
+                        onChange={(e) => handleTodayIntercept(e.target.checked)}
+                        className="mr-1" 
+                      />
                       접근차단일을 오늘로 지정
                     </label>
                   </div>
