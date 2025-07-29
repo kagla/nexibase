@@ -79,6 +79,7 @@ export default function LoginPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     className="pl-10"
                     required
+                    autoComplete="off"
                   />
                 </div>
               </div>
@@ -97,6 +98,7 @@ export default function LoginPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     className="pl-10 pr-10"
                     required
+                    autoComplete="off"
                   />
                   <button
                     type="button"
@@ -108,19 +110,19 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between">
+              <Button
+                type="submit"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                disabled={isLoading}
+              >
+                {isLoading ? "로그인 중..." : "로그인"}
+              </Button>
+
+              <div className="text-center">
                 <Link href="/forgot-password" className="text-sm text-blue-600 hover:underline">
                   비밀번호를 잊으셨나요?
                 </Link>
               </div>
-
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isLoading || !email || !password}
-              >
-                {isLoading ? "로그인 중..." : "로그인"}
-              </Button>
             </form>
 
             <Separator />

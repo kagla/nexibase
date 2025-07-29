@@ -85,7 +85,7 @@ export default function EmailCertifyPage() {
             {verificationStatus === 'success' && (
               <Button 
                 onClick={() => router.push('/login')}
-                className="w-full"
+                className="w-full bg-blue-600 hover:bg-blue-700"
               >
                 로그인하기
               </Button>

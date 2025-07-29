@@ -184,6 +184,11 @@ export default function SignupPage() {
     e.preventDefault();
     
     // 제출 전 최종 검증
+    if (!email) {
+      alert('이메일을 입력해주세요.');
+      return;
+    }
+    
     if (!isValidEmail(email)) {
       alert('올바른 이메일 형식을 입력하세요.');
       return;
@@ -194,15 +199,30 @@ export default function SignupPage() {
       return;
     }
     
-    if (nicknameStatus.available !== true) {
-      alert('닉네임 중복 확인을 완료하세요.');
+    if (!password) {
+      alert('비밀번호를 입력해주세요.');
       return;
     }
-
+    
     // if (password.length < 6) {
     //   alert('비밀번호는 최소 6자 이상이어야 합니다.');
     //   return;
     // }
+    
+    if (!nickname) {
+      alert('닉네임을 입력해주세요.');
+      return;
+    }
+    
+    if (nickname.length < 2) {
+      alert('닉네임은 최소 2자 이상이어야 합니다.');
+      return;
+    }
+    
+    if (nicknameStatus.available !== true) {
+      alert('닉네임 중복 확인을 완료하세요.');
+      return;
+    }
     
     setIsLoading(true);
 
@@ -316,6 +336,7 @@ export default function SignupPage() {
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 hover:text-gray-600"
+                    tabIndex={-1}
                   >
                     {showPassword ? <EyeOff /> : <Eye />}
                   </button>
@@ -358,23 +379,22 @@ export default function SignupPage() {
   
               <Button
                 type="submit"
-                className={`w-full ${
-                  isFormValid() 
-                    ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                    : isAllFieldsFilled()
-                    ? 'bg-gray-600 hover:bg-gray-700 text-white'
-                    : 'bg-gray-400 text-gray-300 cursor-not-allowed'
-                }`}
-                disabled={
-                  isLoading || 
-                  !isAllFieldsFilled() || 
-                  !isValidEmail(email) || 
-                  emailStatus.available !== true || 
-                  nicknameStatus.available !== true
-                }
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                disabled={isLoading}
               >
                 {isLoading ? "가입 중..." : "회원가입"}
               </Button>
+              
+              {isLoading && (
+                <div className="text-center">
+                  <p className="text-sm text-gray-600">
+                    회원가입 처리 중입니다. 메일 발송으로 인해 잠시 시간이 걸릴 수 있습니다.
+                  </p>
+                  <div className="mt-2">
+                    <div className="inline-block animate-spin h-4 w-4 border-2 border-gray-300 border-t-blue-600 rounded-full"></div>
+                  </div>
+                </div>
+              )}
             </form>
 
             <Separator />
