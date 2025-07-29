@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 1. 이메일(아이디)로 사용자 검색
-    const user = await prisma.g5Member.findFirst({
+    const member = await prisma.g5Member.findFirst({
       where: { 
         mb_email: email.toLowerCase() 
       },
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     });
 
     // 사용자가 존재하지 않음
-    if (!user) {
+    if (!member) {
       return NextResponse.json(
         { error: '등록되지 않은 이메일입니다.' },
         { status: 401 }
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 2. 비밀번호 확인
-    const isPasswordValid = verifyPassword(password, user.mb_password);
+    const isPasswordValid = verifyPassword(password, member.mb_password);
     
     if (!isPasswordValid) {
       return NextResponse.json(
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. 이메일 인증 확인 (mb_email_certify가 1980년 이후인지 확인)
-    const certifyDate = new Date(user.mb_email_certify);
+    const certifyDate = new Date(member.mb_email_certify);
     const limitDate = new Date('1980-01-01');
     
     // 위 2개의 시간 보여줘
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
 
     // 로그인 성공 - 오늘 로그인 시간 업데이트
     await prisma.g5Member.update({
-      where: { mb_no: user.mb_no },
+      where: { mb_no: member.mb_no },
       data: { mb_today_login: new Date() }
     });
 
@@ -78,11 +78,13 @@ export async function POST(request: NextRequest) {
     const jwtSecret = process.env.JWT_SECRET || 'your-secret-key';
     const token = jwt.sign(
       {
-        mb_no: user.mb_no,
-        mb_id: user.mb_id,
-        mb_email: user.mb_email,
-        mb_nick: user.mb_nick,
-        mb_level: user.mb_level
+        mb_no: member.mb_no,
+        mb_id: member.mb_id,
+        mb_email: member.mb_email,
+        mb_nick: member.mb_nick,
+        mb_level: member.mb_level,
+        mb_datetime: member.mb_datetime, // 추가
+        mb_today_login: new Date() // 추가
       },
       jwtSecret,
       { expiresIn: '7d' } // 7일간 유효
@@ -98,11 +100,11 @@ export async function POST(request: NextRequest) {
       success: true,
       message: '로그인이 완료되었습니다.',
       user: {
-        mb_no: user.mb_no,
-        mb_id: user.mb_id,
-        mb_email: user.mb_email,
-        mb_nick: user.mb_nick,
-        mb_level: user.mb_level,
+        mb_no: member.mb_no,
+        mb_id: member.mb_id,
+        mb_email: member.mb_email,
+        mb_nick: member.mb_nick,
+        mb_level: member.mb_level,
         loginTime: new Date().toISOString()
       }
     }, { status: 200 });

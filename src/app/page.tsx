@@ -74,7 +74,7 @@ export default function Home() {
         const response = await fetch('/api/me');
         if (response.ok) {
           const data = await response.json();
-          setMember(data.user);
+          setMember(data.member); // data.user에서 data.member로 변경
         } else {
           setMember(null);
         }

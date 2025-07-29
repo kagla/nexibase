@@ -103,7 +103,7 @@ export default function SignupPage() {
     setNicknameStatus(prev => ({ ...prev, checking: true }));
 
     try {
-      const response = await fetch('/api/check-nickname', {
+      const response = await fetch('/api/check-nick', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
