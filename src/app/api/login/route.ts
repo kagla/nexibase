@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyPassword } from '@/lib/auth';
+import jwt from 'jsonwebtoken';
 
 export async function POST(request: NextRequest) {
   try {
@@ -73,13 +74,27 @@ export async function POST(request: NextRequest) {
       data: { mb_today_login: new Date() }
     });
 
+    // JWT 토큰 생성
+    const jwtSecret = process.env.JWT_SECRET || 'your-secret-key';
+    const token = jwt.sign(
+      {
+        mb_no: user.mb_no,
+        mb_id: user.mb_id,
+        mb_email: user.mb_email,
+        mb_nick: user.mb_nick,
+        mb_level: user.mb_level
+      },
+      jwtSecret,
+      { expiresIn: '7d' } // 7일간 유효
+    );
+
     // 클라이언트 IP 주소 가져오기
     const clientIP = request.headers.get('x-forwarded-for') || 
                       request.headers.get('x-real-ip') || 
                       '127.0.0.1';
 
-    // 성공 응답 (민감한 정보 제외)
-    return NextResponse.json({
+    // HTTP-only 쿠키를 포함한 응답 생성
+    const response = NextResponse.json({
       success: true,
       message: '로그인이 완료되었습니다.',
       user: {
@@ -91,6 +106,17 @@ export async function POST(request: NextRequest) {
         loginTime: new Date().toISOString()
       }
     }, { status: 200 });
+
+    // HTTP-only 쿠키 설정
+    response.cookies.set('auth-token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // HTTPS에서만 전송
+      sameSite: 'lax', // CSRF 공격 방지
+      maxAge: 7 * 24 * 60 * 60, // 7일 (초 단위)
+      path: '/', // 모든 경로에서 접근 가능
+    });
+
+    return response;
 
   } catch (error) {
     console.error('로그인 에러:', error);
