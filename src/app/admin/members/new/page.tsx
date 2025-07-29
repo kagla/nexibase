@@ -57,6 +57,19 @@ export default function NewMemberPage() {
     message: "",
     checked: false
   })
+  
+  // 이메일 중복 체크 상태 추가
+  const [emailChecking, setEmailChecking] = useState(false)
+  const [emailStatus, setEmailStatus] = useState<{
+    available: boolean | null
+    message: string
+    checked: boolean
+  }>({
+    available: null,
+    message: "",
+    checked: false
+  })
+  
   const [setTodayLeave, setSetTodayLeave] = useState(false)
   const [setTodayIntercept, setSetTodayIntercept] = useState(false)
   
@@ -123,6 +136,18 @@ export default function NewMemberPage() {
     }
     if (nick.length > 20) {
       return { valid: false, message: "닉네임은 20자 이하여야 합니다." }
+    }
+    return { valid: true, message: "" }
+  }
+
+  // 이메일 유효성 검사 추가
+  const validateEmail = (email: string) => {
+    if (!email.trim()) {
+      return { valid: false, message: "이메일을 입력해주세요." }
+    }
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+    if (!emailRegex.test(email)) {
+      return { valid: false, message: "올바른 이메일 형식이 아닙니다." }
     }
     return { valid: true, message: "" }
   }
@@ -231,6 +256,58 @@ export default function NewMemberPage() {
     []
   )
 
+  // 디바운스된 이메일 중복 체크 함수 추가
+  const debouncedCheckEmail = useCallback(
+    debounce(async (email: string) => {
+      const emailValidation = validateEmail(email)
+      if (!emailValidation.valid) {
+        setEmailStatus({
+          available: false,
+          message: emailValidation.message,
+          checked: false
+        })
+        return
+      }
+
+      setEmailChecking(true)
+      try {
+        const response = await fetch('/api/members/check-email', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email: email }),
+        })
+
+        const data = await response.json()
+
+        if (response.ok) {
+          setEmailStatus({
+            available: data.available,
+            message: data.message,
+            checked: true
+          })
+        } else {
+          setEmailStatus({
+            available: false,
+            message: data.error || '중복 확인 중 오류가 발생했습니다.',
+            checked: false
+          })
+        }
+      } catch (error) {
+        console.error('이메일 중복 확인 에러:', error)
+        setEmailStatus({
+          available: false,
+          message: '네트워크 오류가 발생했습니다.',
+          checked: false
+        })
+      } finally {
+        setEmailChecking(false)
+      }
+    }, 500),
+    []
+  )
+
   // 아이디 변경 시 자동 중복 체크
   useEffect(() => {
     if (formData.mb_id.trim()) {
@@ -256,6 +333,19 @@ export default function NewMemberPage() {
       })
     }
   }, [formData.mb_nick, debouncedCheckNick])
+
+  // 이메일 변경 시 자동 중복 체크 추가
+  useEffect(() => {
+    if (formData.mb_email.trim()) {
+      debouncedCheckEmail(formData.mb_email)
+    } else {
+      setEmailStatus({
+        available: null,
+        message: "",
+        checked: false
+      })
+    }
+  }, [formData.mb_email, debouncedCheckEmail])
 
   const handleInputChange = (field: keyof MemberCreateForm, value: string | number) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -390,11 +480,25 @@ export default function NewMemberPage() {
       }
     }
 
-    if (!formData.mb_email.includes('@') || !formData.mb_email.includes('.')) {
-      alert("이메일 형식이 올바르지 않습니다.")
+    // 이메일 중복 체크 확인 추가
+    const emailValidation = validateEmail(formData.mb_email)
+    if (!emailValidation.valid) {
+      alert(emailValidation.message)
       document.getElementById('mb_email')?.focus()
       return
-    }   
+    }
+
+    if (!emailStatus.checked || !emailStatus.available) {
+      alert("사용할 수 없는 이메일입니다.")
+      document.getElementById('mb_email')?.focus()
+      return
+    }
+
+    // if (!formData.mb_email.includes('@') || !formData.mb_email.includes('.')) {
+    //   alert("이메일 형식이 올바르지 않습니다.")
+    //   document.getElementById('mb_email')?.focus()
+    //   return
+    // }   
 
     // 필수 필드 검증 (신규등록시에만 비밀번호 필수)
     if (!formData.mb_id || !formData.mb_name || !formData.mb_nick || !formData.mb_email) {
@@ -476,6 +580,9 @@ export default function NewMemberPage() {
                     !idStatus.checked || 
                     !idStatus.available ||
                     (formData.mb_nick.trim() && (!nickStatus.checked || !nickStatus.available)) ||
+                    !validateEmail(formData.mb_email).valid ||
+                    !emailStatus.checked ||
+                    !emailStatus.available ||
                     !formData.mb_password ||
                     !formData.mb_name ||
                     !formData.mb_nick ||
@@ -582,6 +689,16 @@ export default function NewMemberPage() {
                       className="text-sm"
                         required
                       />
+                      {formData.mb_email && (
+                        <div className={`text-xs ${
+                          emailStatus.available === true ? 'text-green-600' : 
+                          emailStatus.available === false ? 'text-red-600' : 
+                          'text-gray-600'
+                        }`}>
+                          {emailChecking && "확인 중..."}
+                          {!emailChecking && emailStatus.message}
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -1057,7 +1174,10 @@ export default function NewMemberPage() {
                     !validateId(formData.mb_id).valid || 
                     !idStatus.checked || 
                     !idStatus.available ||
-                    (formData.mb_nick.trim() && (!nickStatus.checked || !nickStatus.available))
+                    (formData.mb_nick.trim() && (!nickStatus.checked || !nickStatus.available)) ||
+                    !validateEmail(formData.mb_email).valid ||
+                    !emailStatus.checked ||
+                    !emailStatus.available
                   }
                   className="bg-red-600 hover:bg-red-700 text-sm"
                   size="lg"
