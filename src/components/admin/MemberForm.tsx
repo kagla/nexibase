@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ArrowLeft, Save, UserPlus, User, Mail, Phone, MapPin, Shield, Settings, Lock, Home, FileText, Calendar } from "lucide-react"
-import { MemberFormData, MemberFormProps, Member } from "@/lib/types"
+import { MemberFormData, MemberFormProps, Member } from "@/lib/types/member"
 import { Separator } from "@/components/ui/separator"
 import { Textarea } from "@/components/ui/textarea"
 

@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email } = body;
+    const { email, exclude_id } = body;
 
     if (!email) {
       return NextResponse.json(
@@ -22,11 +22,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 데이터베이스에서 이메일 중복 확인
+    // 데이터베이스에서 이메일 중복 확인 (exclude_id가 있으면 해당 회원 제외)
+    const whereCondition: any = {
+      mb_email: email.toLowerCase()
+    };
+
+    // 수정 모드일 때는 현재 회원을 제외하고 중복 검사
+    if (exclude_id) {
+      whereCondition.mb_id = {
+        not: exclude_id
+      };
+    }
+
     const existingMember = await prisma.g5Member.findFirst({
-      where: {
-        mb_email: email.toLowerCase()
-      },
+      where: whereCondition,
       select: {
         mb_email: true
       }
