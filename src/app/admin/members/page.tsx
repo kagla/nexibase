@@ -22,35 +22,7 @@ import {
 
 import { MemberAddModal } from "@/components/admin/MemberAddModal"
 import { MemberEditModal } from "@/components/admin/MemberEditModal"
-
-interface Member {
-  mb_no: number
-  mb_id: string
-  mb_name: string
-  mb_nick: string
-  mb_email: string
-  mb_level: number
-  mb_certify: string
-  mb_adult: number
-  mb_mailling: number
-  mb_sms: number
-  mb_open: number
-  mb_point: number
-  mb_today_login: string
-  mb_datetime: string
-  mb_leave_date: string
-  mb_intercept_date: string
-  mb_email_certify: string
-  mb_hp: string
-  mb_tel: string
-  selected?: boolean
-}
-
-interface Stats {
-  totalMembers: number
-  blockedMembers: number
-  withdrawnMembers: number
-}
+import { MemberListItem, MemberStats, MemberSearchFilter } from "@/lib/types"
 
 export default function MembersPage() {
   const router = useRouter()
@@ -58,11 +30,15 @@ export default function MembersPage() {
   
   // URL 파라미터에서 초기값 가져오기
   const [activeMenu, setActiveMenu] = useState("members")
-  const [selectedFilter, setSelectedFilter] = useState(searchParams.get("filter") || "전체목록")
-  const [searchType, setSearchType] = useState(searchParams.get("searchType") || "회원아이디")
+  const [selectedFilter, setSelectedFilter] = useState<MemberSearchFilter['filter']>(
+    (searchParams.get("filter") as MemberSearchFilter['filter']) || "전체목록"
+  )
+  const [searchType, setSearchType] = useState<MemberSearchFilter['searchType']>(
+    (searchParams.get("searchType") as MemberSearchFilter['searchType']) || "회원아이디"
+  )
   const [searchValue, setSearchValue] = useState(searchParams.get("searchValue") || "")
-  const [members, setMembers] = useState<Member[]>([])
-  const [stats, setStats] = useState<Stats>({
+  const [members, setMembers] = useState<MemberListItem[]>([])
+  const [stats, setStats] = useState<MemberStats>({
     totalMembers: 0,
     blockedMembers: 0,
     withdrawnMembers: 0
@@ -70,9 +46,13 @@ export default function MembersPage() {
   const [loading, setLoading] = useState(true)
   const [currentPage, setCurrentPage] = useState(parseInt(searchParams.get("page") || "1"))
   const [totalPages, setTotalPages] = useState(1)
+  // 모달 관련 상태 제거
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
-  const [selectedMember, setSelectedMember] = useState<Member | null>(null)
+  const [selectedMember, setSelectedMember] = useState<MemberListItem | null>(null)
+
+  // 성공 메시지 상태 추가
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false)
 
   // URL 업데이트 함수
   const updateURL = (params: Record<string, string>) => {
@@ -106,7 +86,7 @@ export default function MembersPage() {
       const data = await response.json()
 
       if (data.success) {
-        setMembers(data.members.map((member: Member) => ({ ...member, selected: false })))
+        setMembers(data.members.map((member: MemberListItem) => ({ ...member, selected: false })))
         setStats(data.stats)
         setTotalPages(data.pagination.totalPages)
       }
@@ -120,6 +100,15 @@ export default function MembersPage() {
   useEffect(() => {
     fetchMembers()
   }, [currentPage, selectedFilter, searchType, searchValue])
+
+  useEffect(() => {
+    // URL에서 성공 파라미터 확인
+    if (searchParams.get('success') === 'true') {
+      setShowSuccessMessage(true)
+      // 3초 후 메시지 숨기기
+      setTimeout(() => setShowSuccessMessage(false), 3000)
+    }
+  }, [searchParams])
 
   const filters = [
     { id: "전체목록", label: "전체목록", count: `${stats.totalMembers}명` },
@@ -161,67 +150,18 @@ export default function MembersPage() {
     }
   }
 
+  // 회원 추가 핸들러 수정
   const handleAddMember = () => {
-    setIsAddModalOpen(true)
+    router.push('/admin/members/new')
   }
 
-  const handleSaveMember = async (memberData: any) => {
-    try {
-      const response = await fetch('/api/admin/members', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(memberData),
-      })
-
-      const data = await response.json()
-
-      if (data.success) {
-        alert('회원이 성공적으로 추가되었습니다.')
-        fetchMembers() // 목록 새로고침
-      } else {
-        alert(data.error || '회원 추가 중 오류가 발생했습니다.')
-      }
-    } catch (error) {
-      console.error('회원 추가 실패:', error)
-      alert('네트워크 오류가 발생했습니다.')
-    }
-  }
-
-  const handleSaveMemberEdit = async (memberData: any) => {
-    try {
-      const response = await fetch(`/api/admin/members/${memberData.mb_id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(memberData),
-      })
-
-      const data = await response.json()
-
-      if (data.success) {
-        alert('회원 정보가 성공적으로 수정되었습니다.')
-        fetchMembers() // 목록 새로고침
-        setIsEditModalOpen(false)
-        setSelectedMember(null)
-      } else {
-        alert(data.error || '회원 수정 중 오류가 발생했습니다.')
-      }
-    } catch (error) {
-      console.error('회원 수정 실패:', error)
-      alert('네트워크 오류가 발생했습니다.')
-    }
-  }
-
+  // 회원 수정 핸들러 수정
   const handleEditMember = (mb_id: string) => {
-    const member = members.find(m => m.mb_id === mb_id)
-    if (member) {
-      setSelectedMember(member)
-      setIsEditModalOpen(true)
-    }
+    router.push(`/admin/members/${mb_id}/edit`)
   }
+
+  // 모달 관련 함수들 제거
+  // handleSaveMember, handleSaveMemberEdit 함수 제거
 
   const handleGroupMember = (mb_id: string) => {
     console.log("회원 그룹 관리:", mb_id)
@@ -229,14 +169,14 @@ export default function MembersPage() {
 
   // 필터 변경 핸들러
   const handleFilterChange = (filter: string) => {
-    setSelectedFilter(filter)
+    setSelectedFilter(filter as MemberSearchFilter['filter'])
     setCurrentPage(1)
     updateURL({ filter, page: "1" })
   }
 
   // 검색 타입 변경 핸들러
   const handleSearchTypeChange = (type: string) => {
-    setSearchType(type)
+    setSearchType(type as MemberSearchFilter['searchType'])
     updateURL({ searchType: type })
   }
 
@@ -256,13 +196,13 @@ export default function MembersPage() {
     updateURL({ page: page.toString() })
   }
 
-  const getStatusText = (member: Member) => {
+  const getStatusText = (member: MemberListItem) => {
     if (member.mb_leave_date) return "탈퇴"
     if (member.mb_intercept_date) return "차단"
     return "정상"
   }
 
-  const getStatusColor = (member: Member) => {
+  const getStatusColor = (member: MemberListItem) => {
     if (member.mb_leave_date) return "bg-gray-500"
     if (member.mb_intercept_date) return "bg-red-500"
     return "bg-green-500"
@@ -293,6 +233,15 @@ export default function MembersPage() {
         <Sidebar activeMenu={activeMenu} onMenuChange={setActiveMenu} />
         <main className="flex-1 lg:ml-0 p-4">
           <div className="bg-white rounded-lg shadow">
+            {/* 성공 메시지 */}
+            {showSuccessMessage && (
+              <div className="p-4 bg-green-50 border-b border-green-200">
+                <p className="text-sm text-green-800">
+                  작업이 성공적으로 완료되었습니다.
+                </p>
+              </div>
+            )}
+            
             {/* 헤더 */}
             <div className="flex justify-between items-center p-4 border-b border-gray-200">
               <h1 className="text-xl font-bold text-gray-900">회원관리</h1>
@@ -560,22 +509,7 @@ export default function MembersPage() {
       </div>
       
       {/* 회원 추가 모달 */}
-      <MemberAddModal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onSave={handleSaveMember}
-      />
-
-      {/* 회원 수정 모달 */}
-      <MemberEditModal
-        member={selectedMember}
-        isOpen={isEditModalOpen}
-        onClose={() => {
-          setIsEditModalOpen(false)
-          setSelectedMember(null)
-        }}
-        onSave={handleSaveMemberEdit}
-      />
+      {/* <MemberAddModal /> 및 <MemberEditModal /> 제거 */}
     </div>
   )
 }

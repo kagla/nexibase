@@ -5,37 +5,17 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { X, Eye, EyeOff } from "lucide-react"
-
-interface Member {
-  mb_id: string
-  mb_name: string
-  mb_nick: string
-  mb_email: string
-  mb_level: number
-  mb_certify: string
-  mb_adult: number
-  mb_mailling: number
-  mb_sms: number
-  mb_open: number
-  mb_point: number
-  mb_hp: string
-  mb_tel: string
-  // 편집 시에만 필요한 추가 필드들
-  mb_no?: number
-  mb_leave_date?: string
-  mb_intercept_date?: string
-  mb_email_certify?: string
-}
+import { Member, MemberUpdateForm, DuplicateCheckStatus } from "@/lib/types"
 
 interface MemberEditModalProps {
   member: Member | null
   isOpen: boolean
   onClose: () => void
-  onSave: (member: Member) => void
+  onSave: (member: MemberUpdateForm) => void
 }
 
 export function MemberEditModal({ member, isOpen, onClose, onSave }: MemberEditModalProps) {
-  const [formData, setFormData] = useState<Member>({
+  const [formData, setFormData] = useState<MemberUpdateForm>({
     mb_id: '',
     mb_name: '',
     mb_nick: '',
@@ -57,22 +37,14 @@ export function MemberEditModal({ member, isOpen, onClose, onSave }: MemberEditM
   const [isSubmitting, setIsSubmitting] = useState(false)
   
   // 이메일 중복 검사 상태 추가
-  const [emailStatus, setEmailStatus] = useState<{
-    available: boolean | null;
-    message: string;
-    checking: boolean;
-  }>({
+  const [emailStatus, setEmailStatus] = useState<DuplicateCheckStatus>({
     available: null,
     message: "",
     checking: false
   })
 
   // 닉네임 중복 검사 상태 추가
-  const [nickStatus, setNickStatus] = useState<{
-    available: boolean | null;
-    message: string;
-    checking: boolean;
-  }>({
+  const [nickStatus, setNickStatus] = useState<DuplicateCheckStatus>({
     available: null,
     message: "",
     checking: false

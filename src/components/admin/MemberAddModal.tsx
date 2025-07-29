@@ -5,32 +5,16 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { X, Eye, EyeOff } from "lucide-react"
-
-interface MemberAddForm {
-  mb_id: string
-  mb_password: string
-  mb_name: string
-  mb_nick: string
-  mb_email: string
-  mb_level: number
-  mb_certify: string
-  mb_adult: number
-  mb_mailling: number
-  mb_sms: number
-  mb_open: number
-  mb_point: number
-  mb_hp: string
-  mb_tel: string
-}
+import { MemberCreateForm } from "@/lib/types"
 
 interface MemberAddModalProps {
   isOpen: boolean
   onClose: () => void
-  onSave: (member: MemberAddForm) => void
+  onSave: (member: MemberCreateForm) => void
 }
 
 export function MemberAddModal({ isOpen, onClose, onSave }: MemberAddModalProps) {
-  const [formData, setFormData] = useState<MemberAddForm>({
+  const [formData, setFormData] = useState<MemberCreateForm>({
     mb_id: '',
     mb_password: '',
     mb_name: '',
