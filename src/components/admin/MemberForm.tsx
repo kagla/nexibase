@@ -496,6 +496,31 @@ export function MemberForm({ mode, memberId, onCancel, onSuccess }: MemberFormPr
       return
     }
 
+    // Create 모드에서만 비밀번호 필수
+    if (mode === 'create' && !formData.mb_password) {
+      alert("비밀번호를 입력해주세요.")
+      document.getElementById('mb_password')?.focus()
+      return
+    }
+
+    if (!formData.mb_name.trim()) {
+      alert("이름을 입력해주세요.")
+      document.getElementById('mb_name')?.focus()
+      return
+    }
+
+    if (!formData.mb_nick.trim()) {
+      alert("닉네임을 입력해주세요.")
+      document.getElementById('mb_nick')?.focus()
+      return
+    }
+
+    if (!formData.mb_email.trim()) {
+      alert("이메일을 입력해주세요.")
+      document.getElementById('mb_email')?.focus()
+      return
+    }
+
     if (formData.mb_nick.trim()) {
       const nickValidation = validateNick(formData.mb_nick)
       if (!nickValidation.valid) {
@@ -520,17 +545,12 @@ export function MemberForm({ mode, memberId, onCancel, onSuccess }: MemberFormPr
       return
     }
 
-    // 필수 필드 검증
-    if (!formData.mb_id || !formData.mb_name || !formData.mb_nick || !formData.mb_email) {
-      alert("필수 항목을 모두 입력해주세요.")
-      return
-    }
+    // // 필수 필드 검증
+    // if (!formData.mb_id || !formData.mb_name || !formData.mb_nick || !formData.mb_email) {
+    //   alert("필수 항목을 모두 입력해주세요.")
+    //   return
+    // }
 
-    // Create 모드에서만 비밀번호 필수
-    if (mode === 'create' && !formData.mb_password) {
-      alert("비밀번호를 입력해주세요.")
-      return
-    }
 
     try {
       setLoading(true)
@@ -565,6 +585,20 @@ export function MemberForm({ mode, memberId, onCancel, onSuccess }: MemberFormPr
     }
   }
 
+  // Enter 키 핸들러 추가
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      // Textarea에서 Shift+Enter는 줄바꿈을 위해 허용
+      const target = e.target as HTMLElement
+      if (target.tagName === 'TEXTAREA') {
+        return
+      }
+      
+      e.preventDefault()
+      handleSubmit(e as any)
+    }
+  }
+
   return (
     <>
       {/* Daum 우편번호 API 스크립트 로드 */}
@@ -576,7 +610,7 @@ export function MemberForm({ mode, memberId, onCancel, onSuccess }: MemberFormPr
         }}
       />
       
-      <div className="space-y-6">
+      <div className="space-y-6" onKeyDown={handleKeyDown}>
         {/* 헤더 */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -631,6 +665,7 @@ export function MemberForm({ mode, memberId, onCancel, onSuccess }: MemberFormPr
                 <Label htmlFor="mb_id" className="text-xs font-medium">아이디 *</Label>
                 <Input
                   id="mb_id"
+                  maxLength={20}
                   value={formData.mb_id}
                   onChange={(e) => handleInputChange('mb_id', e.target.value)}
                   autoComplete="off"

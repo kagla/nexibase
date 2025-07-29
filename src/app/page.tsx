@@ -118,9 +118,11 @@ export default function Home() {
               <h1 className="text-2xl font-bold text-primary">DevCommunity</h1>
               <nav className="hidden md:flex items-center space-x-6">
                 <Button variant="ghost">홈</Button>
-                <Button variant="ghost">질문/답변</Button>
                 <Button variant="ghost">프로젝트</Button>
                 <Button variant="ghost">스터디</Button>
+                <Link href="/admin">
+                  <Button variant="ghost">관리자</Button>
+                </Link>
               </nav>
             </div>
             
