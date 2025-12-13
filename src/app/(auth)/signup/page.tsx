@@ -33,11 +33,34 @@ export default function SignupPage() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isFirstUser, setIsFirstUser] = useState(false);
   const router = useRouter();
 
   // 디바운스를 위한 ref
   const emailTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const nicknameTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // 첫 회원인지 확인
+  useEffect(() => {
+    const checkFirstUser = async () => {
+      try {
+        const response = await fetch('/api/members/check-first');
+        const data = await response.json();
+        if (data.isFirst) {
+          setIsFirstUser(true);
+          setNickname("관리자");
+          setNicknameStatus({
+            available: true,
+            message: "관리자로 자동 설정됩니다.",
+            checking: false
+          });
+        }
+      } catch (error) {
+        console.error('첫 회원 확인 에러:', error);
+      }
+    };
+    checkFirstUser();
+  }, []);
 
   // 이메일 형식 검증 함수 추가
   const isValidEmail = (email: string): boolean => {
@@ -154,14 +177,17 @@ export default function SignupPage() {
 
   // 닉네임 입력 핸들러 (개선된 디바운스)
   const handleNicknameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // 첫 회원인 경우 닉네임 변경 불가
+    if (isFirstUser) return;
+
     const newNickname = e.target.value;
     setNickname(newNickname);
-    
+
     // 기존 타이머가 있다면 클리어
     if (nicknameTimeoutRef.current) {
       clearTimeout(nicknameTimeoutRef.current);
     }
-    
+
     // 새 타이머 설정
     nicknameTimeoutRef.current = setTimeout(() => {
       checkNicknameAvailability(newNickname);
@@ -272,7 +298,13 @@ export default function SignupPage() {
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold text-center">회원가입</CardTitle>
             <CardDescription className="text-center">
-              새 계정을 만들어 서비스를 시작하세요
+              {isFirstUser ? (
+                <span className="text-blue-600 font-medium">
+                  최초 가입자는 관리자로 등록됩니다
+                </span>
+              ) : (
+                "새 계정을 만들어 서비스를 시작하세요"
+              )}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -351,11 +383,12 @@ export default function SignupPage() {
                     value={nickname}
                     onChange={handleNicknameChange}
                     className={`pl-10 ${
-                      nicknameStatus.available === false ? 'border-red-500' : 
+                      nicknameStatus.available === false ? 'border-red-500' :
                       nicknameStatus.available === true ? 'border-green-500' : ''
-                    }`}
+                    } ${isFirstUser ? 'bg-gray-100' : ''}`}
                     autoComplete="off"
                     required
+                    readOnly={isFirstUser}
                   />
                   {nicknameStatus.checking && (
                     <div className="absolute right-3 top-3">

@@ -68,6 +68,19 @@ export async function PUT(
       )
     }
 
+    // 관리자 최소 1명 유지 체크
+    if (existingUser.role === 'admin' && role !== 'admin') {
+      const adminCount = await prisma.user.count({
+        where: { role: 'admin' }
+      })
+      if (adminCount <= 1) {
+        return NextResponse.json(
+          { success: false, message: '최소 1명의 관리자가 있어야 합니다.' },
+          { status: 400 }
+        )
+      }
+    }
+
     // 이메일 중복 확인 (다른 사용자)
     if (email !== existingUser.email) {
       const emailExists = await prisma.user.findUnique({
@@ -123,6 +136,31 @@ export async function DELETE(
   try {
     const { id } = await params
     const userId = parseInt(id)
+
+    // 삭제하려는 사용자 확인
+    const userToDelete = await prisma.user.findUnique({
+      where: { id: userId }
+    })
+
+    if (!userToDelete) {
+      return NextResponse.json(
+        { success: false, message: '사용자를 찾을 수 없습니다.' },
+        { status: 404 }
+      )
+    }
+
+    // 관리자 최소 1명 유지 체크
+    if (userToDelete.role === 'admin') {
+      const adminCount = await prisma.user.count({
+        where: { role: 'admin' }
+      })
+      if (adminCount <= 1) {
+        return NextResponse.json(
+          { success: false, message: '최소 1명의 관리자가 있어야 합니다.' },
+          { status: 400 }
+        )
+      }
+    }
 
     await prisma.user.delete({
       where: { id: userId }

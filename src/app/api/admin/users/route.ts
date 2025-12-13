@@ -148,6 +148,29 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
+    // 삭제 대상 중 관리자 수 확인
+    const adminsToDelete = await prisma.user.count({
+      where: {
+        id: { in: ids },
+        role: 'admin'
+      }
+    })
+
+    if (adminsToDelete > 0) {
+      // 전체 관리자 수 확인
+      const totalAdmins = await prisma.user.count({
+        where: { role: 'admin' }
+      })
+
+      // 삭제 후 관리자가 0명이 되면 방지
+      if (totalAdmins - adminsToDelete < 1) {
+        return NextResponse.json(
+          { success: false, message: '최소 1명의 관리자가 있어야 합니다.' },
+          { status: 400 }
+        )
+      }
+    }
+
     await prisma.user.deleteMany({
       where: {
         id: { in: ids }
