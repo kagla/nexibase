@@ -51,7 +51,7 @@ export function UsersContent() {
               </thead>
               <tbody>
                 {[1, 2, 3, 4, 5].map((i) => (
-                  <tr key={i} className="border-b hover:bg-gray-50">
+                  <tr key={i} className="border-b hover:bg-muted/50">
                     <td className="p-2">{i}</td>
                     <td className="p-2">사용자 {i}</td>
                     <td className="p-2">user{i}@example.com</td>

@@ -26,7 +26,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <div className="flex">
         <Sidebar activeMenu={activeMenu} onMenuChange={setActiveMenu} />
         <main className="flex-1 lg:ml-0 p-6">

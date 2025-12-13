@@ -35,6 +35,7 @@ export default function LoginPage() {
         // 로그인 성공
         console.log('로그인 성공:', data);
         router.push("/");
+        router.refresh();
       } else {
         // 로그인 실패
         console.error('로그인 실패:', data.error);

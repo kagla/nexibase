@@ -11,30 +11,22 @@ import { Search, Users, MessageCircle, TrendingUp, Star, Heart, Share2, LogOut, 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-// 회원 목록에서 사용하는 간소화된 회원 정보
-export interface MemberListItem {
-  mb_no: number
-  mb_id: string
-  mb_name: string
-  mb_nick: string
-  mb_email: string
-  mb_level: number
-  mb_point: number
-  mb_datetime: string
-  mb_today_login: string
-  mb_leave_date: string
-  mb_intercept_date: string
-  mb_certify: string          // 본인확인방법 추가
-  mb_email_certify: string    // 이메일 인증 정보 추가
-  mb_sms: number             // SMS 수신 여부 추가
-  mb_adult: number           // 성인인증 추가
-  mb_open: number            // 정보공개 추가
-  mb_mailling: number        // 메일링 수신 여부 추가
-  selected?: boolean // UI 선택 상태
+// 사용자 정보 인터페이스
+interface UserInfo {
+  id: string
+  email: string
+  name: string | null
+  nickname: string | null
+  image: string | null
+  phone: string | null
+  role: string
+  status: string
+  lastLoginAt: string | null
+  createdAt: string
 }
 
 export default function Home() {
-  const [member, setMember] = useState<MemberListItem | null>(null);
+  const [user, setUser] = useState<UserInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
@@ -86,13 +78,13 @@ export default function Home() {
         const response = await fetch('/api/me');
         if (response.ok) {
           const data = await response.json();
-          setMember(data.member); // data.user에서 data.member로 변경
+          setUser(data.user);
         } else {
-          setMember(null);
+          setUser(null);
         }
       } catch (error) {
         console.error('사용자 정보 조회 에러:', error);
-        setMember(null);
+        setUser(null);
       } finally {
         setIsLoading(false);
       }
@@ -109,7 +101,7 @@ export default function Home() {
       });
 
       if (response.ok) {
-        setMember(null);
+        setUser(null);
         router.push('/');
       } else {
         alert('로그아웃 중 오류가 발생했습니다.');
@@ -149,21 +141,22 @@ export default function Home() {
               
               {!isLoading && (
                 <>
-                  {member ? (
+                  {user ? (
                     // 로그인된 사용자
                     <div className="flex items-center space-x-3">
                       <div className="flex items-center space-x-2">
                         <Avatar className="h-8 w-8">
+                          <AvatarImage src={user.image || undefined} />
                           <AvatarFallback className="bg-blue-100 text-blue-600 text-sm font-medium">
-                            {(member.mb_nick || member.mb_id || '?')[0]?.toUpperCase()}
+                            {(user.nickname || user.name || user.email || '?')[0]?.toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
                         <span className="text-sm font-medium text-gray-700 hidden sm:block">
-                          {member.mb_nick || member.mb_id || '사용자'}
+                          {user.nickname || user.name || '사용자'}
                         </span>
                       </div>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         onClick={handleLogout}
                         className="flex items-center space-x-1"
@@ -197,10 +190,10 @@ export default function Home() {
             {/* Hero Section */}
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-8 mb-8">
               <h2 className="text-3xl font-bold text-gray-900 mb-4">
-                {member ? `${member.mb_nick || member.mb_id || '사용자'}님, 환영합니다!` : '개발자들의 소통 공간에 오신 것을 환영합니다!'}  
+                {user ? `${user.nickname || user.name || '사용자'}님, 환영합니다!` : '개발자들의 소통 공간에 오신 것을 환영합니다!'}
               </h2>
               <p className="text-lg text-gray-600 mb-6">
-                {member ? '질문하고, 답변하고, 함께 성장하는 개발자 커뮤니티' : '질문하고, 답변하고, 함께 성장하는 개발자 커뮤니티'}
+                질문하고, 답변하고, 함께 성장하는 개발자 커뮤니티
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
@@ -304,7 +297,7 @@ export default function Home() {
           <aside className="lg:col-span-4">
             <div className="space-y-6">
               {/* User Info Card (로그인된 경우만 표시) */}
-              {member && (
+              {user && (
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center">
@@ -315,18 +308,21 @@ export default function Home() {
                   <CardContent>
                     <div className="flex items-center space-x-3 mb-4">
                       <Avatar className="h-12 w-12">
+                        <AvatarImage src={user.image || undefined} />
                         <AvatarFallback className="bg-blue-100 text-blue-600 text-lg font-medium">
-                          {(member.mb_nick || member.mb_id || '?')[0]?.toUpperCase()}
+                          {(user.nickname || user.name || user.email || '?')[0]?.toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <div className="font-medium">{member.mb_nick || member.mb_id || '사용자'}</div>
-                        <div className="text-sm text-muted-foreground">{member.mb_email}</div>
+                        <div className="font-medium">{user.nickname || user.name || '사용자'}</div>
+                        <div className="text-sm text-muted-foreground">{user.email}</div>
                       </div>
                     </div>
                     <div className="space-y-2 text-sm text-muted-foreground">
-                      <div>가입일: {new Date(member.mb_datetime).toLocaleDateString('ko-KR')}</div>
-                      <div>최근 로그인: {new Date(member.mb_today_login).toLocaleDateString('ko-KR')}</div>
+                      <div>가입일: {new Date(user.createdAt).toLocaleDateString('ko-KR')}</div>
+                      {user.lastLoginAt && (
+                        <div>최근 로그인: {new Date(user.lastLoginAt).toLocaleDateString('ko-KR')}</div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>

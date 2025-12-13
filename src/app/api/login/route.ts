@@ -1,125 +1,137 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { verifyPassword } from '@/lib/auth';
-import jwt from 'jsonwebtoken';
+import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
+import { generateId } from '@/lib/id'
+import bcrypt from 'bcryptjs'
+import { randomUUID } from 'crypto'
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { email, password } = body;
+    const body = await request.json()
+    const { email, password } = body
 
     // 필수 필드 검증
     if (!email || !password) {
       return NextResponse.json(
         { error: '이메일과 비밀번호를 모두 입력해주세요.' },
         { status: 400 }
-      );
+      )
     }
 
-    // 1. 이메일(아이디)로 사용자 검색
-    const member = await prisma.g5Member.findFirst({
-      where: { 
-        mb_email: email.toLowerCase() 
-      },
-      select: {
-        mb_no: true,
-        mb_id: true,
-        mb_email: true,
-        mb_password: true,
-        mb_nick: true,
-        mb_level: true,
-        mb_email_certify: true,
-        mb_datetime: true
+    // 이메일로 사용자 검색
+    const user = await prisma.user.findUnique({
+      where: { email: email.toLowerCase() },
+      include: {
+        accounts: {
+          select: { provider: true }
+        }
       }
-    });
+    })
 
     // 사용자가 존재하지 않음
-    if (!member) {
+    if (!user) {
       return NextResponse.json(
         { error: '등록되지 않은 이메일입니다.' },
         { status: 401 }
-      );
+      )
     }
 
-    // 2. 비밀번호 확인
-    const isPasswordValid = verifyPassword(password, member.mb_password);
-    
+    // 소셜 로그인 사용자인 경우 (비밀번호 없음)
+    if (!user.password) {
+      const providers = user.accounts.map(a => a.provider).join(', ')
+      return NextResponse.json(
+        {
+          error: `이 계정은 소셜 로그인(${providers})으로 가입되었습니다. 해당 소셜 계정으로 로그인해주세요.`,
+          socialOnly: true,
+          providers: user.accounts.map(a => a.provider)
+        },
+        { status: 401 }
+      )
+    }
+
+    // 계정 상태 확인
+    if (user.status === 'banned') {
+      return NextResponse.json(
+        { error: '차단된 계정입니다. 관리자에게 문의하세요.' },
+        { status: 403 }
+      )
+    }
+
+    if (user.status === 'inactive') {
+      return NextResponse.json(
+        { error: '비활성화된 계정입니다. 관리자에게 문의하세요.' },
+        { status: 403 }
+      )
+    }
+
+    // 비밀번호 확인
+    const isPasswordValid = await bcrypt.compare(password, user.password)
+
     if (!isPasswordValid) {
       return NextResponse.json(
         { error: '비밀번호가 올바르지 않습니다.' },
         { status: 401 }
-      );
+      )
     }
 
-    // 3. 이메일 인증 확인 (mb_email_certify가 1980년 이후인지 확인)
-    const certifyDate = new Date(member.mb_email_certify);
-    const limitDate = new Date('1980-01-01');
-    
-    // 위 2개의 시간 보여줘
-    console.log('certifyDate:', certifyDate);
-    console.log('limitDate:', limitDate);
-    if (certifyDate <= limitDate) {
-      return NextResponse.json(
-        { 
-          error: '이메일 인증이 필요합니다. 이메일을 확인해주세요.',
-          requireEmailVerification: true 
-        },
-        { status: 403 }
-      );
-    }
+    // 클라이언트 IP 가져오기
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ||
+               request.headers.get('x-real-ip') ||
+               'unknown'
 
-    // 로그인 성공 - 오늘 로그인 시간 업데이트
-    await prisma.g5Member.update({
-      where: { mb_no: member.mb_no },
-      data: { mb_today_login: new Date() }
-    });
+    // 로그인 시간 및 IP 업데이트
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        lastLoginAt: new Date(),
+        lastLoginIp: ip
+      }
+    })
 
-    // JWT 토큰 생성
-    const token = jwt.sign(
-      { 
-        mb_no: member.mb_no,
-        mb_id: member.mb_id,
-        mb_email: member.mb_email,
-        mb_nick: member.mb_nick,
-        mb_datetime: member.mb_datetime,
-        mb_level: member.mb_level 
-      },
-      process.env.JWT_SECRET!,
-      { expiresIn: '7d' } // 7일간 유효
-    );
+    // 세션 토큰 생성
+    const sessionToken = randomUUID()
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7일 후 만료
 
-    // HTTP-only 쿠키를 포함한 응답 생성
+    // 세션 저장
+    await prisma.userSession.create({
+      data: {
+        id: generateId(),
+        sessionToken,
+        userId: user.id,
+        expires: expiresAt
+      }
+    })
+
+    // 응답 생성
     const response = NextResponse.json({
       success: true,
       message: '로그인이 완료되었습니다.',
-      member: {
-        mb_no: member.mb_no,
-        mb_id: member.mb_id,
-        mb_email: member.mb_email,
-        mb_nick: member.mb_nick,
-        mb_level: member.mb_level,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        nickname: user.nickname,
+        role: user.role,
+        image: user.image,
         loginTime: new Date().toISOString()
       }
-    }, { status: 200 });
+    })
 
-    // HTTP-only 쿠키 설정
-    response.cookies.set('auth-token', token, {
+    // HTTP-only 쿠키에 세션 토큰 설정
+    response.cookies.set('session-token', sessionToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // HTTPS에서만 전송
-      sameSite: 'lax', // CSRF 공격 방지
-      maxAge: 7 * 24 * 60 * 60, // 7일 (초 단위)
-      path: '/', // 모든 경로에서 접근 가능
-    });
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60, // 7일
+      path: '/',
+    })
 
-    return response;
+    return response
 
   } catch (error) {
-    console.error('로그인 에러:', error);
+    console.error('로그인 에러:', error)
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }
-    );
-  } finally {
-    await prisma.$disconnect();
+    )
   }
-} 
+}

@@ -1,13 +1,8 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
-  // output 라인을 제거하거나 주석처리
-  // output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -15,1121 +10,217 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Auth 테이블
-model G5Auth {
-  mb_id   String @db.VarChar(20)
-  au_menu String @db.VarChar(50)
-  au_auth String @db.VarChar(255) // set을 String으로
+// ============================================
+// 사용자 시스템
+// ============================================
 
-  @@id([mb_id, au_menu])
-  @@map("g5_auth")
+// 사용자 테이블
+model User {
+  id            String    @id @db.VarChar(25)
+  email         String    @unique @db.VarChar(255)
+  name          String?   @db.VarChar(100)
+  nickname      String?   @db.VarChar(100)
+  password      String?   @db.VarChar(255) // 소셜 로그인 사용자는 null
+  image         String?   @db.VarChar(500) // 프로필 이미지 URL
+  phone         String?   @db.VarChar(20)
+  level         Int       @default(1) // 사용자 레벨 (게시판 권한용)
+  role          String    @default("user") @db.VarChar(20) // user, admin, moderator
+  status        String    @default("active") @db.VarChar(20) // active, inactive, banned
+  emailVerified DateTime?
+  lastLoginAt   DateTime?
+  lastLoginIp   String?   @db.VarChar(50)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // 관계
+  accounts      Account[]
+  sessions      UserSession[]
+  posts         Post[]
+  comments      Comment[]
+  reactions     Reaction[]
+
+  @@index([email])
+  @@index([status])
+  @@index([createdAt])
+  @@map("users")
 }
 
-// Autosave 테이블
-model G5Autosave {
-  as_id       Int      @id @default(autoincrement())
-  mb_id       String   @db.VarChar(20)
-  as_uid      BigInt   @unique @db.UnsignedBigInt
-  as_subject  String   @db.VarChar(255)
-  as_content  String   @db.Text
-  as_datetime DateTime
+// 소셜 로그인 계정 연동 테이블
+model Account {
+  id                String  @id @db.VarChar(25)
+  userId            String
+  type              String  @db.VarChar(50) // oauth, credentials
+  provider          String  @db.VarChar(50) // google, kakao, naver, github
+  providerAccountId String  @db.VarChar(255)
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String? @db.VarChar(50)
+  scope             String? @db.VarChar(255)
+  id_token          String? @db.Text
+  session_state     String? @db.VarChar(255)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
-  @@index([mb_id])
-  @@map("g5_autosave")
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("accounts")
 }
 
-// 게시판 설정 테이블
-model G5Board {
-  bo_table                      String  @id @db.VarChar(20)
-  gr_id                        String  @default("") @db.VarChar(255)
-  bo_subject                   String  @default("") @db.VarChar(255)
-  bo_mobile_subject            String  @default("") @db.VarChar(255)
-  bo_device                    String  @default("both") @db.VarChar(10) // enum
-  bo_admin                     String  @default("") @db.VarChar(255)
-  bo_list_level                Int     @default(0) @db.TinyInt
-  bo_read_level                Int     @default(0) @db.TinyInt
-  bo_write_level               Int     @default(0) @db.TinyInt
-  bo_reply_level               Int     @default(0) @db.TinyInt
-  bo_comment_level             Int     @default(0) @db.TinyInt
-  bo_upload_level              Int     @default(0) @db.TinyInt
-  bo_download_level            Int     @default(0) @db.TinyInt
-  bo_html_level                Int     @default(0) @db.TinyInt
-  bo_link_level                Int     @default(0) @db.TinyInt
-  bo_count_delete              Int     @default(0) @db.TinyInt
-  bo_count_modify              Int     @default(0) @db.TinyInt
-  bo_read_point                Int     @default(0)
-  bo_write_point               Int     @default(0)
-  bo_comment_point             Int     @default(0)
-  bo_download_point            Int     @default(0)
-  bo_use_category              Int     @default(0) @db.TinyInt
-  bo_category_list             String  @db.Text
-  bo_use_sideview              Int     @default(0) @db.TinyInt
-  bo_use_file_content          Int     @default(0) @db.TinyInt
-  bo_use_secret                Int     @default(0) @db.TinyInt
-  bo_use_dhtml_editor          Int     @default(0) @db.TinyInt
-  bo_select_editor             String  @default("") @db.VarChar(50)
-  bo_use_rss_view              Int     @default(0) @db.TinyInt
-  bo_use_good                  Int     @default(0) @db.TinyInt
-  bo_use_nogood                Int     @default(0) @db.TinyInt
-  bo_use_name                  Int     @default(0) @db.TinyInt
-  bo_use_signature             Int     @default(0) @db.TinyInt
-  bo_use_ip_view               Int     @default(0) @db.TinyInt
-  bo_use_list_view             Int     @default(0) @db.TinyInt
-  bo_use_list_file             Int     @default(0) @db.TinyInt
-  bo_use_list_content          Int     @default(0) @db.TinyInt
-  bo_table_width               Int     @default(0)
-  bo_subject_len               Int     @default(0)
-  bo_mobile_subject_len        Int     @default(0)
-  bo_page_rows                 Int     @default(0)
-  bo_mobile_page_rows          Int     @default(0)
-  bo_new                       Int     @default(0)
-  bo_hot                       Int     @default(0)
-  bo_image_width               Int     @default(0)
-  bo_skin                      String  @default("") @db.VarChar(255)
-  bo_mobile_skin               String  @default("") @db.VarChar(255)
-  bo_include_head              String  @default("") @db.VarChar(255)
-  bo_include_tail              String  @default("") @db.VarChar(255)
-  bo_content_head              String  @db.Text
-  bo_mobile_content_head       String  @db.Text
-  bo_content_tail              String  @db.Text
-  bo_mobile_content_tail       String  @db.Text
-  bo_insert_content            String  @db.Text
-  bo_gallery_cols              Int     @default(0)
-  bo_gallery_width             Int     @default(0)
-  bo_gallery_height            Int     @default(0)
-  bo_mobile_gallery_width      Int     @default(0)
-  bo_mobile_gallery_height     Int     @default(0)
-  bo_upload_size               Int     @default(0)
-  bo_reply_order               Int     @default(0) @db.TinyInt
-  bo_use_search                Int     @default(0) @db.TinyInt
-  bo_order                     Int     @default(0)
-  bo_count_write               Int     @default(0)
-  bo_count_comment             Int     @default(0)
-  bo_write_min                 Int     @default(0)
-  bo_write_max                 Int     @default(0)
-  bo_comment_min               Int     @default(0)
-  bo_comment_max               Int     @default(0)
-  bo_notice                    String  @db.Text
-  bo_upload_count              Int     @default(0) @db.TinyInt
-  bo_use_email                 Int     @default(0) @db.TinyInt
-  bo_use_cert                  String  @default("") @db.VarChar(20)
-  bo_use_sns                   Int     @default(0) @db.TinyInt
-  bo_use_captcha               Int     @default(0) @db.TinyInt
-  bo_sort_field                String  @default("") @db.VarChar(255)
-  bo_1_subj                    String  @default("") @db.VarChar(255)
-  bo_2_subj                    String  @default("") @db.VarChar(255)
-  bo_3_subj                    String  @default("") @db.VarChar(255)
-  bo_4_subj                    String  @default("") @db.VarChar(255)
-  bo_5_subj                    String  @default("") @db.VarChar(255)
-  bo_6_subj                    String  @default("") @db.VarChar(255)
-  bo_7_subj                    String  @default("") @db.VarChar(255)
-  bo_8_subj                    String  @default("") @db.VarChar(255)
-  bo_9_subj                    String  @default("") @db.VarChar(255)
-  bo_10_subj                   String  @default("") @db.VarChar(255)
-  bo_1                         String  @default("") @db.VarChar(255)
-  bo_2                         String  @default("") @db.VarChar(255)
-  bo_3                         String  @default("") @db.VarChar(255)
-  bo_4                         String  @default("") @db.VarChar(255)
-  bo_5                         String  @default("") @db.VarChar(255)
-  bo_6                         String  @default("") @db.VarChar(255)
-  bo_7                         String  @default("") @db.VarChar(255)
-  bo_8                         String  @default("") @db.VarChar(255)
-  bo_9                         String  @default("") @db.VarChar(255)
-  bo_10                        String  @default("") @db.VarChar(255)
+// 세션 테이블
+model UserSession {
+  id           String   @id @db.VarChar(25)
+  sessionToken String   @unique @db.VarChar(255)
+  userId       String
+  expires      DateTime
+  createdAt    DateTime @default(now())
 
-  @@map("g5_board")
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("user_sessions")
 }
 
-// 게시판 파일 테이블
-model G5BoardFile {
-  bo_table    String   @db.VarChar(20)
-  wr_id       Int      @default(0)
-  bf_no       Int      @default(0)
-  bf_source   String   @default("") @db.VarChar(255)
-  bf_file     String   @default("") @db.VarChar(255)
-  bf_download Int
-  bf_content  String   @db.Text
-  bf_fileurl  String   @default("") @db.VarChar(255)
-  bf_thumburl String   @default("") @db.VarChar(255)
-  bf_storage  String   @default("") @db.VarChar(50)
-  bf_filesize Int      @default(0)
-  bf_width    Int      @default(0)
-  bf_height   Int      @default(0) @db.SmallInt
-  bf_type     Int      @default(0) @db.TinyInt
-  bf_datetime DateTime @default(dbgenerated("'0000-00-00 00:00:00'"))
+// ============================================
+// 게시판 시스템
+// ============================================
 
-  @@id([bo_table, wr_id, bf_no])
-  @@map("g5_board_file")
+// 게시판 테이블
+model Board {
+  id          String   @id @db.VarChar(25)
+  slug        String   @unique @db.VarChar(50) // URL용 슬러그 (예: free, notice, qna)
+  name        String   @db.VarChar(100) // 게시판 이름
+  description String?  @db.VarChar(500) // 게시판 설명
+  category    String?  @db.VarChar(50) // 카테고리 (community, support, etc.)
+
+  // 권한 설정 (레벨)
+  listLevel   Int      @default(0) // 목록 보기 권한
+  readLevel   Int      @default(0) // 글 읽기 권한
+  writeLevel  Int      @default(1) // 글 쓰기 권한
+  commentLevel Int     @default(1) // 댓글 쓰기 권한
+
+  // 기능 설정
+  useComment  Boolean  @default(true) // 댓글 사용
+  useReaction Boolean  @default(true) // 반응(좋아요 등) 사용
+  useFile     Boolean  @default(true) // 파일 첨부 사용
+  useSecret   Boolean  @default(false) // 비밀글 사용
+
+  // 표시 설정
+  postsPerPage Int     @default(20) // 페이지당 게시글 수
+  sortOrder   String   @default("latest") @db.VarChar(20) // latest, popular, oldest
+  isActive    Boolean  @default(true) // 활성화 여부
+
+  // 통계
+  postCount   Int      @default(0)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // 관계
+  posts       Post[]
+
+  @@index([slug])
+  @@index([category])
+  @@index([isActive])
+  @@map("boards")
 }
 
-// 게시판 추천 테이블
-model G5BoardGood {
-  bg_id       Int      @id @default(autoincrement())
-  bo_table    String   @default("") @db.VarChar(20)
-  wr_id       Int      @default(0)
-  mb_id       String   @default("") @db.VarChar(20)
-  bg_flag     String   @default("") @db.VarChar(255)
-  bg_datetime DateTime @default(dbgenerated("'0000-00-00 00:00:00'"))
+// 게시글 테이블
+model Post {
+  id          String   @id @db.VarChar(25)
+  boardId     String
+  authorId    String
 
-  @@unique([bo_table, wr_id, mb_id], map: "fkey1")
-  @@map("g5_board_good")
+  title       String   @db.VarChar(200)
+  content     String   @db.Text
+
+  // 상태
+  status      String   @default("published") @db.VarChar(20) // draft, published, hidden, deleted
+  isNotice    Boolean  @default(false) // 공지글 여부
+  isSecret    Boolean  @default(false) // 비밀글 여부
+
+  // 통계
+  viewCount   Int      @default(0)
+  likeCount   Int      @default(0)
+  commentCount Int     @default(0)
+
+  // 메타 정보
+  ip          String?  @db.VarChar(50)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // 관계
+  board       Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments    Comment[]
+  reactions   Reaction[]
+
+  @@index([boardId])
+  @@index([authorId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("posts")
 }
 
-// 게시판 새글 테이블
-model G5BoardNew {
-  bn_id       Int      @id @default(autoincrement())
-  bo_table    String   @default("") @db.VarChar(20)
-  wr_id       Int      @default(0)
-  wr_parent   Int      @default(0)
-  bn_datetime DateTime @default(dbgenerated("'0000-00-00 00:00:00'"))
-  mb_id       String   @default("") @db.VarChar(20)
+// 댓글 테이블
+model Comment {
+  id          String   @id @db.VarChar(25)
+  postId      String
+  authorId    String
+  parentId    String?  // 대댓글용 부모 댓글 ID
 
-  @@index([mb_id])
-  @@map("g5_board_new")
+  content     String   @db.Text
+
+  // 상태
+  status      String   @default("published") @db.VarChar(20) // published, hidden, deleted
+  isSecret    Boolean  @default(false) // 비밀 댓글
+
+  // 통계
+  likeCount   Int      @default(0)
+
+  // 메타 정보
+  ip          String?  @db.VarChar(50)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // 관계
+  post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parent      Comment? @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies     Comment[] @relation("CommentReplies")
+  reactions   Reaction[]
+
+  @@index([postId])
+  @@index([authorId])
+  @@index([parentId])
+  @@index([createdAt])
+  @@map("comments")
 }
 
-// 인증 내역 테이블
-model G5CertHistory {
-  cr_id      Int      @id @default(autoincrement())
-  mb_id      String   @default("") @db.VarChar(20)
-  cr_company String   @default("") @db.VarChar(255)
-  cr_method  String   @default("") @db.VarChar(255)
-  cr_ip      String   @default("") @db.VarChar(255)
-  cr_date    DateTime @default(dbgenerated("'0000-00-00'")) @db.Date
-  cr_time    DateTime @default(dbgenerated("'00:00:00'")) @db.Time
+// 반응(좋아요 등) 테이블
+model Reaction {
+  id          String   @id @db.VarChar(25)
+  userId      String
+  postId      String?
+  commentId   String?
 
-  @@index([mb_id])
-  @@map("g5_cert_history")
+  type        String   @db.VarChar(20) // like, dislike, love, haha, sad, angry
+
+  createdAt   DateTime @default(now())
+
+  // 관계
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post        Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  comment     Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  // 한 사용자가 같은 게시글/댓글에 같은 타입 반응은 한 번만
+  @@unique([userId, postId, type])
+  @@unique([userId, commentId, type])
+  @@index([postId])
+  @@index([commentId])
+  @@map("reactions")
 }
-
-// 환경설정 테이블
-model G5Config {
-  cf_id                         Int     @id @default(autoincrement())
-  cf_title                      String  @default("") @db.VarChar(255)
-  cf_theme                      String  @default("") @db.VarChar(100)
-  cf_admin                      String  @default("") @db.VarChar(100)
-  cf_admin_email                String  @default("") @db.VarChar(100)
-  cf_admin_email_name           String  @default("") @db.VarChar(100)
-  cf_add_script                 String  @db.Text
-  cf_use_point                  Int     @default(0) @db.TinyInt
-  cf_point_term                 Int     @default(0)
-  cf_use_copy_log               Int     @default(0) @db.TinyInt
-  cf_use_email_certify          Int     @default(0) @db.TinyInt
-  cf_login_point                Int     @default(0)
-  cf_cut_name                   Int     @default(0) @db.TinyInt
-  cf_nick_modify                Int     @default(0)
-  cf_new_skin                   String  @default("") @db.VarChar(50)
-  cf_new_rows                   Int     @default(0)
-  cf_search_skin                String  @default("") @db.VarChar(50)
-  cf_connect_skin               String  @default("") @db.VarChar(50)
-  cf_faq_skin                   String  @default("") @db.VarChar(50)
-  cf_read_point                 Int     @default(0)
-  cf_write_point                Int     @default(0)
-  cf_comment_point              Int     @default(0)
-  cf_download_point             Int     @default(0)
-  cf_write_pages                Int     @default(0)
-  cf_mobile_pages               Int     @default(0)
-  cf_link_target                String  @default("") @db.VarChar(50)
-  cf_bbs_rewrite                Int     @default(0) @db.TinyInt
-  cf_delay_sec                  Int     @default(0)
-  cf_filter                     String  @db.Text
-  cf_possible_ip                String  @db.Text
-  cf_intercept_ip               String  @db.Text
-  cf_analytics                  String  @db.Text
-  cf_add_meta                   String  @db.Text
-  cf_syndi_token                String  @db.VarChar(255)
-  cf_syndi_except               String  @db.Text
-  cf_member_skin                String  @default("") @db.VarChar(50)
-  cf_use_homepage               Int     @default(0) @db.TinyInt
-  cf_req_homepage               Int     @default(0) @db.TinyInt
-  cf_use_tel                    Int     @default(0) @db.TinyInt
-  cf_req_tel                    Int     @default(0) @db.TinyInt
-  cf_use_hp                     Int     @default(0) @db.TinyInt
-  cf_req_hp                     Int     @default(0) @db.TinyInt
-  cf_use_addr                   Int     @default(0) @db.TinyInt
-  cf_req_addr                   Int     @default(0) @db.TinyInt
-  cf_use_signature              Int     @default(0) @db.TinyInt
-  cf_req_signature              Int     @default(0) @db.TinyInt
-  cf_use_profile                Int     @default(0) @db.TinyInt
-  cf_req_profile                Int     @default(0) @db.TinyInt
-  cf_register_level             Int     @default(0) @db.TinyInt
-  cf_register_point             Int     @default(0)
-  cf_icon_level                 Int     @default(0) @db.TinyInt
-  cf_use_recommend              Int     @default(0) @db.TinyInt
-  cf_recommend_point            Int     @default(0)
-  cf_leave_day                  Int     @default(0)
-  cf_search_part                Int     @default(0)
-  cf_email_use                  Int     @default(0) @db.TinyInt
-  cf_email_wr_super_admin       Int     @default(0) @db.TinyInt
-  cf_email_wr_group_admin       Int     @default(0) @db.TinyInt
-  cf_email_wr_board_admin       Int     @default(0) @db.TinyInt
-  cf_email_wr_write             Int     @default(0) @db.TinyInt
-  cf_email_wr_comment_all       Int     @default(0) @db.TinyInt
-  cf_email_mb_super_admin       Int     @default(0) @db.TinyInt
-  cf_email_mb_member            Int     @default(0) @db.TinyInt
-  cf_email_po_super_admin       Int     @default(0) @db.TinyInt
-  cf_prohibit_id                String  @db.Text
-  cf_prohibit_email             String  @db.Text
-  cf_new_del                    Int     @default(0)
-  cf_memo_del                   Int     @default(0)
-  cf_visit_del                  Int     @default(0)
-  cf_popular_del                Int     @default(0)
-  cf_optimize_date              DateTime @default(dbgenerated("'0000-00-00'")) @db.Date
-  cf_use_member_icon            Int     @default(0) @db.TinyInt
-  cf_member_icon_size           Int     @default(0)
-  cf_member_icon_width          Int     @default(0)
-  cf_member_icon_height         Int     @default(0)
-  cf_member_img_size            Int     @default(0)
-  cf_member_img_width           Int     @default(0)
-  cf_member_img_height          Int     @default(0)
-  cf_login_minutes              Int     @default(0)
-  cf_image_extension            String  @default("") @db.VarChar(255)
-  cf_flash_extension            String  @default("") @db.VarChar(255)
-  cf_movie_extension            String  @default("") @db.VarChar(255)
-  cf_formmail_is_member         Int     @default(0) @db.TinyInt
-  cf_page_rows                  Int     @default(0)
-  cf_mobile_page_rows           Int     @default(0)
-  cf_visit                      String  @default("") @db.VarChar(255)
-  cf_max_po_id                  Int     @default(0)
-  cf_stipulation                String  @db.Text
-  cf_privacy                    String  @db.Text
-  cf_open_modify                Int     @default(0)
-  cf_memo_send_point            Int     @default(0)
-  cf_mobile_new_skin            String  @default("") @db.VarChar(50)
-  cf_mobile_search_skin         String  @default("") @db.VarChar(50)
-  cf_mobile_connect_skin        String  @default("") @db.VarChar(50)
-  cf_mobile_faq_skin            String  @default("") @db.VarChar(50)
-  cf_mobile_member_skin         String  @default("") @db.VarChar(50)
-  cf_captcha_mp3                String  @default("") @db.VarChar(255)
-  cf_editor                     String  @default("") @db.VarChar(50)
-  cf_cert_use                   Int     @default(0) @db.TinyInt
-  cf_cert_find                  Int     @default(0) @db.TinyInt
-  cf_cert_ipin                  String  @default("") @db.VarChar(255)
-  cf_cert_hp                    String  @default("") @db.VarChar(255)
-  cf_cert_simple                String  @default("") @db.VarChar(255)
-  cf_cert_kg_cd                 String  @default("") @db.VarChar(255)
-  cf_cert_kg_mid                String  @default("") @db.VarChar(255)
-  cf_cert_use_seed              Int     @default(1) @db.TinyInt
-  cf_cert_kcb_cd                String  @default("") @db.VarChar(255)
-  cf_cert_kcp_cd                String  @default("") @db.VarChar(255)
-  cf_cert_kcp_enckey            String  @default("") @db.VarChar(100)
-  cf_lg_mid                     String  @default("") @db.VarChar(100)
-  cf_lg_mert_key                String  @default("") @db.VarChar(100)
-  cf_cert_limit                 Int     @default(0)
-  cf_cert_req                   Int     @default(0) @db.TinyInt
-  cf_sms_use                    String  @default("") @db.VarChar(255)
-  cf_sms_type                   String  @default("") @db.VarChar(10)
-  cf_icode_id                   String  @default("") @db.VarChar(255)
-  cf_icode_pw                   String  @default("") @db.VarChar(255)
-  cf_icode_server_ip            String  @default("") @db.VarChar(50)
-  cf_icode_server_port          String  @default("") @db.VarChar(50)
-  cf_icode_token_key            String  @default("") @db.VarChar(100)
-  cf_googl_shorturl_apikey      String  @default("") @db.VarChar(50)
-  cf_social_login_use           Int     @default(0) @db.TinyInt
-  cf_social_servicelist         String  @default("") @db.VarChar(255)
-  cf_payco_clientid             String  @default("") @db.VarChar(100)
-  cf_payco_secret               String  @default("") @db.VarChar(100)
-  cf_facebook_appid             String  @db.VarChar(100)
-  cf_facebook_secret            String  @db.VarChar(100)
-  cf_twitter_key                String  @db.VarChar(100)
-  cf_twitter_secret             String  @db.VarChar(100)
-  cf_google_clientid            String  @default("") @db.VarChar(100)
-  cf_google_secret              String  @default("") @db.VarChar(100)
-  cf_naver_clientid             String  @default("") @db.VarChar(100)
-  cf_naver_secret               String  @default("") @db.VarChar(100)
-  cf_kakao_rest_key             String  @default("") @db.VarChar(100)
-  cf_kakao_client_secret        String  @default("") @db.VarChar(100)
-  cf_kakao_js_apikey            String  @db.VarChar(100)
-  cf_captcha                    String  @default("") @db.VarChar(100)
-  cf_recaptcha_site_key         String  @default("") @db.VarChar(100)
-  cf_recaptcha_secret_key       String  @default("") @db.VarChar(100)
-  cf_1_subj                     String  @default("") @db.VarChar(255)
-  cf_2_subj                     String  @default("") @db.VarChar(255)
-  cf_3_subj                     String  @default("") @db.VarChar(255)
-  cf_4_subj                     String  @default("") @db.VarChar(255)
-  cf_5_subj                     String  @default("") @db.VarChar(255)
-  cf_6_subj                     String  @default("") @db.VarChar(255)
-  cf_7_subj                     String  @default("") @db.VarChar(255)
-  cf_8_subj                     String  @default("") @db.VarChar(255)
-  cf_9_subj                     String  @default("") @db.VarChar(255)
-  cf_10_subj                    String  @default("") @db.VarChar(255)
-  cf_1                          String  @default("") @db.VarChar(255)
-  cf_2                          String  @default("") @db.VarChar(255)
-  cf_3                          String  @default("") @db.VarChar(255)
-  cf_4                          String  @default("") @db.VarChar(255)
-  cf_5                          String  @default("") @db.VarChar(255)
-  cf_6                          String  @default("") @db.VarChar(255)
-  cf_7                          String  @default("") @db.VarChar(255)
-  cf_8                          String  @default("") @db.VarChar(255)
-  cf_9                          String  @default("") @db.VarChar(255)
-  cf_10                         String  @default("") @db.VarChar(255)
-
-  @@map("g5_config")
-}
-
-// 내용 관리 테이블
-model G5Content {
-  co_id               String  @id @db.VarChar(20)
-  co_html             Int     @default(0) @db.TinyInt
-  co_subject          String  @default("") @db.VarChar(255)
-  co_content          String  @db.LongText
-  co_seo_title        String  @default("") @db.VarChar(255)
-  co_mobile_content   String  @db.LongText
-  co_skin             String  @default("") @db.VarChar(255)
-  co_mobile_skin      String  @default("") @db.VarChar(255)
-  co_tag_filter_use   Int     @default(0) @db.TinyInt
-  co_hit              Int     @default(0)
-  co_include_head     String  @db.VarChar(255)
-  co_include_tail     String  @db.VarChar(255)
-
-  @@index([co_seo_title])
-  @@map("g5_content")
-}
-
-// FAQ 테이블
-model G5Faq {
-  fa_id      Int    @id @default(autoincrement())
-  fm_id      Int    @default(0)
-  fa_subject String @db.Text
-  fa_content String @db.Text
-  fa_order   Int    @default(0)
-
-  @@index([fm_id])
-  @@map("g5_faq")
-}
-
-// FAQ 마스터 테이블
-model G5FaqMaster {
-  fm_id                   Int    @id @default(autoincrement())
-  fm_subject              String @default("") @db.VarChar(255)
-  fm_head_html            String @db.Text
-  fm_tail_html            String @db.Text
-  fm_mobile_head_html     String @db.Text
-  fm_mobile_tail_html     String @db.Text
-  fm_order                Int    @default(0)
-
-  @@map("g5_faq_master")
-}
-
-// 그룹 테이블
-model G5Group {
-  gr_id         String @id @db.VarChar(10)
-  gr_subject    String @default("") @db.VarChar(255)
-  gr_device     String @default("both") @db.VarChar(10) // enum
-  gr_admin      String @default("") @db.VarChar(255)
-  gr_use_access Int    @default(0) @db.TinyInt
-  gr_order      Int    @default(0)
-  gr_1_subj     String @default("") @db.VarChar(255)
-  gr_2_subj     String @default("") @db.VarChar(255)
-  gr_3_subj     String @default("") @db.VarChar(255)
-  gr_4_subj     String @default("") @db.VarChar(255)
-  gr_5_subj     String @default("") @db.VarChar(255)
-  gr_6_subj     String @default("") @db.VarChar(255)
-  gr_7_subj     String @default("") @db.VarChar(255)
-  gr_8_subj     String @default("") @db.VarChar(255)
-  gr_9_subj     String @default("") @db.VarChar(255)
-  gr_10_subj    String @default("") @db.VarChar(255)
-  gr_1          String @default("") @db.VarChar(255)
-  gr_2          String @default("") @db.VarChar(255)
-  gr_3          String @default("") @db.VarChar(255)
-  gr_4          String @default("") @db.VarChar(255)
-  gr_5          String @default("") @db.VarChar(255)
-  gr_6          String @default("") @db.VarChar(255)
-  gr_7          String @default("") @db.VarChar(255)
-  gr_8          String @default("") @db.VarChar(255)
-  gr_9          String @default("") @db.VarChar(255)
-  gr_10         String @default("") @db.VarChar(255)
-
-  @@map("g5_group")
-}
-
-// 그룹 회원 테이블
-model G5GroupMember {
-  gm_id       Int      @id @default(autoincrement())
-  gr_id       String   @default("") @db.VarChar(255)
-  mb_id       String   @default("") @db.VarChar(20)
-  gm_datetime DateTime @default(dbgenerated("'0000-00-00 00:00:00'"))
-
-  @@index([gr_id])
-  @@index([mb_id])
-  @@map("g5_group_member")
-}
-
-// 로그인 테이블
-model G5Login {
-  lo_id       Int      @id @default(autoincrement())
-  lo_ip       String   @unique(map: "lo_ip_unique") @default("") @db.VarChar(100)
-  mb_id       String   @default("") @db.VarChar(20)
-  lo_datetime DateTime @default(dbgenerated("'0000-00-00 00:00:00'"))
-  lo_location String   @db.Text
-  lo_url      String   @db.Text
-
-  @@map("g5_login")
-}
-
-// 메일 테이블
-model G5Mail {
-  ma_id           Int      @id @default(autoincrement())
-  ma_subject      String   @default("") @db.VarChar(255)
-  ma_content      String   @db.MediumText
-  ma_time         DateTime @default(dbgenerated("'0000-00-00 00:00:00'"))
-  ma_ip           String   @default("") @db.VarChar(255)
-  ma_last_option  String   @db.Text
-
-  @@map("g5_mail")
-}
-
-// 회원 테이블
-model G5Member {
-  mb_no                Int      @id @default(autoincrement())
-  mb_id                String   @unique @default("") @db.VarChar(20)
-  mb_password          String   @default("") @db.VarChar(255)
-  mb_name              String   @default("") @db.VarChar(255)
-  mb_nick              String   @default("") @db.VarChar(255)
-  mb_nick_date         DateTime @default(dbgenerated("'0000-00-00'")) @db.Date
-  mb_email             String   @default("") @db.VarChar(255)
-  mb_homepage          String   @default("") @db.VarChar(255)
-  mb_level             Int      @default(0) @db.TinyInt
-  mb_sex               String   @default("") @db.Char(1)
-  mb_birth             String   @default("") @db.VarChar(255)
-  mb_tel               String   @default("") @db.VarChar(255)
-  mb_hp                String   @default("") @db.VarChar(255)
-  mb_certify           String   @default("") @db.VarChar(20)
-  mb_adult             Int      @default(0) @db.TinyInt
-  mb_dupinfo           String   @default("") @db.VarChar(255)
-  mb_zip1              String   @default("") @db.Char(3)
-  mb_zip2              String   @default("") @db.Char(3)
-  mb_addr1             String   @default("") @db.VarChar(255)
-  mb_addr2             String   @default("") @db.VarChar(255)
-  mb_addr3             String   @default("") @db.VarChar(255)
-  mb_addr_jibeon       String   @default("") @db.VarChar(255)
-  mb_signature         String   @db.Text
-  mb_recommend         String   @default("") @db.VarChar(255)
-  mb_point             Int      @default(0)
-  mb_today_login       DateTime @default(dbgenerated("'0000-00-00 00:00:00'"))
-  mb_login_ip          String   @default("") @db.VarChar(255)
-  mb_datetime          DateTime @default(dbgenerated("'0000-00-00 00:00:00'"))
-  mb_ip                String   @default("") @db.VarChar(255)
-  mb_leave_date        String   @default("") @db.VarChar(8)
-  mb_intercept_date    String   @default("") @db.VarChar(8)
-  mb_email_certify     DateTime @default(dbgenerated("'0000-00-00 00:00:00'"))
-  mb_email_certify2    String   @default("") @db.VarChar(255)
-  mb_memo              String   @db.Text
-  mb_lost_certify      String   @db.VarChar(255)
-  mb_mailling          Int      @default(0) @db.TinyInt
-  mb_sms               Int      @default(0) @db.TinyInt
-  mb_open              Int      @default(0) @db.TinyInt
-  mb_open_date         DateTime @default(dbgenerated("'0000-00-00'")) @db.Date
-  mb_profile           String   @db.Text
-  mb_memo_call         String   @default("") @db.VarChar(255)
-  mb_memo_cnt          Int      @default(0)
-  mb_scrap_cnt         Int      @default(0)
-  mb_1                 String   @default("") @db.VarChar(255)
-  mb_2                 String   @default("") @db.VarChar(255)
-  mb_3                 String   @default("") @db.VarChar(255)
-  mb_4                 String   @default("") @db.VarChar(255)
-  mb_5                 String   @default("") @db.VarChar(255)
-  mb_6                 String   @default("") @db.VarChar(255)
-  mb_7                 String   @default("") @db.VarChar(255)
-  mb_8                 String   @default("") @db.VarChar(255)
-  mb_9                 String   @default("") @db.VarChar(255)
-  mb_10                String   @default("") @db.VarChar(255)
-
-  @@index([mb_today_login])
-  @@index([mb_datetime])
-  @@map("g5_member")
-}
-
-// 회원 인증 내역 테이블
-model G5MemberCertHistory {
-  ch_id       Int      @id @default(autoincrement())
-  mb_id       String   @default("") @db.VarChar(20)
-  ch_name     String   @default("") @db.VarChar(255)
-  ch_hp       String   @default("") @db.VarChar(255)
-  ch_birth    String   @default("") @db.VarChar(255)
-  ch_type     String   @default("") @db.VarChar(20)
-  ch_datetime DateTime @default(dbgenerated("'0000-00-00 00:00:00'"))
-
-  @@index([mb_id])
-  @@map("g5_member_cert_history")
-}
-
-// 회원 소셜 프로필 테이블
-model G5MemberSocialProfiles {
-  mp_no           Int      @id @default(autoincrement())
-  mb_id           String   @default("") @db.VarChar(255)
-  provider        String   @default("") @db.VarChar(50)
-  object_sha      String   @default("") @db.VarChar(45)
-  identifier      String   @default("") @db.VarChar(255)
-  profileurl      String   @default("") @db.VarChar(255)
-  photourl        String   @default("") @db.VarChar(255)
-  displayname     String   @default("") @db.VarChar(150)
-  description     String   @default("") @db.VarChar(255)
-  mp_register_day DateTime @default(dbgenerated("'0000-00-00 00:00:00'"))
-  mp_latest_day   DateTime @default(dbgenerated("'0000-00-00 00:00:00'"))
-
-  @@index([mb_id])
-  @@index([provider])
-  @@map("g5_member_social_profiles")
-}
-
-// 쪽지 테이블
-model G5Memo {
-  me_id            Int      @id @default(autoincrement())
-  me_recv_mb_id    String   @default("") @db.VarChar(20)
-  me_send_mb_id    String   @default("") @db.VarChar(20)
-  me_send_datetime DateTime @default(dbgenerated("'0000-00-00 00:00:00'"))
-  me_read_datetime DateTime @default(dbgenerated("'0000-00-00 00:00:00'"))
-  me_memo          String   @db.Text
-  me_send_id       Int      @default(0)
-  me_type          String   @default("recv") @db.VarChar(10) // enum
-  me_send_ip       String   @default("") @db.VarChar(100)
-
-  @@index([me_recv_mb_id])
-  @@map("g5_memo")
-}
-
-// 메뉴 테이블
-model G5Menu {
-  me_id         Int    @id @default(autoincrement())
-  me_code       String @default("") @db.VarChar(255)
-  me_name       String @default("") @db.VarChar(255)
-  me_link       String @default("") @db.VarChar(255)
-  me_target     String @default("") @db.VarChar(255)
-  me_order      Int    @default(0)
-  me_use        Int    @default(0) @db.TinyInt
-  me_mobile_use Int    @default(0) @db.TinyInt
-
-  @@map("g5_menu")
-}
-
-// 새창 테이블
-model G5NewWin {
-  nw_id            Int      @id @default(autoincrement())
-  nw_division      String   @default("both") @db.VarChar(10)
-  nw_device        String   @default("both") @db.VarChar(10)
-  nw_begin_time    DateTime @default(dbgenerated("'0000-00-00 00:00:00'"))
-  nw_end_time      DateTime @default(dbgenerated("'0000-00-00 00:00:00'"))
-  nw_disable_hours Int      @default(0)
-  nw_left          Int      @default(0)
-  nw_top           Int      @default(0)
-  nw_height        Int      @default(0)
-  nw_width         Int      @default(0)
-  nw_subject       String   @db.Text
-  nw_content       String   @db.Text
-  nw_content_html  Int      @default(0) @db.TinyInt
-
-  @@map("g5_new_win")
-}
-
-// 포인트 테이블
-model G5Point {
-  po_id           Int      @id @default(autoincrement())
-  mb_id           String   @default("") @db.VarChar(20)
-  po_datetime     DateTime @default(dbgenerated("'0000-00-00 00:00:00'"))
-  po_content      String   @default("") @db.VarChar(255)
-  po_point        Int      @default(0)
-  po_use_point    Int      @default(0)
-  po_expired      Int      @default(0) @db.TinyInt
-  po_expire_date  DateTime @default(dbgenerated("'0000-00-00'")) @db.Date
-  po_mb_point     Int      @default(0)
-  po_rel_table    String   @default("") @db.VarChar(20)
-  po_rel_id       String   @default("") @db.VarChar(20)
-  po_rel_action   String   @default("") @db.VarChar(100)
-
-  @@index([mb_id, po_rel_table, po_rel_id, po_rel_action], map: "index1")
-  @@index([po_expire_date], map: "index2")
-  @@map("g5_point")
-}
-
-// 투표 테이블
-model G5Poll {
-  po_id      Int      @id @default(autoincrement())
-  po_subject String   @default("") @db.VarChar(255)
-  po_poll1   String   @default("") @db.VarChar(255)
-  po_poll2   String   @default("") @db.VarChar(255)
-  po_poll3   String   @default("") @db.VarChar(255)
-  po_poll4   String   @default("") @db.VarChar(255)
-  po_poll5   String   @default("") @db.VarChar(255)
-  po_poll6   String   @default("") @db.VarChar(255)
-  po_poll7   String   @default("") @db.VarChar(255)
-  po_poll8   String   @default("") @db.VarChar(255)
-  po_poll9   String   @default("") @db.VarChar(255)
-  po_cnt1    Int      @default(0)
-  po_cnt2    Int      @default(0)
-  po_cnt3    Int      @default(0)
-  po_cnt4    Int      @default(0)
-  po_cnt5    Int      @default(0)
-  po_cnt6    Int      @default(0)
-  po_cnt7    Int      @default(0)
-  po_cnt8    Int      @default(0)
-  po_cnt9    Int      @default(0)
-  po_etc     String   @default("") @db.VarChar(255)
-  po_level   Int      @default(0) @db.TinyInt
-  po_point   Int      @default(0)
-  po_date    DateTime @default(dbgenerated("'0000-00-00'")) @db.Date
-  po_ips     String   @db.MediumText
-  mb_ids     String   @db.Text
-  po_use     Int      @default(0) @db.TinyInt
-
-  @@map("g5_poll")
-}
-
-// 투표 기타의견 테이블
-model G5PollEtc {
-  pc_id       Int      @id @default(0)
-  po_id       Int      @default(0)
-  mb_id       String   @default("") @db.VarChar(20)
-  pc_name     String   @default("") @db.VarChar(255)
-  pc_idea     String   @default("") @db.VarChar(255)
-  pc_datetime DateTime @default(dbgenerated("'0000-00-00 00:00:00'"))
-
-  @@map("g5_poll_etc")
-}
-
-// 인기검색어 테이블
-model G5Popular {
-  pp_id   Int      @id @default(autoincrement())
-  pp_word String   @default("") @db.VarChar(50)
-  pp_date DateTime @default(dbgenerated("'0000-00-00'")) @db.Date
-  pp_ip   String   @default("") @db.VarChar(50)
-
-  @@unique([pp_date, pp_word, pp_ip], map: "index1")
-  @@map("g5_popular")
-}
-
-// QA 설정 테이블
-model G5QaConfig {
-  qa_id                    Int    @id @default(autoincrement())
-  qa_title                 String @default("") @db.VarChar(255)
-  qa_category              String @default("") @db.VarChar(255)
-  qa_skin                  String @default("") @db.VarChar(255)
-  qa_mobile_skin           String @default("") @db.VarChar(255)
-  qa_use_email             Int    @default(0) @db.TinyInt
-  qa_req_email             Int    @default(0) @db.TinyInt
-  qa_use_hp                Int    @default(0) @db.TinyInt
-  qa_req_hp                Int    @default(0) @db.TinyInt
-  qa_use_sms               Int    @default(0) @db.TinyInt
-  qa_send_number           String @default("0") @db.VarChar(255)
-  qa_admin_hp              String @default("") @db.VarChar(255)
-  qa_admin_email           String @default("") @db.VarChar(255)
-  qa_use_editor            Int    @default(0) @db.TinyInt
-  qa_subject_len           Int    @default(0)
-  qa_mobile_subject_len    Int    @default(0)
-  qa_page_rows             Int    @default(0)
-  qa_mobile_page_rows      Int    @default(0)
-  qa_image_width           Int    @default(0)
-  qa_upload_size           Int    @default(0)
-  qa_insert_content        String @db.Text
-  qa_include_head          String @default("") @db.VarChar(255)
-  qa_include_tail          String @default("") @db.VarChar(255)
-  qa_content_head          String @db.Text
-  qa_content_tail          String @db.Text
-  qa_mobile_content_head   String @db.Text
-  qa_mobile_content_tail   String @db.Text
-  qa_1_subj                String @default("") @db.VarChar(255)
-  qa_2_subj                String @default("") @db.VarChar(255)
-  qa_3_subj                String @default("") @db.VarChar(255)
-  qa_4_subj                String @default("") @db.VarChar(255)
-  qa_5_subj                String @default("") @db.VarChar(255)
-  qa_1                     String @default("") @db.VarChar(255)
-  qa_2                     String @default("") @db.VarChar(255)
-  qa_3                     String @default("") @db.VarChar(255)
-  qa_4                     String @default("") @db.VarChar(255)
-  qa_5                     String @default("") @db.VarChar(255)
-
-  @@map("g5_qa_config")
-}
-
-// QA 내용 테이블
-model G5QaContent {
-  qa_id        Int      @id @default(autoincrement())
-  qa_num       Int      @default(0)
-  qa_parent    Int      @default(0)
-  qa_related   Int      @default(0)
-  mb_id        String   @default("") @db.VarChar(20)
-  qa_name      String   @default("") @db.VarChar(255)
-  qa_email     String   @default("") @db.VarChar(255)
-  qa_hp        String   @default("") @db.VarChar(255)
-  qa_type      Int      @default(0) @db.TinyInt
-  qa_category  String   @default("") @db.VarChar(255)
-  qa_email_recv Int     @default(0) @db.TinyInt
-  qa_sms_recv  Int      @default(0) @db.TinyInt
-  qa_html      Int      @default(0) @db.TinyInt
-  qa_subject   String   @default("") @db.VarChar(255)
-  qa_content   String   @db.Text
-  qa_status    Int      @default(0) @db.TinyInt
-  qa_file1     String   @default("") @db.VarChar(255)
-  qa_source1   String   @default("") @db.VarChar(255)
-  qa_file2     String   @default("") @db.VarChar(255)
-  qa_source2   String   @default("") @db.VarChar(255)
-  qa_ip        String   @default("") @db.VarChar(255)
-  qa_datetime  DateTime @default(dbgenerated("'0000-00-00 00:00:00'"))
-  qa_1         String   @default("") @db.VarChar(255)
-  qa_2         String   @default("") @db.VarChar(255)
-  qa_3         String   @default("") @db.VarChar(255)
-  qa_4         String   @default("") @db.VarChar(255)
-  qa_5         String   @default("") @db.VarChar(255)
-
-  @@index([qa_num, qa_parent], map: "qa_num_parent")
-  @@map("g5_qa_content")
-}
-
-// 스크랩 테이블
-model G5Scrap {
-  ms_id       Int      @id @default(autoincrement())
-  mb_id       String   @default("") @db.VarChar(20)
-  bo_table    String   @default("") @db.VarChar(20)
-  wr_id       String   @default("") @db.VarChar(15)
-  ms_datetime DateTime @default(dbgenerated("'0000-00-00 00:00:00'"))
-
-  @@index([mb_id])
-  @@map("g5_scrap")
-}
-
-// 쇼핑몰 배너 테이블
-model G5ShopBanner {
-  bn_id         Int      @id @default(autoincrement())
-  bn_alt        String   @default("") @db.VarChar(255)
-  bn_url        String   @default("") @db.VarChar(255)
-  bn_device     String   @default("") @db.VarChar(10)
-  bn_position   String   @default("") @db.VarChar(255)
-  bn_border     Int      @default(0) @db.TinyInt
-  bn_new_win    Int      @default(0) @db.TinyInt
-  bn_begin_time DateTime @default(dbgenerated("'0000-00-00 00:00:00'"))
-  bn_end_time   DateTime @default(dbgenerated("'0000-00-00 00:00:00'"))
-  bn_time       DateTime @default(dbgenerated("'0000-00-00 00:00:00'"))
-  bn_hit        Int      @default(0)
-  bn_order      Int      @default(0)
-
-  @@map("g5_shop_banner")
-}
-
-// 쇼핑몰 장바구니 테이블
-model G5ShopCart {
-  ct_id           Int      @id @default(autoincrement())
-  od_id           BigInt   @db.UnsignedBigInt
-  mb_id           String   @default("") @db.VarChar(255)
-  it_id           String   @default("") @db.VarChar(20)
-  it_name         String   @default("") @db.VarChar(255)
-  it_sc_type      Int      @default(0) @db.TinyInt
-  it_sc_method    Int      @default(0) @db.TinyInt
-  it_sc_price     Int      @default(0)
-  it_sc_minimum   Int      @default(0)
-  it_sc_qty       Int      @default(0)
-  ct_status       String   @default("") @db.VarChar(255)
-  ct_history      String   @db.Text
-  ct_price        Int      @default(0)
-  ct_point        Int      @default(0)
-  cp_price        Int      @default(0)
-  ct_point_use    Int      @default(0) @db.TinyInt
-  ct_stock_use    Int      @default(0) @db.TinyInt
-  ct_option       String   @default("") @db.VarChar(255)
-  ct_qty          Int      @default(0)
-  ct_notax        Int      @default(0) @db.TinyInt
-  io_id           String   @default("") @db.VarChar(255)
-  io_type         Int      @default(0) @db.TinyInt
-  io_price        Int      @default(0)
-  ct_time         DateTime @default(dbgenerated("'0000-00-00 00:00:00'"))
-  ct_ip           String   @default("") @db.VarChar(25)
-  ct_send_cost    Int      @default(0) @db.TinyInt
-  ct_direct       Int      @default(0) @db.TinyInt
-  ct_select       Int      @default(0) @db.TinyInt
-  ct_select_time  DateTime @default(dbgenerated("'0000-00-00 00:00:00'"))
-
-  @@index([od_id])
-  @@index([it_id])
-  @@index([ct_status])
-  @@map("g5_shop_cart")
-}
-
-// 나머지 테이블들도 계속 추가...
-// (매우 많은 테이블이 있어서 전체를 보여드리는 것보다는 중요한 몇 개를 더 추가하겠습니다)
-
-// 쇼핑몰 카테고리 테이블
-model G5ShopCategory {
-  ca_id                     String @id @default("0") @db.VarChar(10)
-  ca_name                   String @default("") @db.VarChar(255)
-  ca_order                  Int    @default(0)
-  ca_skin_dir               String @default("") @db.VarChar(255)
-  ca_mobile_skin_dir        String @default("") @db.VarChar(255)
-  ca_skin                   String @default("") @db.VarChar(255)
-  ca_mobile_skin            String @default("") @db.VarChar(255)
-  ca_img_width              Int    @default(0)
-  ca_img_height             Int    @default(0)
-  ca_mobile_img_width       Int    @default(0)
-  ca_mobile_img_height      Int    @default(0)
-  ca_sell_email             String @default("") @db.VarChar(255)
-  ca_use                    Int    @default(0) @db.TinyInt
-  ca_stock_qty              Int    @default(0)
-  ca_explan_html            Int    @default(0) @db.TinyInt
-  ca_head_html              String @db.Text
-  ca_tail_html              String @db.Text
-  ca_mobile_head_html       String @db.Text
-  ca_mobile_tail_html       String @db.Text
-  ca_list_mod               Int    @default(0)
-  ca_list_row               Int    @default(0)
-  ca_mobile_list_mod        Int    @default(0)
-  ca_mobile_list_row        Int    @default(0)
-  ca_include_head           String @default("") @db.VarChar(255)
-  ca_include_tail           String @default("") @db.VarChar(255)
-  ca_mb_id                  String @default("") @db.VarChar(255)
-  ca_cert_use               Int    @default(0) @db.TinyInt
-  ca_adult_use              Int    @default(0) @db.TinyInt
-  ca_nocoupon               Int    @default(0) @db.TinyInt
-  ca_1_subj                 String @default("") @db.VarChar(255)
-  ca_2_subj                 String @default("") @db.VarChar(255)
-  ca_3_subj                 String @default("") @db.VarChar(255)
-  ca_4_subj                 String @default("") @db.VarChar(255)
-  ca_5_subj                 String @default("") @db.VarChar(255)
-  ca_6_subj                 String @default("") @db.VarChar(255)
-  ca_7_subj                 String @default("") @db.VarChar(255)
-  ca_8_subj                 String @default("") @db.VarChar(255)
-  ca_9_subj                 String @default("") @db.VarChar(255)
-  ca_10_subj                String @default("") @db.VarChar(255)
-  ca_1                      String @default("") @db.VarChar(255)
-  ca_2                      String @default("") @db.VarChar(255)
-  ca_3                      String @default("") @db.VarChar(255)
-  ca_4                      String @default("") @db.VarChar(255)
-  ca_5                      String @default("") @db.VarChar(255)
-  ca_6                      String @default("") @db.VarChar(255)
-  ca_7                      String @default("") @db.VarChar(255)
-  ca_8                      String @default("") @db.VarChar(255)
-  ca_9                      String @default("") @db.VarChar(255)
-  ca_10                     String @default("") @db.VarChar(255)
-
-  @@index([ca_order])
-  @@map("g5_shop_category")
-}
-
-// 방문자 통계 테이블
-model G5Visit {
-  vi_id       Int      @id @default(autoincrement())
-  vi_ip       String   @default("") @db.VarChar(100)
-  vi_date     DateTime @default(dbgenerated("'0000-00-00'")) @db.Date
-  vi_time     DateTime @default(dbgenerated("'00:00:00'")) @db.Time
-  vi_referer  String   @db.Text
-  vi_agent    String   @default("") @db.VarChar(200)
-  vi_browser  String   @default("") @db.VarChar(255)
-  vi_os       String   @default("") @db.VarChar(255)
-  vi_device   String   @default("") @db.VarChar(255)
-
-  @@unique([vi_ip, vi_date], map: "index1")
-  @@index([vi_date], map: "index2")
-  @@map("g5_visit")
-}
-
-// 방문자 통계 합계 테이블
-model G5VisitSum {
-  vs_date  DateTime @id @default(dbgenerated("'0000-00-00'")) @db.Date
-  vs_count Int      @default(0)
-
-  @@index([vs_count], map: "index1")
-  @@map("g5_visit_sum")
-}
-
-// 자유게시판 테이블
-model G5WriteFree {
-  wr_id              Int      @id @default(autoincrement())
-  wr_num             Int      @default(0)
-  wr_reply           String   @db.VarChar(10)
-  wr_parent          Int      @default(0)
-  wr_is_comment      Int      @default(0) @db.TinyInt
-  wr_comment         Int      @default(0)
-  wr_comment_reply   String   @db.VarChar(5)
-  ca_name            String   @db.VarChar(255)
-  wr_option          String   @db.VarChar(255) // set
-  wr_subject         String   @db.VarChar(255)
-  wr_content         String   @db.Text
-  wr_seo_title       String   @default("") @db.VarChar(255)
-  wr_link1           String   @db.Text
-  wr_link2           String   @db.Text
-  wr_link1_hit       Int      @default(0)
-  wr_link2_hit       Int      @default(0)
-  wr_hit             Int      @default(0)
-  wr_good            Int      @default(0)
-  wr_nogood          Int      @default(0)
-  mb_id              String   @db.VarChar(20)
-  wr_password        String   @db.VarChar(255)
-  wr_name            String   @db.VarChar(255)
-  wr_email           String   @db.VarChar(255)
-  wr_homepage        String   @db.VarChar(255)
-  wr_datetime        DateTime @default(dbgenerated("'0000-00-00 00:00:00'"))
-  wr_file            Int      @default(0) @db.TinyInt
-  wr_last            String   @db.VarChar(19)
-  wr_ip              String   @db.VarChar(255)
-  wr_facebook_user   String   @db.VarChar(255)
-  wr_twitter_user    String   @db.VarChar(255)
-  wr_1               String   @db.VarChar(255)
-  wr_2               String   @db.VarChar(255)
-  wr_3               String   @db.VarChar(255)
-  wr_4               String   @db.VarChar(255)
-  wr_5               String   @db.VarChar(255)
-  wr_6               String   @db.VarChar(255)
-  wr_7               String   @db.VarChar(255)
-  wr_8               String   @db.VarChar(255)
-  wr_9               String   @db.VarChar(255)
-  wr_10              String   @db.VarChar(255)
-
-  @@index([wr_seo_title])
-  @@index([wr_num, wr_reply, wr_parent], map: "wr_num_reply_parent")
-  @@index([wr_is_comment, wr_id], map: "wr_is_comment")
-  @@map("g5_write_free")
-}
-
-// 갤러리 게시판 테이블
-model G5WriteGallery {
-  wr_id              Int      @id @default(autoincrement())
-  wr_num             Int      @default(0)
-  wr_reply           String   @db.VarChar(10)
-  wr_parent          Int      @default(0)
-  wr_is_comment      Int      @default(0) @db.TinyInt
-  wr_comment         Int      @default(0)
-  wr_comment_reply   String   @db.VarChar(5)
-  ca_name            String   @db.VarChar(255)
-  wr_option          String   @db.VarChar(255) // set
-  wr_subject         String   @db.VarChar(255)
-  wr_content         String   @db.Text
-  wr_seo_title       String   @default("") @db.VarChar(255)
-  wr_link1           String   @db.Text
-  wr_link2           String   @db.Text
-  wr_link1_hit       Int      @default(0)
-  wr_link2_hit       Int      @default(0)
-  wr_hit             Int      @default(0)
-  wr_good            Int      @default(0)
-  wr_nogood          Int      @default(0)
-  mb_id              String   @db.VarChar(20)
-  wr_password        String   @db.VarChar(255)
-  wr_name            String   @db.VarChar(255)
-  wr_email           String   @db.VarChar(255)
-  wr_homepage        String   @db.VarChar(255)
-  wr_datetime        DateTime @default(dbgenerated("'0000-00-00 00:00:00'"))
-  wr_file            Int      @default(0) @db.TinyInt
-  wr_last            String   @db.VarChar(19)
-  wr_ip              String   @db.VarChar(255)
-  wr_facebook_user   String   @db.VarChar(255)
-  wr_twitter_user    String   @db.VarChar(255)
-  wr_1               String   @db.VarChar(255)
-  wr_2               String   @db.VarChar(255)
-  wr_3               String   @db.VarChar(255)
-  wr_4               String   @db.VarChar(255)
-  wr_5               String   @db.VarChar(255)
-  wr_6               String   @db.VarChar(255)
-  wr_7               String   @db.VarChar(255)
-  wr_8               String   @db.VarChar(255)
-  wr_9               String   @db.VarChar(255)
-  wr_10              String   @db.VarChar(255)
-
-  @@index([wr_seo_title])
-  @@index([wr_num, wr_reply, wr_parent], map: "wr_num_reply_parent")
-  @@index([wr_is_comment, wr_id], map: "wr_is_comment")
-  @@map("g5_write_gallery")
-}
-
-// 공지사항 게시판 테이블
-model G5WriteNotice {
-  wr_id              Int      @id @default(autoincrement())
-  wr_num             Int      @default(0)
-  wr_reply           String   @db.VarChar(10)
-  wr_parent          Int      @default(0)
-  wr_is_comment      Int      @default(0) @db.TinyInt
-  wr_comment         Int      @default(0)
-  wr_comment_reply   String   @db.VarChar(5)
-  ca_name            String   @db.VarChar(255)
-  wr_option          String   @db.VarChar(255) // set
-  wr_subject         String   @db.VarChar(255)
-  wr_content         String   @db.Text
-  wr_seo_title       String   @default("") @db.VarChar(255)
-  wr_link1           String   @db.Text
-  wr_link2           String   @db.Text
-  wr_link1_hit       Int      @default(0)
-  wr_link2_hit       Int      @default(0)
-  wr_hit             Int      @default(0)
-  wr_good            Int      @default(0)
-  wr_nogood          Int      @default(0)
-  mb_id              String   @db.VarChar(20)
-  wr_password        String   @db.VarChar(255)
-  wr_name            String   @db.VarChar(255)
-  wr_email           String   @db.VarChar(255)
-  wr_homepage        String   @db.VarChar(255)
-  wr_datetime        DateTime @default(dbgenerated("'0000-00-00 00:00:00'"))
-  wr_file            Int      @default(0) @db.TinyInt
-  wr_last            String   @db.VarChar(19)
-  wr_ip              String   @db.VarChar(255)
-  wr_facebook_user   String   @db.VarChar(255)
-  wr_twitter_user    String   @db.VarChar(255)
-  wr_1               String   @db.VarChar(255)
-  wr_2               String   @db.VarChar(255)
-  wr_3               String   @db.VarChar(255)
-  wr_4               String   @db.VarChar(255)
-  wr_5               String   @db.VarChar(255)
-  wr_6               String   @db.VarChar(255)
-  wr_7               String   @db.VarChar(255)
-  wr_8               String   @db.VarChar(255)
-  wr_9               String   @db.VarChar(255)
-  wr_10              String   @db.VarChar(255)
-
-  @@index([wr_seo_title])
-  @@index([wr_num, wr_reply, wr_parent], map: "wr_num_reply_parent")
-  @@index([wr_is_comment, wr_id], map: "wr_is_comment")
-  @@map("g5_write_notice")
-}
-
-// QA 게시판 테이블
-model G5WriteQa {
-  wr_id              Int      @id @default(autoincrement())
-  wr_num             Int      @default(0)
-  wr_reply           String   @db.VarChar(10)
-  wr_parent          Int      @default(0)
-  wr_is_comment      Int      @default(0) @db.TinyInt
-  wr_comment         Int      @default(0)
-  wr_comment_reply   String   @db.VarChar(5)
-  ca_name            String   @db.VarChar(255)
-  wr_option          String   @db.VarChar(255) // set
-  wr_subject         String   @db.VarChar(255)
-  wr_content         String   @db.Text
-  wr_seo_title       String   @default("") @db.VarChar(255)
-  wr_link1           String   @db.Text
-  wr_link2           String   @db.Text
-  wr_link1_hit       Int      @default(0)
-  wr_link2_hit       Int      @default(0)
-  wr_hit             Int      @default(0)
-  wr_good            Int      @default(0)
-  wr_nogood          Int      @default(0)
-  mb_id              String   @db.VarChar(20)
-  wr_password        String   @db.VarChar(255)
-  wr_name            String   @db.VarChar(255)
-  wr_email           String   @db.VarChar(255)
-  wr_homepage        String   @db.VarChar(255)
-  wr_datetime        DateTime @default(dbgenerated("'0000-00-00 00:00:00'"))
-  wr_file            Int      @default(0) @db.TinyInt
-  wr_last            String   @db.VarChar(19)
-  wr_ip              String   @db.VarChar(255)
-  wr_facebook_user   String   @db.VarChar(255)
-  wr_twitter_user    String   @db.VarChar(255)
-  wr_1               String   @db.VarChar(255)
-  wr_2               String   @db.VarChar(255)
-  wr_3               String   @db.VarChar(255)
-  wr_4               String   @db.VarChar(255)
-  wr_5               String   @db.VarChar(255)
-  wr_6               String   @db.VarChar(255)
-  wr_7               String   @db.VarChar(255)
-  wr_8               String   @db.VarChar(255)
-  wr_9               String   @db.VarChar(255)
-  wr_10              String   @db.VarChar(255)
-
-  @@index([wr_seo_title])
-  @@index([wr_num, wr_reply, wr_parent], map: "wr_num_reply_parent")
-  @@index([wr_is_comment, wr_id], map: "wr_is_comment")
-  @@map("g5_write_qa")
-}
-
-// 고유번호 테이블
-model G5Uniqid {
-  uq_id BigInt @id @db.UnsignedBigInt
-  uq_ip String @db.VarChar(255)
-
-  @@map("g5_uniqid")
-}
-
-// 기타 쇼핑몰 관련 테이블들도 필요하면 추가로 정의할 수 있습니다.

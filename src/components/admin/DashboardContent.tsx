@@ -74,7 +74,7 @@ export function DashboardContent() {
             <div className="space-y-4">
               {[1, 2, 3, 4, 5].map((i) => (
                 <div key={i} className="flex items-center space-x-4">
-                  <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
+                  <div className="w-8 h-8 bg-muted rounded-full"></div>
                   <div className="flex-1">
                     <p className="text-sm font-medium">사용자 {i}</p>
                     <p className="text-xs text-muted-foreground">
@@ -95,8 +95,8 @@ export function DashboardContent() {
             <div className="space-y-4">
               {[1, 2, 3, 4, 5].map((i) => (
                 <div key={i} className="flex items-center space-x-4">
-                  <div className="w-8 h-8 bg-blue-200 rounded-full flex items-center justify-center">
-                    <MessageSquare className="h-4 w-4 text-blue-600" />
+                  <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
+                    <MessageSquare className="h-4 w-4 text-primary" />
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-medium">게시글 제목 {i}</p>
