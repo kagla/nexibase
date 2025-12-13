@@ -25,24 +25,17 @@ npm install
 
 ### 3. 환경 설정
 
-`.env.example` 파일을 `.env.local`로 복사 후 수정:
+`.env.example` 파일을 `.env`로 복사 후 수정:
 
 ```bash
-cp .env.example .env.local
+cp .env.example .env
 ```
 
-`.env.local` 파일 편집:
+`.env` 파일 편집:
 
 ```env
-# MySQL 연결 정보
-MYSQL_HOST=localhost
-MYSQL_PORT=3306
-MYSQL_USER=root
-MYSQL_PASS=your-password
-MYSQL_DB=nexabase
-
-# Prisma용 (위 값들로 자동 조합)
-DATABASE_URL="mysql://${MYSQL_USER}:${MYSQL_PASS}@${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DB}"
+# MySQL 연결 정보 (직접 입력)
+DATABASE_URL="mysql://사용자명:비밀번호@localhost:3306/데이터베이스명"
 
 # SMTP 설정 (이메일 인증용)
 SMTP_HOST=smtp.gmail.com
