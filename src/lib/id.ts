@@ -1,13 +1,10 @@
-import { customAlphabet } from 'nanoid'
-
-// 소문자 + 숫자만 사용 (36자)
-const nanoid = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyz', 21)
+import { nanoid } from 'nanoid'
 
 /**
- * NanoID 생성 (소문자 + 숫자)
+ * NanoID 생성 (기본 알파벳: A-Za-z0-9_-)
  *
  * 특징:
- * - 21자 URL-safe 문자열 (a-z0-9)
+ * - 21자 URL-safe 문자열
  * - cuid보다 작고 빠름
  * - 충돌 확률 매우 낮음
  *
