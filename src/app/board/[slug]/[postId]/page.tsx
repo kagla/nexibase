@@ -433,7 +433,7 @@ export default function PostPage() {
 
             {/* 본문 */}
             <div
-              className="prose dark:prose-invert max-w-none mb-6"
+              className="tiptap prose dark:prose-invert max-w-none mb-6"
               dangerouslySetInnerHTML={{ __html: post.content }}
             />
 
