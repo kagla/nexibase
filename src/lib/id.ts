@@ -1,11 +1,12 @@
-import { nanoid } from 'nanoid'
+import { v7 as uuidv7 } from 'uuid'
 
 /**
- * NanoID 생성 (기본 알파벳: A-Za-z0-9_-)
+ * UUID v7 생성
  *
  * 특징:
- * - 21자 URL-safe 문자열
- * - cuid보다 작고 빠름
+ * - 36자 표준 UUID 형식 (하이픈 포함)
+ * - 시간 기반 정렬 가능 (타임스탬프 내장)
+ * - DB 인덱싱에 유리
  * - 충돌 확률 매우 낮음
  *
  * 사용법:
@@ -13,5 +14,5 @@ import { nanoid } from 'nanoid'
  * await prisma.user.create({ data: { id, email: '...' } })
  */
 export function generateId(): string {
-  return nanoid()
+  return uuidv7()
 }
