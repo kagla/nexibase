@@ -1,5 +1,18 @@
 # Claude Code 규칙
 
+## 프로젝트 정보
+
+### 브랜드명
+- **NexiBase** (현재)
+- 변경 이력: NexaBase → NexiBase (2025-12)
+
+### 네이밍 의미
+- **Next.js + I + Base**
+- **I**: Intelligence, Idea, Interface, Individual, Innovation, Initial
+- AI 종속 없이 확장 가능한 네이밍
+
+---
+
 ## 버전 관리
 
 ### 커밋 프로세스

@@ -4,7 +4,7 @@
 
 **NexiBase**는 **Next.js + I + Base**의 합성어로, Next.js를 기반으로 한 차세대 웹 서비스의 기본 구조(Base)를 의미합니다.
 
-여기서 **I**는 *Intelligence, Interface, Individual, Innovation*을 포괄하며, AI를 포함한 지능형 기능부터 사용자 중심 설계까지 **확장 가능한 핵심 레이어**를 상징합니다.
+여기서 **I**는 *Intelligence, Idea, Interface, Individual, Innovation, Initial*을 포괄하며, AI를 포함한 지능형 기능부터 사용자 중심 설계까지 **확장 가능한 핵심 레이어**를 상징합니다.
 
 ## 왜 NexiBase인가?
 
