@@ -3,13 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "predev": "node scripts/setup-app.js",
+    "predev": "node scripts/prebuild.js",
     "dev": "nodemon",
-    "prebuild": "node scripts/setup-app.js",
+    "prebuild": "node scripts/prebuild.js",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "setup": "node scripts/setup-app.js"
+    "lint": "next lint"
   },
   "dependencies": {
     "@prisma/client": "^6.12.0",
