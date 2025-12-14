@@ -17,9 +17,16 @@ import {
   Users,
   FileText,
   Sparkles,
+  Plus,
+  Trash2,
 } from "lucide-react"
 
-interface Settings {
+interface FooterLink {
+  label: string
+  url: string
+}
+
+interface SettingsData {
   // 사이트 기본
   site_name: string
   site_description: string
@@ -34,7 +41,7 @@ interface Settings {
   footer_links: string
 }
 
-const DEFAULT_SETTINGS: Settings = {
+const DEFAULT_SETTINGS: SettingsData = {
   site_name: 'NexiBase',
   site_description: '',
   site_logo: '',
@@ -44,12 +51,26 @@ const DEFAULT_SETTINGS: Settings = {
   footer_links: '[]'
 }
 
-export default function ConfigPage() {
-  const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS)
+export default function SettingsPage() {
+  const [settings, setSettings] = useState<SettingsData>(DEFAULT_SETTINGS)
+  const [footerLinks, setFooterLinks] = useState<FooterLink[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [seeding, setSeeding] = useState(false)
   const [hasSettings, setHasSettings] = useState(false)
+
+  // JSON 문자열을 FooterLink 배열로 파싱
+  const parseFooterLinks = (jsonStr: string): FooterLink[] => {
+    try {
+      const parsed = JSON.parse(jsonStr)
+      if (Array.isArray(parsed)) {
+        return parsed.filter(item => item.label && item.url)
+      }
+    } catch {
+      // 파싱 실패시 빈 배열
+    }
+    return []
+  }
 
   // 설정 불러오기
   const fetchSettings = useCallback(async () => {
@@ -60,10 +81,12 @@ export default function ConfigPage() {
       if (response.ok && data.settings) {
         const hasAny = Object.keys(data.settings).length > 0
         setHasSettings(hasAny)
-        setSettings({
+        const newSettings = {
           ...DEFAULT_SETTINGS,
           ...data.settings
-        })
+        }
+        setSettings(newSettings)
+        setFooterLinks(parseFooterLinks(newSettings.footer_links))
       }
     } catch (error) {
       console.error('설정 조회 에러:', error)
@@ -80,10 +103,16 @@ export default function ConfigPage() {
   const handleSave = async () => {
     setSaving(true)
     try {
+      // footerLinks를 JSON 문자열로 변환하여 저장
+      const settingsToSave = {
+        ...settings,
+        footer_links: JSON.stringify(footerLinks)
+      }
+
       const response = await fetch('/api/admin/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ settings })
+        body: JSON.stringify({ settings: settingsToSave })
       })
 
       const data = await response.json()
@@ -128,31 +157,50 @@ export default function ConfigPage() {
   }
 
   // 값 변경 핸들러
-  const handleChange = (key: keyof Settings, value: string) => {
+  const handleChange = (key: keyof SettingsData, value: string) => {
     setSettings(prev => ({ ...prev, [key]: value }))
   }
 
   // 스위치 변경 핸들러
-  const handleSwitchChange = (key: keyof Settings, checked: boolean) => {
+  const handleSwitchChange = (key: keyof SettingsData, checked: boolean) => {
     setSettings(prev => ({ ...prev, [key]: checked ? 'true' : 'false' }))
+  }
+
+  // 푸터 링크 추가
+  const addFooterLink = () => {
+    setFooterLinks([...footerLinks, { label: '', url: '' }])
+  }
+
+  // 푸터 링크 삭제
+  const removeFooterLink = (index: number) => {
+    setFooterLinks(footerLinks.filter((_, i) => i !== index))
+  }
+
+  // 푸터 링크 변경
+  const updateFooterLink = (index: number, field: keyof FooterLink, value: string) => {
+    setFooterLinks(footerLinks.map((link, i) =>
+      i === index ? { ...link, [field]: value } : link
+    ))
   }
 
   if (loading) {
     return (
-      <div className="flex min-h-screen bg-background">
-        <Sidebar />
-        <div className="flex-1 flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="min-h-screen bg-background">
+        <div className="flex">
+          <Sidebar activeMenu="settings" />
+          <main className="flex-1 lg:ml-0 p-6 flex items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </main>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <Sidebar />
-      <main className="flex-1 p-6 lg:p-8 ml-0 lg:ml-64">
-        <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-background">
+      <div className="flex">
+        <Sidebar activeMenu="settings" />
+        <main className="flex-1 lg:ml-0 p-6">
           {/* 헤더 */}
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -299,25 +347,61 @@ export default function ConfigPage() {
                   />
                 </div>
 
+                <Separator />
+
                 <div className="grid gap-2">
-                  <Label htmlFor="footer_links">푸터 링크 (JSON)</Label>
-                  <Textarea
-                    id="footer_links"
-                    value={settings.footer_links}
-                    onChange={(e) => handleChange('footer_links', e.target.value)}
-                    placeholder='[{"label": "이용약관", "url": "/policy/terms"}]'
-                    rows={4}
-                    className="font-mono text-sm"
-                  />
-                  <p className="text-sm text-muted-foreground">
-                    JSON 배열 형식: {`[{"label": "링크명", "url": "/경로"}]`}
-                  </p>
+                  <div className="flex items-center justify-between">
+                    <Label>푸터 링크</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={addFooterLink}
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      링크 추가
+                    </Button>
+                  </div>
+
+                  {footerLinks.length === 0 ? (
+                    <p className="text-sm text-muted-foreground py-4 text-center">
+                      푸터에 표시할 링크가 없습니다. 링크를 추가해 주세요.
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      {footerLinks.map((link, index) => (
+                        <div key={index} className="flex gap-2 items-start">
+                          <div className="flex-1 grid grid-cols-2 gap-2">
+                            <Input
+                              value={link.label}
+                              onChange={(e) => updateFooterLink(index, 'label', e.target.value)}
+                              placeholder="링크명 (예: 이용약관)"
+                            />
+                            <Input
+                              value={link.url}
+                              onChange={(e) => updateFooterLink(index, 'url', e.target.value)}
+                              placeholder="URL (예: /policy/terms)"
+                            />
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => removeFooterLink(index)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
           </div>
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   )
 }
