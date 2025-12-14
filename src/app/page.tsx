@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 "use client"
 
 import { useState, useEffect } from "react"
@@ -134,8 +135,13 @@ export default function Home() {
     if (diffDays < 7) return `${diffDays}일 전`
     return date.toLocaleDateString('ko-KR')
   }
+=======
+import { Header, Hero, Features, TechStack, GettingStarted, Footer } from "@/components/landing"
+>>>>>>> 2f362ae14fb4cd16f856a1ccfd9481a47604558a
 
+export default function LandingPage() {
   return (
+<<<<<<< HEAD
     <div className="min-h-screen bg-background flex flex-col">
       <Header />
 
@@ -430,6 +436,14 @@ export default function Home() {
         </div>
       </div>
 
+=======
+    <div className="min-h-screen bg-background">
+      <Header />
+      <Hero />
+      <Features />
+      <TechStack />
+      <GettingStarted />
+>>>>>>> 2f362ae14fb4cd16f856a1ccfd9481a47604558a
       <Footer />
     </div>
   )
