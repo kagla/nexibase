@@ -1,10 +1,11 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Search, LogOut } from "lucide-react"
+import { Search, LogOut, Sun, Moon, Monitor } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
@@ -26,11 +27,17 @@ interface SiteSettings {
 export function Header() {
   const [user, setUser] = useState<UserInfo | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [mounted, setMounted] = useState(false)
   const [settings, setSettings] = useState<SiteSettings>({
     site_name: 'NexiBase',
     site_logo: ''
   })
   const router = useRouter()
+  const { theme, setTheme } = useTheme()
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     const fetchData = async () => {
@@ -84,6 +91,19 @@ export function Header() {
     }
   }
 
+  const cycleTheme = () => {
+    if (theme === 'light') setTheme('dark')
+    else if (theme === 'dark') setTheme('system')
+    else setTheme('light')
+  }
+
+  const getThemeIcon = () => {
+    if (!mounted) return <Monitor className="h-4 w-4" />
+    if (theme === 'light') return <Sun className="h-4 w-4" />
+    if (theme === 'dark') return <Moon className="h-4 w-4" />
+    return <Monitor className="h-4 w-4" />
+  }
+
   return (
     <header className="border-b bg-background/50 backdrop-blur-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -123,6 +143,17 @@ export function Header() {
                 className="pl-10 w-64"
               />
             </div>
+
+            {/* 테마 토글 버튼 */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={cycleTheme}
+              className="h-9 w-9"
+              title={mounted ? (theme === 'light' ? '라이트 모드' : theme === 'dark' ? '다크 모드' : '시스템 모드') : '테마 변경'}
+            >
+              {getThemeIcon()}
+            </Button>
 
             {!isLoading && (
               <>

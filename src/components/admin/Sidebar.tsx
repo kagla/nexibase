@@ -37,7 +37,7 @@ export function Sidebar({ activeMenu, onMenuChange }: SidebarProps) {
   const menuItems = [
     { id: "dashboard", label: "대시보드", icon: LayoutDashboard, path: "/admin" },
     { id: "users", label: "사용자관리", icon: Users, path: "/admin/users" },
-    { id: "members", label: "회원관리(G5)", icon: Users, path: "/admin/members" },
+    // { id: "members", label: "회원관리(G5)", icon: Users, path: "/admin/members" }, // API 구현 필요
     { id: "boards", label: "게시판관리", icon: MessageSquare, path: "/admin/boards" },
     { id: "contents", label: "콘텐츠관리", icon: FileText, path: "/admin/contents" },
     { id: "policies", label: "약관관리", icon: ScrollText, path: "/admin/policies" },
