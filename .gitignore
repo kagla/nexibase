@@ -42,3 +42,7 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+
+# 사용자가 app 을 복사해서 만드는 디렉토리 
+# core 를 수정할때 사용함
+/custom
