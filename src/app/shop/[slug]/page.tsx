@@ -24,7 +24,15 @@ import {
   Check,
   AlertCircle,
   X,
+  Star,
+  MessageSquare,
+  Lock,
+  Send,
 } from "lucide-react"
+import { Textarea } from "@/components/ui/textarea"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 
 interface ProductOption {
   id: number
@@ -72,6 +80,37 @@ interface CartItem {
   quantity: number
 }
 
+interface Review {
+  id: number
+  rating: number
+  content: string
+  images: string | null
+  reply: string | null
+  repliedAt: string | null
+  createdAt: string
+  user: { id: number; name: string; image: string | null }
+}
+
+interface Qna {
+  id: number
+  question: string
+  answer: string | null
+  answeredAt: string | null
+  isSecret: boolean
+  canView: boolean
+  isOwner: boolean
+  createdAt: string
+  user: { id: number; name: string }
+}
+
+interface ReviewableOrder {
+  orderId: number
+  orderItemId: number
+  productName: string
+  optionText: string | null
+  orderNo: string
+}
+
 export default function ProductDetailPage() {
   const params = useParams()
   const router = useRouter()
@@ -95,9 +134,157 @@ export default function ProductDetailPage() {
   const [cartMessage, setCartMessage] = useState<string | null>(null)
   const [showCartModal, setShowCartModal] = useState(false)
 
+  // 탭 상태
+  const [activeTab, setActiveTab] = useState<'detail' | 'review' | 'qna'>('detail')
+
+  // 리뷰 상태
+  const [reviews, setReviews] = useState<Review[]>([])
+  const [reviewsLoading, setReviewsLoading] = useState(false)
+  const [reviewPage, setReviewPage] = useState(1)
+  const [reviewTotal, setReviewTotal] = useState(0)
+  const [avgRating, setAvgRating] = useState(0)
+  const [reviewableOrders, setReviewableOrders] = useState<ReviewableOrder[]>([])
+  const [showReviewForm, setShowReviewForm] = useState(false)
+  const [selectedOrderItem, setSelectedOrderItem] = useState<number | null>(null)
+  const [reviewRating, setReviewRating] = useState(5)
+  const [reviewContent, setReviewContent] = useState('')
+  const [submittingReview, setSubmittingReview] = useState(false)
+
+  // Q&A 상태
+  const [qnas, setQnas] = useState<Qna[]>([])
+  const [qnasLoading, setQnasLoading] = useState(false)
+  const [qnaPage, setQnaPage] = useState(1)
+  const [qnaTotal, setQnaTotal] = useState(0)
+  const [showQnaForm, setShowQnaForm] = useState(false)
+  const [qnaContent, setQnaContent] = useState('')
+  const [qnaIsSecret, setQnaIsSecret] = useState(false)
+  const [submittingQna, setSubmittingQna] = useState(false)
+
   useEffect(() => {
     fetchProduct()
   }, [slug])
+
+  // 탭 변경 시 데이터 로드
+  useEffect(() => {
+    if (activeTab === 'review' && reviews.length === 0) {
+      fetchReviews()
+      fetchReviewableOrders()
+    }
+    if (activeTab === 'qna' && qnas.length === 0) {
+      fetchQnas()
+    }
+  }, [activeTab])
+
+  // 리뷰 가져오기
+  const fetchReviews = async (page = 1) => {
+    setReviewsLoading(true)
+    try {
+      const res = await fetch(`/api/shop/products/${slug}/reviews?page=${page}&limit=10`)
+      if (res.ok) {
+        const data = await res.json()
+        setReviews(data.reviews)
+        setReviewTotal(data.pagination.total)
+        setAvgRating(data.avgRating)
+        setReviewPage(page)
+      }
+    } catch (err) {
+      console.error('리뷰 로드 실패:', err)
+    } finally {
+      setReviewsLoading(false)
+    }
+  }
+
+  // 리뷰 작성 가능한 주문 확인
+  const fetchReviewableOrders = async () => {
+    try {
+      const res = await fetch(`/api/shop/products/${slug}/reviewable-orders`)
+      if (res.ok) {
+        const data = await res.json()
+        setReviewableOrders(data.orders || [])
+      }
+    } catch (err) {
+      console.error('리뷰 가능 주문 로드 실패:', err)
+    }
+  }
+
+  // Q&A 가져오기
+  const fetchQnas = async (page = 1) => {
+    setQnasLoading(true)
+    try {
+      const res = await fetch(`/api/shop/products/${slug}/qna?page=${page}&limit=10`)
+      if (res.ok) {
+        const data = await res.json()
+        setQnas(data.qnas)
+        setQnaTotal(data.pagination.total)
+        setQnaPage(page)
+      }
+    } catch (err) {
+      console.error('Q&A 로드 실패:', err)
+    } finally {
+      setQnasLoading(false)
+    }
+  }
+
+  // 리뷰 작성
+  const submitReview = async () => {
+    if (!selectedOrderItem || !reviewContent.trim()) return
+    setSubmittingReview(true)
+    try {
+      const res = await fetch(`/api/shop/products/${slug}/reviews`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderItemId: selectedOrderItem,
+          rating: reviewRating,
+          content: reviewContent.trim()
+        })
+      })
+      if (res.ok) {
+        setShowReviewForm(false)
+        setSelectedOrderItem(null)
+        setReviewRating(5)
+        setReviewContent('')
+        fetchReviews(1)
+        fetchReviewableOrders()
+      } else {
+        const data = await res.json()
+        alert(data.error || '리뷰 작성에 실패했습니다.')
+      }
+    } catch (err) {
+      alert('리뷰 작성에 실패했습니다.')
+    } finally {
+      setSubmittingReview(false)
+    }
+  }
+
+  // Q&A 작성
+  const submitQna = async () => {
+    if (!qnaContent.trim()) return
+    setSubmittingQna(true)
+    try {
+      const res = await fetch(`/api/shop/products/${slug}/qna`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question: qnaContent.trim(),
+          isSecret: qnaIsSecret
+        })
+      })
+      if (res.ok) {
+        setShowQnaForm(false)
+        setQnaContent('')
+        setQnaIsSecret(false)
+        fetchQnas(1)
+      } else {
+        const data = await res.json()
+        alert(data.error || 'Q&A 작성에 실패했습니다.')
+      }
+    } catch (err) {
+      alert('Q&A 작성에 실패했습니다.')
+    } finally {
+      setSubmittingQna(false)
+    }
+  }
 
   const fetchProduct = async () => {
     setLoading(true)
@@ -629,16 +816,384 @@ export default function ProductDetailPage() {
             </div>
           </div>
 
-          {/* 상세 설명 */}
-          {product.content && (
-            <div className="mt-12">
-              <h2 className="text-xl font-bold mb-4 pb-2 border-b">상품 상세정보</h2>
-              <div
-                className="prose prose-sm max-w-none dark:prose-invert"
-                dangerouslySetInnerHTML={{ __html: product.content }}
-              />
+          {/* 탭 영역 */}
+          <div className="mt-12">
+            {/* 탭 버튼 */}
+            <div className="flex border-b">
+              <button
+                onClick={() => setActiveTab('detail')}
+                className={`px-6 py-3 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                  activeTab === 'detail'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                상세정보
+              </button>
+              <button
+                onClick={() => setActiveTab('review')}
+                className={`px-6 py-3 text-sm font-medium border-b-2 -mb-px transition-colors flex items-center gap-2 ${
+                  activeTab === 'review'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <Star className="h-4 w-4" />
+                리뷰 ({reviewTotal})
+              </button>
+              <button
+                onClick={() => setActiveTab('qna')}
+                className={`px-6 py-3 text-sm font-medium border-b-2 -mb-px transition-colors flex items-center gap-2 ${
+                  activeTab === 'qna'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <MessageSquare className="h-4 w-4" />
+                Q&A ({qnaTotal})
+              </button>
             </div>
-          )}
+
+            {/* 탭 내용 */}
+            <div className="py-6">
+              {/* 상세정보 탭 */}
+              {activeTab === 'detail' && (
+                <div>
+                  {product.content ? (
+                    <div
+                      className="prose prose-sm max-w-none dark:prose-invert"
+                      dangerouslySetInnerHTML={{ __html: product.content }}
+                    />
+                  ) : (
+                    <p className="text-muted-foreground text-center py-12">
+                      등록된 상세정보가 없습니다.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* 리뷰 탭 */}
+              {activeTab === 'review' && (
+                <div>
+                  {/* 평균 별점 */}
+                  {reviewTotal > 0 && (
+                    <div className="flex items-center gap-4 mb-6 p-4 bg-muted rounded-lg">
+                      <div className="text-center">
+                        <div className="text-3xl font-bold">{avgRating.toFixed(1)}</div>
+                        <div className="flex gap-0.5 mt-1">
+                          {[1, 2, 3, 4, 5].map(i => (
+                            <Star
+                              key={i}
+                              className={`h-4 w-4 ${i <= Math.round(avgRating) ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`}
+                            />
+                          ))}
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">{reviewTotal}개 리뷰</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 리뷰 작성 버튼 */}
+                  {reviewableOrders.length > 0 && !showReviewForm && (
+                    <div className="mb-6">
+                      <Button onClick={() => setShowReviewForm(true)}>
+                        <Star className="h-4 w-4 mr-2" />
+                        리뷰 작성
+                      </Button>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        작성 가능한 리뷰: {reviewableOrders.length}건
+                      </p>
+                    </div>
+                  )}
+
+                  {/* 리뷰 작성 폼 */}
+                  {showReviewForm && (
+                    <Card className="mb-6">
+                      <CardContent className="p-4 space-y-4">
+                        <div>
+                          <Label>주문 선택</Label>
+                          <Select
+                            value={selectedOrderItem?.toString() || ''}
+                            onValueChange={(v) => setSelectedOrderItem(parseInt(v))}
+                          >
+                            <SelectTrigger className="mt-1">
+                              <SelectValue placeholder="리뷰를 작성할 주문을 선택하세요" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {reviewableOrders.map(order => (
+                                <SelectItem key={order.orderItemId} value={order.orderItemId.toString()}>
+                                  {order.orderNo} - {order.optionText || '기본'}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div>
+                          <Label>별점</Label>
+                          <div className="flex gap-1 mt-1">
+                            {[1, 2, 3, 4, 5].map(i => (
+                              <button
+                                key={i}
+                                type="button"
+                                onClick={() => setReviewRating(i)}
+                                className="p-1"
+                              >
+                                <Star
+                                  className={`h-8 w-8 transition-colors ${
+                                    i <= reviewRating
+                                      ? 'fill-yellow-400 text-yellow-400'
+                                      : 'text-muted-foreground hover:text-yellow-400'
+                                  }`}
+                                />
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div>
+                          <Label>리뷰 내용</Label>
+                          <Textarea
+                            value={reviewContent}
+                            onChange={(e) => setReviewContent(e.target.value)}
+                            placeholder="상품에 대한 솔직한 리뷰를 작성해주세요."
+                            className="mt-1"
+                            rows={4}
+                          />
+                        </div>
+
+                        <div className="flex gap-2 justify-end">
+                          <Button variant="outline" onClick={() => setShowReviewForm(false)}>
+                            취소
+                          </Button>
+                          <Button
+                            onClick={submitReview}
+                            disabled={submittingReview || !selectedOrderItem || !reviewContent.trim()}
+                          >
+                            {submittingReview ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
+                            등록
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* 리뷰 목록 */}
+                  {reviewsLoading ? (
+                    <div className="flex justify-center py-12">
+                      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : reviews.length > 0 ? (
+                    <div className="space-y-4">
+                      {reviews.map(review => (
+                        <div key={review.id} className="border rounded-lg p-4">
+                          <div className="flex items-start gap-3">
+                            <Avatar className="h-10 w-10">
+                              <AvatarFallback>{review.user.name[0]}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-medium">{review.user.name}</span>
+                                <div className="flex gap-0.5">
+                                  {[1, 2, 3, 4, 5].map(i => (
+                                    <Star
+                                      key={i}
+                                      className={`h-3 w-3 ${i <= review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`}
+                                    />
+                                  ))}
+                                </div>
+                                <span className="text-sm text-muted-foreground">
+                                  {new Date(review.createdAt).toLocaleDateString('ko-KR')}
+                                </span>
+                              </div>
+                              <p className="text-sm whitespace-pre-wrap">{review.content}</p>
+
+                              {/* 관리자 답변 */}
+                              {review.reply && (
+                                <div className="mt-3 p-3 bg-muted rounded-lg">
+                                  <p className="text-sm font-medium mb-1">판매자 답변</p>
+                                  <p className="text-sm whitespace-pre-wrap">{review.reply}</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* 페이지네이션 */}
+                      {reviewTotal > 10 && (
+                        <div className="flex justify-center gap-2 mt-4">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => fetchReviews(reviewPage - 1)}
+                            disabled={reviewPage <= 1}
+                          >
+                            이전
+                          </Button>
+                          <span className="flex items-center px-3 text-sm">
+                            {reviewPage} / {Math.ceil(reviewTotal / 10)}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => fetchReviews(reviewPage + 1)}
+                            disabled={reviewPage >= Math.ceil(reviewTotal / 10)}
+                          >
+                            다음
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground text-center py-12">
+                      아직 등록된 리뷰가 없습니다.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Q&A 탭 */}
+              {activeTab === 'qna' && (
+                <div>
+                  {/* Q&A 작성 버튼 */}
+                  {!showQnaForm && (
+                    <div className="mb-6">
+                      <Button onClick={() => setShowQnaForm(true)}>
+                        <MessageSquare className="h-4 w-4 mr-2" />
+                        문의하기
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Q&A 작성 폼 */}
+                  {showQnaForm && (
+                    <Card className="mb-6">
+                      <CardContent className="p-4 space-y-4">
+                        <div>
+                          <Label>문의 내용</Label>
+                          <Textarea
+                            value={qnaContent}
+                            onChange={(e) => setQnaContent(e.target.value)}
+                            placeholder="상품에 대해 궁금한 점을 문의해주세요."
+                            className="mt-1"
+                            rows={4}
+                          />
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            id="qna-secret"
+                            checked={qnaIsSecret}
+                            onCheckedChange={setQnaIsSecret}
+                          />
+                          <Label htmlFor="qna-secret" className="flex items-center gap-1 cursor-pointer">
+                            <Lock className="h-4 w-4" />
+                            비밀글로 작성
+                          </Label>
+                        </div>
+
+                        <div className="flex gap-2 justify-end">
+                          <Button variant="outline" onClick={() => setShowQnaForm(false)}>
+                            취소
+                          </Button>
+                          <Button
+                            onClick={submitQna}
+                            disabled={submittingQna || !qnaContent.trim()}
+                          >
+                            {submittingQna ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
+                            등록
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Q&A 목록 */}
+                  {qnasLoading ? (
+                    <div className="flex justify-center py-12">
+                      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : qnas.length > 0 ? (
+                    <div className="space-y-4">
+                      {qnas.map(qna => (
+                        <div key={qna.id} className="border rounded-lg p-4">
+                          <div className="flex items-start gap-3">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                {qna.isSecret && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    <Lock className="h-3 w-3 mr-1" />
+                                    비밀글
+                                  </Badge>
+                                )}
+                                <span className="font-medium text-sm">{qna.user.name}</span>
+                                <span className="text-sm text-muted-foreground">
+                                  {new Date(qna.createdAt).toLocaleDateString('ko-KR')}
+                                </span>
+                                {qna.answer && (
+                                  <Badge variant="outline" className="text-xs text-green-600 border-green-600">
+                                    답변완료
+                                  </Badge>
+                                )}
+                              </div>
+
+                              {/* 질문 */}
+                              <div className="mb-3">
+                                <span className="inline-block px-2 py-0.5 bg-primary text-primary-foreground text-xs font-medium rounded mr-2">Q</span>
+                                <span className={`text-sm ${!qna.canView ? 'text-muted-foreground italic' : ''}`}>
+                                  {qna.question}
+                                </span>
+                              </div>
+
+                              {/* 답변 */}
+                              {qna.answer && (
+                                <div className="p-3 bg-muted rounded-lg">
+                                  <span className="inline-block px-2 py-0.5 bg-green-600 text-white text-xs font-medium rounded mr-2">A</span>
+                                  <span className={`text-sm ${!qna.canView ? 'text-muted-foreground italic' : ''}`}>
+                                    {qna.answer}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* 페이지네이션 */}
+                      {qnaTotal > 10 && (
+                        <div className="flex justify-center gap-2 mt-4">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => fetchQnas(qnaPage - 1)}
+                            disabled={qnaPage <= 1}
+                          >
+                            이전
+                          </Button>
+                          <span className="flex items-center px-3 text-sm">
+                            {qnaPage} / {Math.ceil(qnaTotal / 10)}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => fetchQnas(qnaPage + 1)}
+                            disabled={qnaPage >= Math.ceil(qnaTotal / 10)}
+                          >
+                            다음
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground text-center py-12">
+                      아직 등록된 Q&A가 없습니다.
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </main>
 
