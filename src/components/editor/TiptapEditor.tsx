@@ -26,7 +26,9 @@ import {
   Heading3,
   Upload,
   Loader2,
+  Code2,
 } from 'lucide-react'
+import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -115,6 +117,30 @@ export function TiptapEditor({
   // 파일 업로드 관련
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
+
+  // HTML 소스 보기 모드
+  const [sourceMode, setSourceMode] = useState(false)
+  const [sourceContent, setSourceContent] = useState('')
+
+  const toggleSourceMode = useCallback(() => {
+    if (sourceMode) {
+      // 소스 모드 -> 에디터 모드: HTML 적용
+      if (editor) {
+        editor.commands.setContent(sourceContent)
+        onChange(sourceContent)
+      }
+    } else {
+      // 에디터 모드 -> 소스 모드: 현재 HTML 가져오기
+      if (editor) {
+        setSourceContent(editor.getHTML())
+      }
+    }
+    setSourceMode(!sourceMode)
+  }, [sourceMode, sourceContent, editor, onChange])
+
+  const handleSourceChange = useCallback((value: string) => {
+    setSourceContent(value)
+  }, [])
 
   const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!editor) return
@@ -307,26 +333,46 @@ export function TiptapEditor({
         />
 
         {/* 실행 취소/다시 실행 */}
-        <div className="flex gap-0.5">
+        <div className="flex gap-0.5 border-r pr-2 mr-2">
           <ToolbarButton
             onClick={() => editor.chain().focus().undo().run()}
-            disabled={!editor.can().undo()}
+            disabled={!editor.can().undo() || sourceMode}
             title="실행 취소"
           >
             <Undo className="h-4 w-4" />
           </ToolbarButton>
           <ToolbarButton
             onClick={() => editor.chain().focus().redo().run()}
-            disabled={!editor.can().redo()}
+            disabled={!editor.can().redo() || sourceMode}
             title="다시 실행"
           >
             <Redo className="h-4 w-4" />
           </ToolbarButton>
         </div>
+
+        {/* HTML 소스 보기 */}
+        <div className="flex gap-0.5">
+          <ToolbarButton
+            onClick={toggleSourceMode}
+            isActive={sourceMode}
+            title={sourceMode ? "에디터 모드" : "HTML 소스 보기"}
+          >
+            <Code2 className="h-4 w-4" />
+          </ToolbarButton>
+        </div>
       </div>
 
       {/* 에디터 영역 */}
-      <EditorContent editor={editor} />
+      {sourceMode ? (
+        <Textarea
+          value={sourceContent}
+          onChange={(e) => handleSourceChange(e.target.value)}
+          className="min-h-[300px] font-mono text-sm border-0 rounded-none focus-visible:ring-0 resize-none"
+          placeholder="HTML 코드를 입력하세요..."
+        />
+      ) : (
+        <EditorContent editor={editor} />
+      )}
     </div>
   )
 }
