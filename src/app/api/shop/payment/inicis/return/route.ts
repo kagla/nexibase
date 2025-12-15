@@ -47,6 +47,36 @@ function getNetCancelUrl(idcName: string): string {
   }
 }
 
+// 팝업 창에서 부모 창을 리다이렉트하고 팝업을 닫는 HTML 반환
+function createPopupRedirectHtml(redirectUrl: string) {
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>결제 처리중...</title>
+  <script>
+    // 부모 창으로 리다이렉트
+    if (window.opener) {
+      window.opener.location.href = '${redirectUrl}';
+      window.close();
+    } else {
+      // opener가 없으면 직접 이동
+      window.location.href = '${redirectUrl}';
+    }
+  </script>
+</head>
+<body>
+  <p>결제 처리중입니다. 잠시만 기다려주세요...</p>
+  <p>창이 자동으로 닫히지 않으면 <a href="${redirectUrl}">여기를 클릭</a>하세요.</p>
+</body>
+</html>
+`
+  return new NextResponse(html, {
+    headers: { 'Content-Type': 'text/html; charset=utf-8' }
+  })
+}
+
 // GET 요청 처리 (이니시스 팝업 모드에서 GET으로 호출될 수 있음)
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -61,26 +91,34 @@ export async function GET(request: NextRequest) {
   const message = searchParams.get('message')
 
   if (error) {
-    return NextResponse.redirect(
-      new URL(`/shop/order/complete?error=${error}&message=${encodeURIComponent(message || '결제에 실패했습니다.')}`, baseUrl),
-      303
-    )
+    const redirectUrl = `${baseUrl}/shop/order/complete?error=${error}&message=${encodeURIComponent(message || '결제에 실패했습니다.')}`
+    return createPopupRedirectHtml(redirectUrl)
   }
 
   // 주문번호가 있으면 완료 페이지로
   const orderNo = searchParams.get('orderNo') || searchParams.get('MOID')
   if (orderNo) {
-    return NextResponse.redirect(
-      new URL(`/shop/order/complete?orderNo=${orderNo}`, baseUrl),
-      303
-    )
+    const redirectUrl = `${baseUrl}/shop/order/complete?orderNo=${orderNo}`
+    return createPopupRedirectHtml(redirectUrl)
   }
 
-  // 기타 경우 주문서 페이지로
-  return NextResponse.redirect(
-    new URL('/shop/order?error=payment_cancelled', baseUrl),
-    303
-  )
+  // 기타 경우 (파라미터 없이 GET 접근) - 결제 처리중 표시
+  // 이니시스가 POST로 인증 결과를 보내기 전에 GET으로 먼저 접근할 수 있음
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>결제 처리중...</title>
+</head>
+<body>
+  <p>결제 처리중입니다. 잠시만 기다려주세요...</p>
+</body>
+</html>
+`
+  return new NextResponse(html, {
+    headers: { 'Content-Type': 'text/html; charset=utf-8' }
+  })
 }
 
 // 결제 승인 결과 처리 (POST)
@@ -90,10 +128,10 @@ export async function POST(request: NextRequest) {
   const protocol = request.headers.get('x-forwarded-proto') || 'http'
   const baseUrl = process.env.NEXT_PUBLIC_URL || `${protocol}://${host}`
 
-  // 리다이렉트 헬퍼 함수 (303: POST → GET 변환)
+  // 팝업에서 부모 창 리다이렉트 헬퍼 함수
   const redirectTo = (path: string) => {
     const url = new URL(path, baseUrl)
-    return NextResponse.redirect(url.toString(), 303)
+    return createPopupRedirectHtml(url.toString())
   }
 
   try {
