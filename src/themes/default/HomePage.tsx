@@ -3,7 +3,11 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Users, FileText, MessageSquare, TrendingUp, Eye, ThumbsUp, Clock } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import {
+  Users, FileText, MessageSquare, TrendingUp, Eye, ThumbsUp,
+  Clock, ArrowRight, Sparkles, Flame, BookOpen
+} from "lucide-react"
 import Link from "next/link"
 import { Header, Footer } from "@/themes"
 
@@ -76,7 +80,7 @@ export default function HomePage() {
           fetch('/api/settings'),
           fetch('/api/boards?limit=6'),
           fetch('/api/stats'),
-          fetch('/api/posts/recent?limit=10')
+          fetch('/api/posts/recent?limit=8')
         ])
 
         if (userRes.ok) {
@@ -137,203 +141,223 @@ export default function HomePage() {
 
       <main className="flex-1">
         <div className="max-w-6xl mx-auto px-4 py-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* 메인 콘텐츠 영역 */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* 환영 메시지 (로그인 사용자) */}
-              {user && (
-                <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
-                  <CardContent className="p-4">
-                    <p className="text-sm">
-                      안녕하세요, <span className="font-semibold text-primary">{user.nickname || user.name || '사용자'}</span>님! 👋
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
+          {/* Bento Grid 레이아웃 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 auto-rows-[minmax(120px,auto)]">
 
-              {/* 최근 게시글 */}
-              <Card>
-                <div className="border-b px-4 py-3 flex items-center justify-between">
-                  <h2 className="font-semibold flex items-center gap-2">
-                    <Clock className="h-4 w-4" />
-                    최근 게시글
-                  </h2>
-                  <Link href="/recent" className="text-sm text-primary hover:underline">
-                    더보기
+            {/* 환영/히어로 카드 - 큰 카드 (2x2) */}
+            <Card className="md:col-span-2 md:row-span-2 bg-gradient-to-br from-primary/10 via-primary/5 to-background border-primary/20 overflow-hidden relative group">
+              <CardContent className="p-6 h-full flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <Sparkles className="h-5 w-5 text-primary" />
+                    <span className="text-sm font-medium text-primary">Welcome</span>
+                  </div>
+                  <h1 className="text-2xl md:text-3xl font-bold mb-2">
+                    {user
+                      ? `${user.nickname || user.name || '사용자'}님, 환영합니다!`
+                      : `${settings.site_name}에 오신 것을 환영합니다`
+                    }
+                  </h1>
+                  <p className="text-muted-foreground">
+                    {settings.site_description || '함께 성장하는 커뮤니티에서 다양한 이야기를 나눠보세요.'}
+                  </p>
+                </div>
+                <div className="flex gap-3 mt-4">
+                  {boards.length > 0 && (
+                    <Link href={`/board/${boards[0].slug}`}>
+                      <Button className="group-hover:translate-x-1 transition-transform">
+                        시작하기
+                        <ArrowRight className="h-4 w-4 ml-2" />
+                      </Button>
+                    </Link>
+                  )}
+                  <Link href="/content/about">
+                    <Button variant="outline">더 알아보기</Button>
                   </Link>
                 </div>
-                <CardContent className="p-0">
-                  {recentPosts.length > 0 ? (
-                    <div className="divide-y">
-                      {recentPosts.map((post) => (
-                        <Link
-                          key={post.id}
-                          href={`/board/${post.board.slug}/${post.id}`}
-                          className="block px-4 py-3 hover:bg-muted/50 transition-colors"
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1">
-                                <Badge variant="outline" className="text-xs shrink-0">
-                                  {post.board.name}
-                                </Badge>
-                                <span className="font-medium text-sm truncate">
-                                  {post.title}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                                <span>{post.author.nickname || post.author.name}</span>
-                                <span className="flex items-center gap-1">
-                                  <Eye className="h-3 w-3" />
-                                  {post.viewCount}
-                                </span>
-                                {post.likeCount !== undefined && post.likeCount > 0 && (
-                                  <span className="flex items-center gap-1">
-                                    <ThumbsUp className="h-3 w-3" />
-                                    {post.likeCount}
-                                  </span>
-                                )}
-                                {post.commentCount !== undefined && post.commentCount > 0 && (
-                                  <span className="flex items-center gap-1">
-                                    <MessageSquare className="h-3 w-3" />
-                                    {post.commentCount}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            <span className="text-xs text-muted-foreground shrink-0">
-                              {formatTimeAgo(post.createdAt)}
-                            </span>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="py-12 text-center text-muted-foreground">
-                      아직 게시글이 없습니다.
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                {/* 배경 장식 */}
+                <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-primary/10 rounded-full blur-2xl" />
+              </CardContent>
+            </Card>
 
-              {/* 게시판 목록 */}
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="font-semibold flex items-center gap-2">
-                    <FileText className="h-4 w-4" />
-                    게시판
-                  </h2>
-                </div>
-                {boards.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {boards.map((board) => (
-                      <Link key={board.id} href={`/board/${board.slug}`}>
-                        <Card className="hover:border-primary/50 hover:shadow-sm transition-all cursor-pointer h-full">
-                          <CardContent className="p-4">
-                            <div className="flex items-center justify-between mb-1">
-                              <h3 className="font-medium">{board.name}</h3>
-                              <Badge variant="secondary" className="text-xs">
-                                {board.postCount}
+            {/* 통계 카드들 - 각각 1x1 */}
+            {stats && (
+              <>
+                <Card className="group hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300">
+                  <CardContent className="p-4 h-full flex flex-col justify-center items-center text-center">
+                    <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                      <Users className="h-6 w-6 text-blue-500" />
+                    </div>
+                    <div className="text-3xl font-bold">{stats.memberCount.toLocaleString()}</div>
+                    <div className="text-sm text-muted-foreground">회원</div>
+                  </CardContent>
+                </Card>
+
+                <Card className="group hover:border-green-500/50 hover:shadow-lg hover:shadow-green-500/10 transition-all duration-300">
+                  <CardContent className="p-4 h-full flex flex-col justify-center items-center text-center">
+                    <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                      <FileText className="h-6 w-6 text-green-500" />
+                    </div>
+                    <div className="text-3xl font-bold">{stats.postCount.toLocaleString()}</div>
+                    <div className="text-sm text-muted-foreground">게시글</div>
+                  </CardContent>
+                </Card>
+
+                <Card className="group hover:border-purple-500/50 hover:shadow-lg hover:shadow-purple-500/10 transition-all duration-300">
+                  <CardContent className="p-4 h-full flex flex-col justify-center items-center text-center">
+                    <div className="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                      <MessageSquare className="h-6 w-6 text-purple-500" />
+                    </div>
+                    <div className="text-3xl font-bold">{stats.commentCount.toLocaleString()}</div>
+                    <div className="text-sm text-muted-foreground">댓글</div>
+                  </CardContent>
+                </Card>
+
+                <Card className="group hover:border-orange-500/50 hover:shadow-lg hover:shadow-orange-500/10 transition-all duration-300">
+                  <CardContent className="p-4 h-full flex flex-col justify-center items-center text-center">
+                    <div className="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                      <TrendingUp className="h-6 w-6 text-orange-500" />
+                    </div>
+                    <div className="text-3xl font-bold">{stats.boardCount.toLocaleString()}</div>
+                    <div className="text-sm text-muted-foreground">게시판</div>
+                  </CardContent>
+                </Card>
+              </>
+            )}
+
+            {/* 최근 게시글 - 넓은 카드 (2x2) */}
+            <Card className="md:col-span-2 lg:row-span-2">
+              <div className="border-b px-4 py-3 flex items-center justify-between">
+                <h2 className="font-semibold flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-primary" />
+                  최근 게시글
+                </h2>
+                <Link href="/recent" className="text-sm text-primary hover:underline flex items-center gap-1">
+                  더보기 <ArrowRight className="h-3 w-3" />
+                </Link>
+              </div>
+              <CardContent className="p-0">
+                {recentPosts.length > 0 ? (
+                  <div className="divide-y">
+                    {recentPosts.slice(0, 6).map((post) => (
+                      <Link
+                        key={post.id}
+                        href={`/board/${post.board.slug}/${post.id}`}
+                        className="block px-4 py-3 hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Badge variant="outline" className="text-xs shrink-0">
+                                {post.board.name}
                               </Badge>
+                              <span className="font-medium text-sm truncate">
+                                {post.title}
+                              </span>
                             </div>
-                            {board.description && (
-                              <p className="text-sm text-muted-foreground line-clamp-1">
-                                {board.description}
-                              </p>
-                            )}
-                          </CardContent>
-                        </Card>
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                              <span>{post.author.nickname || post.author.name}</span>
+                              <span className="flex items-center gap-1">
+                                <Eye className="h-3 w-3" />
+                                {post.viewCount}
+                              </span>
+                              {post.commentCount !== undefined && post.commentCount > 0 && (
+                                <span className="flex items-center gap-1">
+                                  <MessageSquare className="h-3 w-3" />
+                                  {post.commentCount}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <span className="text-xs text-muted-foreground shrink-0">
+                            {formatTimeAgo(post.createdAt)}
+                          </span>
+                        </div>
                       </Link>
                     ))}
                   </div>
                 ) : (
-                  <Card>
-                    <CardContent className="py-8 text-center text-muted-foreground">
-                      아직 게시판이 없습니다.
-                    </CardContent>
-                  </Card>
+                  <div className="py-12 text-center text-muted-foreground">
+                    아직 게시글이 없습니다.
+                  </div>
                 )}
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
-            {/* 사이드바 */}
-            <div className="space-y-6">
-              {/* 커뮤니티 통계 */}
-              {stats && (
-                <Card>
-                  <div className="border-b px-4 py-3">
-                    <h2 className="font-semibold flex items-center gap-2">
-                      <TrendingUp className="h-4 w-4" />
-                      커뮤니티 현황
-                    </h2>
+            {/* 인기 게시판 - 세로 카드 (1x2) */}
+            {boards.length > 0 && (
+              <Card className="lg:row-span-2">
+                <div className="border-b px-4 py-3">
+                  <h2 className="font-semibold flex items-center gap-2">
+                    <Flame className="h-4 w-4 text-orange-500" />
+                    인기 게시판
+                  </h2>
+                </div>
+                <CardContent className="p-0">
+                  <div className="divide-y">
+                    {boards.slice(0, 5).map((board, index) => (
+                      <Link
+                        key={board.id}
+                        href={`/board/${board.slug}`}
+                        className="flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors"
+                      >
+                        <span className={`w-6 h-6 rounded-lg text-xs font-bold flex items-center justify-center ${
+                          index === 0 ? 'bg-yellow-500 text-yellow-950' :
+                          index === 1 ? 'bg-gray-400 text-gray-900' :
+                          index === 2 ? 'bg-amber-600 text-amber-100' :
+                          'bg-muted text-muted-foreground'
+                        }`}>
+                          {index + 1}
+                        </span>
+                        <span className="flex-1 text-sm font-medium truncate">{board.name}</span>
+                        <Badge variant="secondary" className="text-xs">{board.postCount}</Badge>
+                      </Link>
+                    ))}
                   </div>
-                  <CardContent className="p-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="text-center p-3 bg-muted/50 rounded-lg">
-                        <Users className="h-5 w-5 mx-auto mb-1 text-blue-500" />
-                        <div className="text-xl font-bold">{stats.memberCount.toLocaleString()}</div>
-                        <div className="text-xs text-muted-foreground">회원</div>
-                      </div>
-                      <div className="text-center p-3 bg-muted/50 rounded-lg">
-                        <FileText className="h-5 w-5 mx-auto mb-1 text-green-500" />
-                        <div className="text-xl font-bold">{stats.postCount.toLocaleString()}</div>
-                        <div className="text-xs text-muted-foreground">게시글</div>
-                      </div>
-                      <div className="text-center p-3 bg-muted/50 rounded-lg">
-                        <MessageSquare className="h-5 w-5 mx-auto mb-1 text-purple-500" />
-                        <div className="text-xl font-bold">{stats.commentCount.toLocaleString()}</div>
-                        <div className="text-xs text-muted-foreground">댓글</div>
-                      </div>
-                      <div className="text-center p-3 bg-muted/50 rounded-lg">
-                        <TrendingUp className="h-5 w-5 mx-auto mb-1 text-orange-500" />
-                        <div className="text-xl font-bold">{stats.boardCount.toLocaleString()}</div>
-                        <div className="text-xs text-muted-foreground">게시판</div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* 인기 게시판 */}
-              {boards.length > 0 && (
-                <Card>
-                  <div className="border-b px-4 py-3">
-                    <h2 className="font-semibold">🔥 인기 게시판</h2>
-                  </div>
-                  <CardContent className="p-0">
-                    <div className="divide-y">
-                      {boards.slice(0, 5).map((board, index) => (
-                        <Link
-                          key={board.id}
-                          href={`/board/${board.slug}`}
-                          className="flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors"
-                        >
-                          <span className={`w-5 h-5 rounded text-xs font-bold flex items-center justify-center ${
-                            index < 3 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-                          }`}>
-                            {index + 1}
-                          </span>
-                          <span className="flex-1 text-sm font-medium truncate">{board.name}</span>
-                          <span className="text-xs text-muted-foreground">{board.postCount}</span>
-                        </Link>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* 커뮤니티 가이드 */}
-              <Card className="bg-muted/30">
-                <CardContent className="p-4">
-                  <h3 className="font-semibold mb-2">📌 커뮤니티 가이드</h3>
-                  <ul className="text-sm text-muted-foreground space-y-1">
-                    <li>• 서로를 존중하는 대화를 해주세요</li>
-                    <li>• 욕설, 비방, 광고는 금지됩니다</li>
-                    <li>• 도움이 필요하면 문의하기를 이용하세요</li>
-                  </ul>
                 </CardContent>
               </Card>
-            </div>
+            )}
+
+            {/* 커뮤니티 가이드 - 1x1 */}
+            <Card className="bg-gradient-to-br from-muted/50 to-muted/30">
+              <CardContent className="p-4 h-full flex flex-col justify-center">
+                <div className="flex items-center gap-2 mb-2">
+                  <BookOpen className="h-4 w-4 text-primary" />
+                  <h3 className="font-semibold text-sm">커뮤니티 가이드</h3>
+                </div>
+                <ul className="text-xs text-muted-foreground space-y-1">
+                  <li>• 서로 존중하는 대화</li>
+                  <li>• 욕설, 비방 금지</li>
+                  <li>• 광고/스팸 금지</li>
+                </ul>
+              </CardContent>
+            </Card>
+
+            {/* 게시판 카드들 */}
+            {boards.slice(0, 4).map((board, index) => (
+              <Link key={board.id} href={`/board/${board.slug}`} className={index === 0 ? 'md:col-span-2' : ''}>
+                <Card className="h-full hover:border-primary/50 hover:shadow-md transition-all duration-300 cursor-pointer group">
+                  <CardContent className="p-4 h-full flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-semibold group-hover:text-primary transition-colors">{board.name}</h3>
+                        <Badge variant="secondary">{board.postCount}</Badge>
+                      </div>
+                      {board.description && (
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          {board.description}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center text-xs text-primary mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span>바로가기</span>
+                      <ArrowRight className="h-3 w-3 ml-1" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+
           </div>
         </div>
       </main>
