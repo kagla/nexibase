@@ -5,7 +5,7 @@ import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { LogOut, Sun, Moon, ChevronDown, Search, Menu, X, Bell } from "lucide-react"
+import { LogOut, Sun, Moon, ChevronDown, Search, Menu, X, Bell, ShoppingCart, Package } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter, usePathname } from "next/navigation"
@@ -43,6 +43,7 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  const [cartCount, setCartCount] = useState(0)
   const moreMenuRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
   const pathname = usePathname()
@@ -50,6 +51,28 @@ export default function Header() {
 
   useEffect(() => {
     setMounted(true)
+  }, [])
+
+  // 장바구니 개수 업데이트
+  useEffect(() => {
+    const updateCartCount = () => {
+      try {
+        const cart = JSON.parse(localStorage.getItem("cart") || "[]")
+        const count = cart.reduce((sum: number, item: { quantity: number }) => sum + item.quantity, 0)
+        setCartCount(count)
+      } catch {
+        setCartCount(0)
+      }
+    }
+
+    updateCartCount()
+    window.addEventListener("cartUpdated", updateCartCount)
+    window.addEventListener("storage", updateCartCount)
+
+    return () => {
+      window.removeEventListener("cartUpdated", updateCartCount)
+      window.removeEventListener("storage", updateCartCount)
+    }
   }, [])
 
   useEffect(() => {
@@ -199,6 +222,24 @@ export default function Header() {
                 <>
                   {user ? (
                     <div className="flex items-center gap-2">
+                      {/* 장바구니 */}
+                      <Link href="/shop/cart">
+                        <Button variant="ghost" size="icon" className="relative">
+                          <ShoppingCart className="h-5 w-5" />
+                          {cartCount > 0 && (
+                            <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                              {cartCount > 99 ? "99+" : cartCount}
+                            </span>
+                          )}
+                        </Button>
+                      </Link>
+                      {/* 주문내역 */}
+                      <Link href="/shop/orders">
+                        <Button variant="ghost" size="icon" className="relative">
+                          <Package className="h-5 w-5" />
+                        </Button>
+                      </Link>
+                      {/* 알림 */}
                       <Button variant="ghost" size="icon" className="relative">
                         <Bell className="h-5 w-5" />
                       </Button>
@@ -219,6 +260,17 @@ export default function Header() {
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
+                      {/* 장바구니 (비로그인) */}
+                      <Link href="/shop/cart">
+                        <Button variant="ghost" size="icon" className="relative">
+                          <ShoppingCart className="h-5 w-5" />
+                          {cartCount > 0 && (
+                            <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                              {cartCount > 99 ? "99+" : cartCount}
+                            </span>
+                          )}
+                        </Button>
+                      </Link>
                       <Link href="/login">
                         <Button variant="ghost" size="sm">로그인</Button>
                       </Link>
@@ -286,6 +338,18 @@ export default function Header() {
               }`}
             >
               🔥 인기
+            </Link>
+
+            {/* 쇼핑 */}
+            <Link
+              href="/shop"
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors whitespace-nowrap ${
+                pathname?.startsWith('/shop')
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+              }`}
+            >
+              🛒 쇼핑
             </Link>
 
             {/* 구분선 */}
@@ -401,6 +465,42 @@ export default function Header() {
                   {board.name}
                 </Link>
               ))}
+              <div className="border-t my-2" />
+              <div className="px-3 py-1 text-xs font-semibold text-muted-foreground uppercase">쇼핑</div>
+              <Link
+                href="/shop"
+                className={`block px-3 py-2 text-sm rounded-md ${
+                  pathname === '/shop' ? 'bg-primary/10 text-primary' : 'hover:bg-muted'
+                }`}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                상품목록
+              </Link>
+              <Link
+                href="/shop/cart"
+                className={`flex items-center gap-2 px-3 py-2 text-sm rounded-md ${
+                  pathname === '/shop/cart' ? 'bg-primary/10 text-primary' : 'hover:bg-muted'
+                }`}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                장바구니
+                {cartCount > 0 && (
+                  <span className="bg-primary text-primary-foreground text-xs font-bold rounded-full px-2 py-0.5">
+                    {cartCount}
+                  </span>
+                )}
+              </Link>
+              {user && (
+                <Link
+                  href="/shop/orders"
+                  className={`block px-3 py-2 text-sm rounded-md ${
+                    pathname === '/shop/orders' ? 'bg-primary/10 text-primary' : 'hover:bg-muted'
+                  }`}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  주문내역
+                </Link>
+              )}
               <div className="border-t my-2" />
               <div className="px-3 py-1 text-xs font-semibold text-muted-foreground uppercase">정보</div>
               <Link
