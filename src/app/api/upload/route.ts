@@ -7,7 +7,7 @@ import sharp from 'sharp'
 
 // 허용 이미지 타입
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
-const MAX_SIZE = 10 * 1024 * 1024 // 10MB (리사이징 전)
+const MAX_SIZE = 2 * 1024 * 1024 // 2MB (리사이징 전)
 const MAX_WIDTH = 1200 // 최대 너비
 const QUALITY = 80 // 압축 품질
 
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     // 파일 크기 검증
     if (file.size > MAX_SIZE) {
       return NextResponse.json(
-        { error: '파일 크기는 10MB 이하여야 합니다.' },
+        { error: '파일 크기는 2MB 이하여야 합니다.' },
         { status: 400 }
       )
     }
