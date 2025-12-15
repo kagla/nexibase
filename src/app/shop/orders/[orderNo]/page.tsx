@@ -1,0 +1,534 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { useParams, useRouter } from "next/navigation"
+import Link from "next/link"
+import { Header, Footer } from "@/themes"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Textarea } from "@/components/ui/textarea"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
+  Loader2,
+  ChevronLeft,
+  Package,
+  User,
+  Truck,
+  CreditCard,
+  AlertCircle,
+  CheckCircle2,
+  XCircle,
+  RotateCcw,
+} from "lucide-react"
+
+interface Order {
+  id: number
+  orderNo: string
+  ordererName: string
+  ordererPhone: string
+  ordererEmail: string | null
+  recipientName: string
+  recipientPhone: string
+  zipCode: string
+  address: string
+  addressDetail: string | null
+  deliveryMemo: string | null
+  totalPrice: number
+  deliveryFee: number
+  finalPrice: number
+  status: string
+  paymentMethod: string
+  paidAt: string | null
+  trackingCompany: string | null
+  trackingNumber: string | null
+  shippedAt: string | null
+  deliveredAt: string | null
+  cancelReason: string | null
+  cancelledAt: string | null
+  refundAmount: number | null
+  refundedAt: string | null
+  createdAt: string
+  items: {
+    id: number
+    productName: string
+    optionText: string | null
+    price: number
+    quantity: number
+    subtotal: number
+    productImage: string | null
+    productSlug: string | null
+  }[]
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const STATUS_LABELS: Record<string, { label: string; color: string; icon: any }> = {
+  pending: { label: "결제대기", color: "bg-yellow-500", icon: AlertCircle },
+  paid: { label: "결제완료", color: "bg-blue-500", icon: CreditCard },
+  preparing: { label: "상품준비", color: "bg-indigo-500", icon: Package },
+  shipping: { label: "배송중", color: "bg-purple-500", icon: Truck },
+  delivered: { label: "배송완료", color: "bg-green-500", icon: CheckCircle2 },
+  confirmed: { label: "구매확정", color: "bg-green-700", icon: CheckCircle2 },
+  cancelled: { label: "주문취소", color: "bg-gray-500", icon: XCircle },
+  refund_requested: { label: "환불요청", color: "bg-orange-500", icon: RotateCcw },
+  refunded: { label: "환불완료", color: "bg-red-500", icon: RotateCcw },
+}
+
+export default function OrderDetailPage() {
+  const params = useParams()
+  const router = useRouter()
+  const orderNo = params.orderNo as string
+
+  const [order, setOrder] = useState<Order | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // 취소/환불 다이얼로그
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [dialogAction, setDialogAction] = useState<"cancel" | "refund" | "confirm">("cancel")
+  const [cancelReason, setCancelReason] = useState("")
+  const [actionLoading, setActionLoading] = useState(false)
+
+  useEffect(() => {
+    fetchOrder()
+  }, [orderNo])
+
+  const fetchOrder = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/shop/orders/${orderNo}`)
+      if (res.status === 401) {
+        router.push(`/login?redirect=/shop/orders/${orderNo}`)
+        return
+      }
+      if (!res.ok) {
+        setError("주문을 찾을 수 없습니다.")
+        return
+      }
+      const data = await res.json()
+      setOrder(data.order)
+    } catch (err) {
+      setError("주문을 불러오는데 실패했습니다.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleAction = async () => {
+    if (!order) return
+
+    if (dialogAction !== "confirm" && !cancelReason.trim()) {
+      alert("사유를 입력해주세요.")
+      return
+    }
+
+    setActionLoading(true)
+    try {
+      const res = await fetch(`/api/shop/orders/${orderNo}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: dialogAction === "refund" ? "refund_request" : dialogAction,
+          cancelReason: cancelReason.trim() || undefined,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        alert(data.error || "처리에 실패했습니다.")
+        return
+      }
+
+      setDialogOpen(false)
+      setCancelReason("")
+      fetchOrder()
+    } catch (err) {
+      alert("처리 중 오류가 발생했습니다.")
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  const openDialog = (action: "cancel" | "refund" | "confirm") => {
+    setDialogAction(action)
+    setCancelReason("")
+    setDialogOpen(true)
+  }
+
+  const formatPrice = (price: number) => price.toLocaleString() + "원"
+  const formatDate = (date: string | null) => {
+    if (!date) return "-"
+    return new Date(date).toLocaleString("ko-KR")
+  }
+
+  // 배송 조회 URL 생성
+  const getTrackingUrl = (company: string, number: string) => {
+    const urls: Record<string, string> = {
+      CJ대한통운: `https://www.cjlogistics.com/ko/tool/parcel/tracking?gnbInvcNo=${number}`,
+      한진택배: `https://www.hanjin.co.kr/kor/CMS/DeliveryMgr/WaybillResult.do?mession=open&wblnumText2=${number}`,
+      롯데택배: `https://www.lotteglogis.com/home/reservation/tracking/linkView?InvNo=${number}`,
+      우체국택배: `https://service.epost.go.kr/trace.RetrieveDomRi498List.comm?displayHeader=N&sid1=${number}`,
+      로젠택배: `https://www.ilogen.com/web/personal/trace/${number}`,
+    }
+    return urls[company] || "#"
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <Header />
+        <main className="flex-1 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </main>
+        <Footer />
+      </div>
+    )
+  }
+
+  if (error || !order) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <Header />
+        <main className="flex-1 flex flex-col items-center justify-center">
+          <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
+          <p className="text-muted-foreground mb-4">{error || "주문을 찾을 수 없습니다."}</p>
+          <Button onClick={() => router.push("/shop/orders")}>주문 내역으로</Button>
+        </main>
+        <Footer />
+      </div>
+    )
+  }
+
+  const StatusIcon = STATUS_LABELS[order.status]?.icon || AlertCircle
+
+  return (
+    <div className="min-h-screen bg-background flex flex-col">
+      <Header />
+
+      <main className="flex-1">
+        <div className="max-w-3xl mx-auto px-4 py-6">
+          {/* 헤더 */}
+          <div className="mb-6">
+            <Button variant="ghost" size="sm" onClick={() => router.push("/shop/orders")}>
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              주문 내역
+            </Button>
+          </div>
+
+          {/* 주문 상태 */}
+          <Card className="mb-6">
+            <CardContent className="py-6">
+              <div className="flex items-center gap-4">
+                <div className={`p-3 rounded-full ${STATUS_LABELS[order.status]?.color || 'bg-gray-500'}`}>
+                  <StatusIcon className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold">
+                    {STATUS_LABELS[order.status]?.label || order.status}
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    주문번호: {order.orderNo}
+                  </p>
+                </div>
+              </div>
+
+              {/* 배송 정보 */}
+              {order.trackingNumber && (
+                <div className="mt-4 p-4 bg-muted rounded-lg">
+                  <p className="text-sm">
+                    <span className="text-muted-foreground">택배사:</span>{" "}
+                    {order.trackingCompany}
+                  </p>
+                  <p className="text-sm">
+                    <span className="text-muted-foreground">송장번호:</span>{" "}
+                    {order.trackingNumber}
+                  </p>
+                  {order.trackingCompany && (
+                    <a
+                      href={getTrackingUrl(order.trackingCompany, order.trackingNumber)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-primary hover:underline mt-2 inline-block"
+                    >
+                      배송 조회 →
+                    </a>
+                  )}
+                </div>
+              )}
+
+              {/* 취소/환불 사유 */}
+              {order.cancelReason && (
+                <div className="mt-4 p-4 bg-red-50 rounded-lg">
+                  <p className="text-sm text-red-800">
+                    <span className="font-medium">취소/환불 사유:</span> {order.cancelReason}
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* 주문 상품 */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                주문 상품
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {order.items.map((item) => (
+                <div key={item.id} className="flex gap-4 pb-4 border-b last:border-0">
+                  <div className="w-16 h-16 bg-muted rounded-md overflow-hidden flex-shrink-0">
+                    {item.productImage ? (
+                      <img
+                        src={item.productImage}
+                        alt={item.productName}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Package className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    {item.productSlug ? (
+                      <Link href={`/shop/${item.productSlug}`} className="hover:text-primary">
+                        <h3 className="font-medium line-clamp-1">{item.productName}</h3>
+                      </Link>
+                    ) : (
+                      <h3 className="font-medium line-clamp-1">{item.productName}</h3>
+                    )}
+                    {item.optionText && (
+                      <p className="text-sm text-muted-foreground">{item.optionText}</p>
+                    )}
+                    <p className="text-sm">
+                      {formatPrice(item.price)} × {item.quantity}개
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold">{formatPrice(item.subtotal)}</p>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          {/* 배송지 정보 */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Truck className="h-5 w-5" />
+                배송지 정보
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              <div className="flex">
+                <span className="w-24 text-muted-foreground">받는 분</span>
+                <span>{order.recipientName}</span>
+              </div>
+              <div className="flex">
+                <span className="w-24 text-muted-foreground">연락처</span>
+                <span>{order.recipientPhone}</span>
+              </div>
+              <div className="flex">
+                <span className="w-24 text-muted-foreground">주소</span>
+                <span>
+                  [{order.zipCode}] {order.address}
+                  {order.addressDetail && ` ${order.addressDetail}`}
+                </span>
+              </div>
+              {order.deliveryMemo && (
+                <div className="flex">
+                  <span className="w-24 text-muted-foreground">배송 메모</span>
+                  <span>{order.deliveryMemo}</span>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* 결제 정보 */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5" />
+                결제 정보
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">상품 금액</span>
+                <span>{formatPrice(order.totalPrice)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">배송비</span>
+                <span>{formatPrice(order.deliveryFee)}</span>
+              </div>
+              <div className="flex justify-between border-t pt-2">
+                <span className="font-medium">총 결제금액</span>
+                <span className="text-lg font-bold text-primary">
+                  {formatPrice(order.finalPrice)}
+                </span>
+              </div>
+              <div className="flex justify-between pt-2">
+                <span className="text-muted-foreground">결제 방법</span>
+                <span>{order.paymentMethod === "bank" ? "무통장입금" : "카드결제"}</span>
+              </div>
+              {order.paidAt && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">결제일시</span>
+                  <span>{formatDate(order.paidAt)}</span>
+                </div>
+              )}
+              {order.refundAmount && (
+                <div className="flex justify-between text-red-500 pt-2 border-t">
+                  <span>환불금액</span>
+                  <span>{formatPrice(order.refundAmount)}</span>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* 주문 이력 */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>주문 이력</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">주문일시</span>
+                <span>{formatDate(order.createdAt)}</span>
+              </div>
+              {order.paidAt && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">결제일시</span>
+                  <span>{formatDate(order.paidAt)}</span>
+                </div>
+              )}
+              {order.shippedAt && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">배송시작</span>
+                  <span>{formatDate(order.shippedAt)}</span>
+                </div>
+              )}
+              {order.deliveredAt && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">배송완료</span>
+                  <span>{formatDate(order.deliveredAt)}</span>
+                </div>
+              )}
+              {order.cancelledAt && (
+                <div className="flex justify-between text-red-500">
+                  <span>취소일시</span>
+                  <span>{formatDate(order.cancelledAt)}</span>
+                </div>
+              )}
+              {order.refundedAt && (
+                <div className="flex justify-between text-red-500">
+                  <span>환불일시</span>
+                  <span>{formatDate(order.refundedAt)}</span>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* 액션 버튼 */}
+          <div className="flex gap-3">
+            {/* 주문 취소 (결제대기/결제완료 상태) */}
+            {["pending", "paid"].includes(order.status) && (
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => openDialog("cancel")}
+              >
+                <XCircle className="h-4 w-4 mr-2" />
+                주문 취소
+              </Button>
+            )}
+
+            {/* 환불 요청 (결제완료/상품준비/배송완료 상태) */}
+            {["paid", "preparing", "delivered"].includes(order.status) && (
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => openDialog("refund")}
+              >
+                <RotateCcw className="h-4 w-4 mr-2" />
+                환불 요청
+              </Button>
+            )}
+
+            {/* 구매 확정 (배송완료 상태) */}
+            {order.status === "delivered" && (
+              <Button
+                className="flex-1"
+                onClick={() => openDialog("confirm")}
+              >
+                <CheckCircle2 className="h-4 w-4 mr-2" />
+                구매 확정
+              </Button>
+            )}
+          </div>
+        </div>
+      </main>
+
+      <Footer />
+
+      {/* 액션 다이얼로그 */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {dialogAction === "cancel" && "주문 취소"}
+              {dialogAction === "refund" && "환불 요청"}
+              {dialogAction === "confirm" && "구매 확정"}
+            </DialogTitle>
+            <DialogDescription>
+              {dialogAction === "cancel" && "주문을 취소하시겠습니까? 취소 사유를 입력해주세요."}
+              {dialogAction === "refund" && "환불을 요청하시겠습니까? 환불 사유를 입력해주세요."}
+              {dialogAction === "confirm" && "구매를 확정하시겠습니까? 확정 후에는 환불이 어려울 수 있습니다."}
+            </DialogDescription>
+          </DialogHeader>
+
+          {dialogAction !== "confirm" && (
+            <Textarea
+              placeholder="사유를 입력해주세요"
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              rows={4}
+            />
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+              취소
+            </Button>
+            <Button
+              onClick={handleAction}
+              disabled={actionLoading}
+              variant={dialogAction === "confirm" ? "default" : "destructive"}
+            >
+              {actionLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <>
+                  {dialogAction === "cancel" && "주문 취소"}
+                  {dialogAction === "refund" && "환불 요청"}
+                  {dialogAction === "confirm" && "구매 확정"}
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}

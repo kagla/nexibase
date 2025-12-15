@@ -1,4 +1,41 @@
 import crypto from 'crypto';
+import { cookies } from 'next/headers';
+import { prisma } from '@/lib/prisma';
+
+/**
+ * 세션에서 현재 로그인한 사용자 정보 가져오기
+ */
+export const getSession = async () => {
+  try {
+    const cookieStore = await cookies();
+    const sessionToken = cookieStore.get('session-token')?.value;
+    if (!sessionToken) return null;
+
+    const session = await prisma.userSession.findUnique({
+      where: { sessionToken },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            nickname: true,
+            role: true,
+            phone: true,
+          }
+        }
+      }
+    });
+
+    if (!session || new Date() > session.expires) {
+      return null;
+    }
+
+    return session.user;
+  } catch {
+    return null;
+  }
+};
 
 /**
  * 그누보드5 PBKDF2 형식으로 비밀번호 해시 생성

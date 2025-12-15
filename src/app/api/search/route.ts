@@ -20,9 +20,13 @@ export async function GET(request: NextRequest) {
     }
 
     // 각 타입별 검색 결과
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const results: {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       posts: { items: any[]; total: number }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       contents: { items: any[]; total: number }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       policies: { items: any[]; total: number }
     } = {
       posts: { items: [], total: 0 },
@@ -114,6 +118,7 @@ async function searchPosts(
   limit: number,
   sort: string,
   boardSlug: string | null
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<{ items: any[]; total: number }> {
   const offset = (page - 1) * limit
   const searchTerms = query.split(/\s+/).filter(term => term.length >= 2)
@@ -229,6 +234,7 @@ async function searchPostsLike(
   limit: number,
   sort: string,
   boardSlug: string | null
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<{ items: any[]; total: number }> {
   const skip = (page - 1) * limit
 
@@ -311,6 +317,7 @@ async function searchContents(
   query: string,
   page: number,
   limit: number
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<{ items: any[]; total: number }> {
   const skip = (page - 1) * limit
 
@@ -369,6 +376,7 @@ async function searchPolicies(
   query: string,
   page: number,
   limit: number
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<{ items: any[]; total: number }> {
   const skip = (page - 1) * limit
 
@@ -441,9 +449,13 @@ async function fallbackSearch(request: NextRequest) {
     )
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const results: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     posts: { items: any[]; total: number }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     contents: { items: any[]; total: number }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     policies: { items: any[]; total: number }
   } = {
     posts: { items: [], total: 0 },

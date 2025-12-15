@@ -38,6 +38,7 @@ model User {
   posts         Post[]
   comments      Comment[]
   reactions     Reaction[]
+  orders        Order[]
 
   @@index([email])
   @@index([status])
@@ -273,4 +274,196 @@ model Setting {
   updatedAt DateTime @updatedAt
 
   @@map("settings")
+}
+
+// ============================================
+// 쇼핑몰 시스템
+// ============================================
+
+// 상품 카테고리
+model ProductCategory {
+  id          Int       @id @default(autoincrement())
+  name        String    @db.VarChar(50)
+  slug        String    @unique @db.VarChar(50)
+  description String?   @db.Text
+  sortOrder   Int       @default(0)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+
+  // 관계
+  products    Product[]
+
+  @@index([isActive])
+  @@map("product_categories")
+}
+
+// 상품
+model Product {
+  id          Int              @id @default(autoincrement())
+  categoryId  Int?
+  name        String           @db.VarChar(200)
+  slug        String           @unique @db.VarChar(200)
+  description String?          @db.Text           // 짧은 설명
+  content     String?          @db.LongText       // 상세 설명 (HTML)
+  price       Int                                 // 기본 판매가 (옵션 없을 때)
+  originPrice Int?                                // 원가 (할인 표시용)
+  images      String?          @db.Text           // JSON 배열 (이미지 URL들)
+
+  // 옵션 설정
+  optionName1 String?          @db.VarChar(20)    // 1단계 옵션명 (예: "색상")
+  optionName2 String?          @db.VarChar(20)    // 2단계 옵션명 (예: "사이즈")
+  optionName3 String?          @db.VarChar(20)    // 3단계 옵션명 (예: "모델")
+
+  // 상태
+  isActive    Boolean          @default(true)
+  isSoldOut   Boolean          @default(false)
+  sortOrder   Int              @default(0)
+
+  // 통계
+  viewCount   Int              @default(0)
+  soldCount   Int              @default(0)        // 판매 수량
+
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  // 관계
+  category    ProductCategory? @relation(fields: [categoryId], references: [id])
+  options     ProductOption[]
+  orderItems  OrderItem[]
+
+  @@index([categoryId])
+  @@index([isActive])
+  @@index([isSoldOut])
+  @@map("products")
+}
+
+// 상품 옵션 (3단계: 색상 → 사이즈 → 모델)
+model ProductOption {
+  id          Int       @id @default(autoincrement())
+  productId   Int
+
+  // 3단계 옵션값 (예: "빨강", "L", "프리미엄")
+  option1     String?   @db.VarChar(50)   // 1단계 값
+  option2     String?   @db.VarChar(50)   // 2단계 값
+  option3     String?   @db.VarChar(50)   // 3단계 값
+
+  price       Int                         // 이 옵션의 가격
+  stock       Int       @default(0)       // 이 옵션의 재고
+  sku         String?   @db.VarChar(50)   // 재고관리코드
+  isActive    Boolean   @default(true)
+  sortOrder   Int       @default(0)
+
+  // 관계
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, option1, option2, option3])
+  @@index([productId])
+  @@map("product_options")
+}
+
+// 배송비 정책 (지역별)
+model DeliveryFee {
+  id          Int       @id @default(autoincrement())
+  name        String    @db.VarChar(50)   // 예: "기본", "제주", "도서산간"
+  regions     String    @db.Text          // JSON 배열 (우편번호 범위)
+  fee         Int                         // 배송비
+  freeAmount  Int?                        // 무료배송 기준금액 (null이면 무료배송 없음)
+  isDefault   Boolean   @default(false)   // 기본 배송비 여부
+  isActive    Boolean   @default(true)
+  sortOrder   Int       @default(0)
+
+  @@map("delivery_fees")
+}
+
+// 주문
+model Order {
+  id              Int         @id @default(autoincrement())
+  orderNo         String      @unique @db.VarChar(20)  // 주문번호 (ORD-YYYYMMDD-XXXX)
+  userId          Int
+
+  // 주문자 정보
+  ordererName     String      @db.VarChar(50)
+  ordererPhone    String      @db.VarChar(20)
+  ordererEmail    String?     @db.VarChar(100)
+
+  // 배송지 정보
+  recipientName   String      @db.VarChar(50)
+  recipientPhone  String      @db.VarChar(20)
+  zipCode         String      @db.VarChar(10)
+  address         String      @db.VarChar(200)
+  addressDetail   String?     @db.VarChar(100)
+  deliveryMemo    String?     @db.VarChar(200)
+
+  // 금액
+  totalPrice      Int                         // 상품 합계
+  deliveryFee     Int         @default(0)     // 배송비
+  finalPrice      Int                         // 최종 결제금액
+
+  // 상태 (pending, paid, preparing, shipping, delivered, confirmed, cancelled, refund_requested, refunded, exchange_requested, exchanged)
+  status          String      @default("pending") @db.VarChar(20)
+
+  // 결제 정보
+  paymentMethod   String?     @db.VarChar(20)  // bank (무통장), card (카드)
+  paymentInfo     String?     @db.Text         // 입금자명, PG 응답 등 JSON
+  paidAt          DateTime?
+
+  // 배송 정보
+  trackingCompany String?     @db.VarChar(50)  // 택배사
+  trackingNumber  String?     @db.VarChar(50)  // 송장번호
+  shippedAt       DateTime?
+  deliveredAt     DateTime?
+
+  // 취소/환불/교환
+  cancelReason    String?     @db.Text
+  cancelledAt     DateTime?
+  refundAmount    Int?
+  refundedAt      DateTime?
+
+  // 관리자 메모
+  adminMemo       String?     @db.Text
+
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  // 관계
+  user            User        @relation(fields: [userId], references: [id])
+  items           OrderItem[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([orderNo])
+  @@index([createdAt])
+  @@map("orders")
+}
+
+// 주문 상품
+model OrderItem {
+  id          Int      @id @default(autoincrement())
+  orderId     Int
+  productId   Int
+  optionId    Int?                          // 선택한 옵션 ID
+
+  productName String   @db.VarChar(200)     // 주문 시점 상품명
+  optionText  String?  @db.VarChar(200)     // 옵션 텍스트 (예: "빨강 / L / 프리미엄")
+  price       Int                           // 주문 시점 가격
+  quantity    Int
+  subtotal    Int                           // price * quantity
+
+  // 관계
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product  @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+  @@index([productId])
+  @@map("order_items")
+}
+
+// 쇼핑몰 설정
+model ShopSetting {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique @db.VarChar(100)
+  value     String   @db.Text
+  updatedAt DateTime @updatedAt
+
+  @@map("shop_settings")
 }
