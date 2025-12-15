@@ -29,6 +29,7 @@ import {
   Lock,
   Send,
   Pencil,
+  ImagePlus,
 } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
@@ -163,6 +164,8 @@ export default function ProductDetailPage() {
   const [selectedOrderItem, setSelectedOrderItem] = useState<number | null>(null)
   const [reviewRating, setReviewRating] = useState(5)
   const [reviewContent, setReviewContent] = useState('')
+  const [reviewImages, setReviewImages] = useState<string[]>([])
+  const [uploadingImage, setUploadingImage] = useState(false)
   const [submittingReview, setSubmittingReview] = useState(false)
   const [editingReview, setEditingReview] = useState<Review | null>(null)
 
@@ -248,6 +251,50 @@ export default function ProductDetailPage() {
     }
   }
 
+  // 리뷰 이미지 업로드
+  const handleReviewImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+
+    // 최대 5장 제한
+    if (reviewImages.length + files.length > 5) {
+      alert('이미지는 최대 5장까지 첨부할 수 있습니다.')
+      return
+    }
+
+    setUploadingImage(true)
+    try {
+      const uploadPromises = Array.from(files).map(async (file) => {
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('folder', 'reviews')
+
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData
+        })
+
+        if (!res.ok) throw new Error('업로드 실패')
+        const data = await res.json()
+        return data.url
+      })
+
+      const uploadedUrls = await Promise.all(uploadPromises)
+      setReviewImages(prev => [...prev, ...uploadedUrls])
+    } catch (err) {
+      alert('이미지 업로드에 실패했습니다.')
+    } finally {
+      setUploadingImage(false)
+      // input 초기화
+      e.target.value = ''
+    }
+  }
+
+  // 리뷰 이미지 삭제
+  const removeReviewImage = (index: number) => {
+    setReviewImages(prev => prev.filter((_, i) => i !== index))
+  }
+
   // 리뷰 작성
   const submitReview = async () => {
     if (!selectedOrderItem || !reviewContent.trim()) return
@@ -259,7 +306,8 @@ export default function ProductDetailPage() {
         body: JSON.stringify({
           orderItemId: selectedOrderItem,
           rating: reviewRating,
-          content: reviewContent.trim()
+          content: reviewContent.trim(),
+          images: reviewImages.length > 0 ? reviewImages : null
         })
       })
       if (res.ok) {
@@ -267,6 +315,7 @@ export default function ProductDetailPage() {
         setSelectedOrderItem(null)
         setReviewRating(5)
         setReviewContent('')
+        setReviewImages([])
         fetchReviews(1)
         fetchReviewableOrders()
       } else {
@@ -285,6 +334,17 @@ export default function ProductDetailPage() {
     setEditingReview(review)
     setReviewRating(review.rating)
     setReviewContent(review.content)
+    // 기존 이미지 로드
+    if (review.images) {
+      try {
+        const parsed = JSON.parse(review.images)
+        setReviewImages(Array.isArray(parsed) ? parsed : [])
+      } catch {
+        setReviewImages([])
+      }
+    } else {
+      setReviewImages([])
+    }
     setShowReviewForm(false)
   }
 
@@ -293,6 +353,7 @@ export default function ProductDetailPage() {
     setEditingReview(null)
     setReviewRating(5)
     setReviewContent('')
+    setReviewImages([])
   }
 
   // 리뷰 수정 제출
@@ -306,13 +367,15 @@ export default function ProductDetailPage() {
         body: JSON.stringify({
           reviewId: editingReview.id,
           rating: reviewRating,
-          content: reviewContent.trim()
+          content: reviewContent.trim(),
+          images: reviewImages.length > 0 ? reviewImages : null
         })
       })
       if (res.ok) {
         setEditingReview(null)
         setReviewRating(5)
         setReviewContent('')
+        setReviewImages([])
         fetchReviews(reviewPage)
       } else {
         const data = await res.json()
@@ -1045,13 +1108,52 @@ export default function ProductDetailPage() {
                           />
                         </div>
 
+                        {/* 이미지 업로드 */}
+                        <div>
+                          <Label>사진 첨부 (최대 5장)</Label>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {reviewImages.map((img, idx) => (
+                              <div key={idx} className="relative w-20 h-20">
+                                <img src={img} alt="" className="w-full h-full object-cover rounded-lg" />
+                                <button
+                                  type="button"
+                                  onClick={() => removeReviewImage(idx)}
+                                  className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </div>
+                            ))}
+                            {reviewImages.length < 5 && (
+                              <label className="w-20 h-20 border-2 border-dashed border-muted-foreground/30 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-muted-foreground/50 transition-colors">
+                                {uploadingImage ? (
+                                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                                ) : (
+                                  <>
+                                    <ImagePlus className="h-5 w-5 text-muted-foreground" />
+                                    <span className="text-xs text-muted-foreground mt-1">추가</span>
+                                  </>
+                                )}
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  multiple
+                                  onChange={handleReviewImageUpload}
+                                  className="hidden"
+                                  disabled={uploadingImage}
+                                />
+                              </label>
+                            )}
+                          </div>
+                        </div>
+
                         <div className="flex gap-2 justify-end">
-                          <Button variant="outline" onClick={() => setShowReviewForm(false)}>
+                          <Button variant="outline" onClick={() => { setShowReviewForm(false); setReviewImages([]) }}>
                             취소
                           </Button>
                           <Button
                             onClick={submitReview}
-                            disabled={submittingReview || !selectedOrderItem || !reviewContent.trim()}
+                            disabled={submittingReview || uploadingImage || !selectedOrderItem || !reviewContent.trim()}
                           >
                             {submittingReview ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
                             등록
@@ -1102,13 +1204,52 @@ export default function ProductDetailPage() {
                           />
                         </div>
 
+                        {/* 이미지 업로드 */}
+                        <div>
+                          <Label>사진 첨부 (최대 5장)</Label>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {reviewImages.map((img, idx) => (
+                              <div key={idx} className="relative w-20 h-20">
+                                <img src={img} alt="" className="w-full h-full object-cover rounded-lg" />
+                                <button
+                                  type="button"
+                                  onClick={() => removeReviewImage(idx)}
+                                  className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </div>
+                            ))}
+                            {reviewImages.length < 5 && (
+                              <label className="w-20 h-20 border-2 border-dashed border-muted-foreground/30 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-muted-foreground/50 transition-colors">
+                                {uploadingImage ? (
+                                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                                ) : (
+                                  <>
+                                    <ImagePlus className="h-5 w-5 text-muted-foreground" />
+                                    <span className="text-xs text-muted-foreground mt-1">추가</span>
+                                  </>
+                                )}
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  multiple
+                                  onChange={handleReviewImageUpload}
+                                  className="hidden"
+                                  disabled={uploadingImage}
+                                />
+                              </label>
+                            )}
+                          </div>
+                        </div>
+
                         <div className="flex gap-2 justify-end">
                           <Button variant="outline" onClick={cancelEditReview}>
                             취소
                           </Button>
                           <Button
                             onClick={submitEditReview}
-                            disabled={submittingReview || !reviewContent.trim()}
+                            disabled={submittingReview || uploadingImage || !reviewContent.trim()}
                           >
                             {submittingReview ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Pencil className="h-4 w-4 mr-2" />}
                             수정
@@ -1160,6 +1301,33 @@ export default function ProductDetailPage() {
                                 )}
                               </div>
                               <p className="text-sm whitespace-pre-wrap">{review.content}</p>
+
+                              {/* 리뷰 이미지 */}
+                              {review.images && (() => {
+                                try {
+                                  const images = JSON.parse(review.images)
+                                  if (Array.isArray(images) && images.length > 0) {
+                                    return (
+                                      <div className="mt-3 flex flex-wrap gap-2">
+                                        {images.map((img: string, idx: number) => (
+                                          <a
+                                            key={idx}
+                                            href={img}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="block w-20 h-20 rounded-lg overflow-hidden hover:opacity-80 transition-opacity"
+                                          >
+                                            <img src={img} alt="" className="w-full h-full object-cover" />
+                                          </a>
+                                        ))}
+                                      </div>
+                                    )
+                                  }
+                                } catch {
+                                  return null
+                                }
+                                return null
+                              })()}
 
                               {/* 관리자 답변 */}
                               {review.reply && (
