@@ -70,6 +70,8 @@ const components = [
   { name: 'ContentPage', path: 'content/ContentPage' },
   // policy
   { name: 'PolicyPage', path: 'policy/PolicyPage' },
+  // search
+  { name: 'SearchPage', path: 'search/SearchPage' },
 ]
 
 // 각 컴포넌트별로 어느 테마에서 가져올지 결정

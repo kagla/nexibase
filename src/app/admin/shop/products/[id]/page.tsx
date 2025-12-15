@@ -29,8 +29,18 @@ import {
   Settings,
   Image as ImageIcon,
   ExternalLink,
+  FileText,
 } from "lucide-react"
 import Link from "next/link"
+import dynamic from "next/dynamic"
+
+const TiptapEditor = dynamic(
+  () => import("@/components/editor/TiptapEditor").then(mod => mod.TiptapEditor),
+  {
+    ssr: false,
+    loading: () => <div className="h-[400px] border rounded-md flex items-center justify-center text-muted-foreground">에디터 로딩 중...</div>
+  }
+)
 
 interface Product {
   id: number
@@ -81,10 +91,12 @@ export default function ProductEditPage({ params }: { params: Promise<{ id: stri
 
   // URL에서 탭 상태 읽기
   const tabParam = searchParams.get('tab')
-  const activeTab = (tabParam === 'options' || tabParam === 'images') ? tabParam : 'basic'
+  const validTabs = ['basic', 'description', 'options', 'images'] as const
+  type TabType = typeof validTabs[number]
+  const activeTab: TabType = validTabs.includes(tabParam as TabType) ? (tabParam as TabType) : 'basic'
 
   // 탭 변경 시 URL 업데이트
-  const setActiveTab = (tab: 'basic' | 'options' | 'images') => {
+  const setActiveTab = (tab: TabType) => {
     const params = new URLSearchParams(searchParams.toString())
     if (tab === 'basic') {
       params.delete('tab')
@@ -380,13 +392,20 @@ export default function ProductEditPage({ params }: { params: Promise<{ id: stri
           </div>
 
           {/* 탭 */}
-          <div className="flex gap-2 mb-6">
+          <div className="flex gap-2 mb-6 flex-wrap">
             <Button
               variant={activeTab === 'basic' ? 'default' : 'outline'}
               onClick={() => setActiveTab('basic')}
             >
               <Package className="h-4 w-4 mr-2" />
-              기본 정보
+              기본
+            </Button>
+            <Button
+              variant={activeTab === 'description' ? 'default' : 'outline'}
+              onClick={() => setActiveTab('description')}
+            >
+              <FileText className="h-4 w-4 mr-2" />
+              설명
             </Button>
             <Button
               variant={activeTab === 'options' ? 'default' : 'outline'}
@@ -454,27 +473,6 @@ export default function ProductEditPage({ params }: { params: Promise<{ id: stri
                       onChange={(e) => setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })}
                     />
                   </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="description">짧은 설명</Label>
-                  <Input
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    placeholder="상품 한 줄 설명"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="content">상세 설명</Label>
-                  <textarea
-                    id="content"
-                    value={formData.content}
-                    onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                    className="w-full min-h-[200px] p-3 border rounded-md bg-background"
-                    placeholder="상품 상세 설명 (HTML 지원)"
-                  />
                 </div>
 
                 <Separator />
@@ -559,6 +557,40 @@ export default function ProductEditPage({ params }: { params: Promise<{ id: stri
                   <Switch
                     checked={formData.isSoldOut}
                     onCheckedChange={(checked) => setFormData({ ...formData, isSoldOut: checked })}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* 설명 탭 */}
+          {activeTab === 'description' && (
+            <Card>
+              <CardContent className="p-6 space-y-6">
+                <div>
+                  <Label htmlFor="description">짧은 설명</Label>
+                  <Input
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    placeholder="상품 목록에 표시되는 한 줄 설명"
+                    className="mt-1"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    상품 목록 및 검색 결과에서 상품명 아래에 표시됩니다.
+                  </p>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <Label htmlFor="content">상세 설명</Label>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    상품 상세 페이지에 표시되는 내용입니다. 이미지, 표, 동영상 등을 삽입할 수 있습니다.
+                  </p>
+                  <TiptapEditor
+                    content={formData.content}
+                    onChange={(content) => setFormData({ ...formData, content })}
                   />
                 </div>
               </CardContent>
