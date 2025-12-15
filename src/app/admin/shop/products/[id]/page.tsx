@@ -330,7 +330,21 @@ export default function ProductEditPage({ params }: { params: Promise<{ id: stri
   }
 
   // 이미지 삭제
-  const handleRemoveImage = (index: number) => {
+  const handleRemoveImage = async (index: number) => {
+    const imageUrl = images[index]
+
+    // 서버에서 파일 삭제
+    try {
+      await fetch('/api/admin/delete-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageUrl })
+      })
+    } catch (error) {
+      console.error('이미지 삭제 에러:', error)
+    }
+
+    // 상태에서 제거
     setImages(images.filter((_, i) => i !== index))
   }
 
