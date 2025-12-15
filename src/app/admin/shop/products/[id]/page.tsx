@@ -384,14 +384,14 @@ export default function ProductEditPage({ params }: { params: Promise<{ id: stri
                   <div>
                     <Label htmlFor="category">카테고리</Label>
                     <Select
-                      value={formData.categoryId}
-                      onValueChange={(v) => setFormData({ ...formData, categoryId: v })}
+                      value={formData.categoryId || 'none'}
+                      onValueChange={(v) => setFormData({ ...formData, categoryId: v === 'none' ? '' : v })}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="카테고리 선택" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">없음</SelectItem>
+                        <SelectItem value="none">없음</SelectItem>
                         {categories.map(cat => (
                           <SelectItem key={cat.id} value={String(cat.id)}>{cat.name}</SelectItem>
                         ))}

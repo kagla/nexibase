@@ -159,14 +159,14 @@ function ProductModal({
           <div>
             <Label htmlFor="category">카테고리</Label>
             <Select
-              value={formData.categoryId}
-              onValueChange={(value) => setFormData({ ...formData, categoryId: value })}
+              value={formData.categoryId || 'none'}
+              onValueChange={(value) => setFormData({ ...formData, categoryId: value === 'none' ? '' : value })}
             >
               <SelectTrigger>
                 <SelectValue placeholder="카테고리 선택" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">없음</SelectItem>
+                <SelectItem value="none">없음</SelectItem>
                 {categories.map(cat => (
                   <SelectItem key={cat.id} value={String(cat.id)}>{cat.name}</SelectItem>
                 ))}
@@ -292,12 +292,15 @@ export default function ShopProductsPage() {
   }, [fetchProducts])
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleCreateProduct = async (data: any) => {
+  const handleCreateProduct = async (data: { categoryId: string | number | null; [key: string]: unknown }) => {
     try {
       const res = await fetch('/api/admin/shop/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+        body: JSON.stringify({
+          ...data,
+          categoryId: data.categoryId === 'none' ? null : data.categoryId
+        })
       })
 
       if (res.ok) {
@@ -418,24 +421,24 @@ export default function ShopProductsPage() {
               />
             </div>
 
-            <Select value={categoryFilter} onValueChange={(v) => { setCategoryFilter(v); setPage(1) }}>
+            <Select value={categoryFilter || 'all'} onValueChange={(v) => { setCategoryFilter(v === 'all' ? '' : v); setPage(1) }}>
               <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="카테고리" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">전체</SelectItem>
+                <SelectItem value="all">전체</SelectItem>
                 {categories.map(cat => (
                   <SelectItem key={cat.id} value={String(cat.id)}>{cat.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
 
-            <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1) }}>
+            <Select value={statusFilter || 'all'} onValueChange={(v) => { setStatusFilter(v === 'all' ? '' : v); setPage(1) }}>
               <SelectTrigger className="w-[120px]">
                 <SelectValue placeholder="상태" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">전체</SelectItem>
+                <SelectItem value="all">전체</SelectItem>
                 <SelectItem value="active">판매중</SelectItem>
                 <SelectItem value="inactive">비활성</SelectItem>
                 <SelectItem value="soldout">품절</SelectItem>
