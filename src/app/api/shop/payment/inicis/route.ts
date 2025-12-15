@@ -168,9 +168,14 @@ export async function POST(request: NextRequest) {
       ? 'https://stgstdpay.inicis.com/stdjs/INIStdPay.js'
       : 'https://stdpay.inicis.com/stdjs/INIStdPay.js'
 
+    const baseUrl = process.env.NEXT_PUBLIC_URL || 'http://localhost:3004'
+
     // 해시 데이터 생성 (이니시스 웹표준 방식)
-    const hashData = `oid=${orderNo}&price=${finalPrice}&timestamp=${timestamp}`
-    const signature = sha256(hashData)
+    // signature: oid, price, timestamp 해시
+    const signature = sha256(`oid=${orderNo}&price=${finalPrice}&timestamp=${timestamp}`)
+    // verification: oid, price, signKey, timestamp 해시 (위변조 검증용)
+    const verification = sha256(`oid=${orderNo}&price=${finalPrice}&signKey=${signKey}&timestamp=${timestamp}`)
+    // mKey: signKey 해시
     const mKey = sha256(signKey)
 
     // 결제 요청에 필요한 데이터
@@ -191,20 +196,21 @@ export async function POST(request: NextRequest) {
       // 타임스탬프 및 서명
       timestamp,
       signature,
+      verification,
       mKey,
+      use_chkfake: 'Y',
 
       // URL 설정
-      returnUrl: `${process.env.NEXT_PUBLIC_URL || 'http://localhost:3004'}/api/shop/payment/inicis/return`,
-      // closeUrl은 결제창 닫기 버튼 클릭시 호출됨 (요청 페이지와 동일 도메인 필수)
-      // 로컬 개발 환경에서는 Private Network Access 오류가 발생할 수 있으나 무시 가능
-      closeUrl: `${process.env.NEXT_PUBLIC_URL || 'http://localhost:3004'}/shop/order`,
+      returnUrl: `${baseUrl}/api/shop/payment/inicis/return`,
+      closeUrl: `${baseUrl}/api/shop/payment/inicis/close`,
 
       // 결제 방식
       gopaymethod: 'Card',
       payViewType: 'overlay',
 
-      // 추가 정보
-      quotabase: '2:3:4:5:6:7:8:9:10:11:12', // 할부 개월 수
+      // 추가 옵션
+      acceptmethod: 'below1000:centerCd(Y)',  // 1000원 미만 결제 허용, 결제창 가운데 표시
+      quotabase: '2:3:4:5:6:7:8:9:10:11:12',  // 할부 개월 수
 
       // 결제 스크립트 URL
       payUrl,

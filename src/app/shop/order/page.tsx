@@ -57,11 +57,14 @@ interface InicisPaymentData {
   buyeremail: string
   timestamp: string
   signature: string
+  verification: string
   mKey: string
+  use_chkfake: string
   returnUrl: string
   closeUrl: string
   gopaymethod: string
   payViewType: string
+  acceptmethod: string
   quotabase: string
   payUrl: string
   testMode: boolean
@@ -248,11 +251,14 @@ export default function OrderPage() {
       buyeremail: paymentData.buyeremail,
       timestamp: paymentData.timestamp,
       signature: paymentData.signature,
+      verification: paymentData.verification,
       mKey: paymentData.mKey,
+      use_chkfake: paymentData.use_chkfake,
       returnUrl: paymentData.returnUrl,
       closeUrl: paymentData.closeUrl,
       gopaymethod: paymentData.gopaymethod,
       payViewType: paymentData.payViewType,
+      acceptmethod: paymentData.acceptmethod,
       quotabase: paymentData.quotabase,
     }
 

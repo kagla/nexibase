@@ -17,73 +17,108 @@ async function getShopSettings() {
   return settingsMap
 }
 
-// 이니시스 결제 완료 콜백 (POST) - 결제창에서 리턴
+// IDC별 승인 URL 가져오기
+function getAuthUrl(idcName: string): string {
+  const baseUrl = 'stdpay.inicis.com/api/payAuth'
+  switch (idcName) {
+    case 'fc':
+      return `https://fc${baseUrl}`
+    case 'ks':
+      return `https://ks${baseUrl}`
+    case 'stg':
+      return `https://stg${baseUrl}`
+    default:
+      return `https://stg${baseUrl}` // 기본값은 테스트 서버
+  }
+}
+
+// IDC별 망취소 URL 가져오기
+function getNetCancelUrl(idcName: string): string {
+  const baseUrl = 'stdpay.inicis.com/api/netCancel'
+  switch (idcName) {
+    case 'fc':
+      return `https://fc${baseUrl}`
+    case 'ks':
+      return `https://ks${baseUrl}`
+    case 'stg':
+      return `https://stg${baseUrl}`
+    default:
+      return `https://stg${baseUrl}`
+  }
+}
+
+// 결제 승인 결과 처리 (POST)
 export async function POST(request: NextRequest) {
+  const baseUrl = process.env.NEXT_PUBLIC_URL || 'http://localhost:3004'
+
   try {
+    // form-urlencoded 데이터 파싱
     const formData = await request.formData()
-
-    // 이니시스에서 전달받은 데이터
-    const resultCode = formData.get('resultCode') as string
-    const resultMsg = formData.get('resultMsg') as string
-    const mid = formData.get('mid') as string
-    const orderNumber = formData.get('orderNumber') as string
-    const authToken = formData.get('authToken') as string
-    const authUrl = formData.get('authUrl') as string
-    const netCancelUrl = formData.get('netCancelUrl') as string
-    const charset = formData.get('charset') as string || 'UTF-8'
-    const merchantData = formData.get('merchantData') as string
-
-    console.log('이니시스 결제 리턴:', {
-      resultCode,
-      resultMsg,
-      orderNumber,
-      authToken: authToken?.substring(0, 20) + '...'
+    const body: Record<string, string> = {}
+    formData.forEach((value, key) => {
+      body[key] = value.toString()
     })
 
-    // 결제 실패 처리
-    if (resultCode !== '0000') {
-      console.error('결제 인증 실패:', resultCode, resultMsg)
+    const resultCode = body.resultCode
+    const resultMsg = body.resultMsg
 
-      // 주문 상태를 cancelled로 변경
-      if (orderNumber) {
-        await prisma.order.update({
-          where: { orderNo: orderNumber },
+    // 인증 실패인 경우
+    if (resultCode !== '0000') {
+      console.error('이니시스 인증 실패:', resultCode, resultMsg)
+
+      // 주문 취소 처리
+      const oid = body.orderNumber || body.MOID
+      if (oid) {
+        await prisma.order.updateMany({
+          where: { orderNo: oid },
           data: {
             status: 'cancelled',
-            cancelReason: `결제 실패: ${resultMsg}`,
+            cancelReason: `결제 인증 실패: ${resultMsg}`,
             cancelledAt: new Date()
           }
         })
       }
 
-      // 실패 페이지로 리다이렉트
-      const baseUrl = process.env.NEXT_PUBLIC_URL || 'http://localhost:3004'
+      // 에러 페이지로 리다이렉트
       return NextResponse.redirect(
-        `${baseUrl}/shop/order/complete?error=payment_failed&message=${encodeURIComponent(resultMsg)}`
+        `${baseUrl}/shop/order/complete?error=payment_failed&message=${encodeURIComponent(resultMsg || '결제 인증에 실패했습니다.')}`
       )
     }
 
-    // 결제 승인 요청 (authUrl로 POST)
+    // 인증 성공 - 승인 요청
     const settings = await getShopSettings()
     const signKey = settings.pg_signkey || 'SU5JTElURV9UUklQTEVERVNfS0VZU1RS'
 
-    // 승인 요청 데이터
+    const mid = body.mid
+    const authToken = body.authToken
+    const authUrl = body.authUrl
+    const netCancelUrl = body.netCancelUrl
+    const idcName = body.idc_name || 'stg'
     const timestamp = Date.now().toString()
-    const signature = sha256(`authToken=${authToken}&timestamp=${timestamp}`)
-    const verification = sha256(`authToken=${authToken}&signKey=${signKey}`)
 
+    // 승인 요청용 서명 생성
+    const signature = sha256(`authToken=${authToken}&timestamp=${timestamp}`)
+    const verification = sha256(`authToken=${authToken}&signKey=${signKey}&timestamp=${timestamp}`)
+
+    // 승인 요청 데이터
     const authData = new URLSearchParams({
       mid,
       authToken,
       timestamp,
       signature,
       verification,
-      charset,
+      charset: 'UTF-8',
       format: 'JSON'
     })
 
+    // IDC URL 검증
+    const expectedAuthUrl = getAuthUrl(idcName)
+    if (authUrl !== expectedAuthUrl) {
+      console.warn('인증 URL 불일치:', authUrl, expectedAuthUrl)
+    }
+
     // 승인 요청
-    const authResponse = await fetch(authUrl, {
+    const authResponse = await fetch(expectedAuthUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
@@ -94,121 +129,114 @@ export async function POST(request: NextRequest) {
     const authResult = await authResponse.json()
     console.log('이니시스 승인 결과:', authResult)
 
-    const baseUrl = process.env.NEXT_PUBLIC_URL || 'http://localhost:3004'
+    // 승인 성공
+    if (authResult.resultCode === '0000') {
+      const orderNo = authResult.MOID
+      const tid = authResult.tid
+      const totPrice = authResult.TotPrice
 
-    // 승인 실패
-    if (authResult.resultCode !== '0000') {
-      console.error('결제 승인 실패:', authResult.resultCode, authResult.resultMsg)
-
-      // 망취소 요청
-      if (netCancelUrl) {
-        try {
-          await fetch(netCancelUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: authData.toString()
-          })
-        } catch (e) {
-          console.error('망취소 요청 실패:', e)
-        }
-      }
-
-      // 주문 상태를 cancelled로 변경
-      await prisma.order.update({
-        where: { orderNo: orderNumber },
-        data: {
-          status: 'cancelled',
-          cancelReason: `결제 승인 실패: ${authResult.resultMsg}`,
-          cancelledAt: new Date()
-        }
+      // 주문 상태 업데이트
+      const order = await prisma.order.findUnique({
+        where: { orderNo },
+        include: { items: true }
       })
 
-      return NextResponse.redirect(
-        `${baseUrl}/shop/order/complete?error=auth_failed&message=${encodeURIComponent(authResult.resultMsg)}`
-      )
-    }
+      if (order) {
+        // 결제 금액 검증
+        if (parseInt(totPrice) !== order.finalPrice) {
+          console.error('결제 금액 불일치:', totPrice, order.finalPrice)
 
-    // 결제 성공! 주문 상태 업데이트
-    const order = await prisma.order.update({
-      where: { orderNo: orderNumber },
-      data: {
-        status: 'paid',
-        paymentMethod: 'card',
-        paymentInfo: JSON.stringify({
-          tid: authResult.tid,
-          authDate: authResult.authDate,
-          cardCode: authResult.CARD_Code,
-          cardName: authResult.CARD_BankCode,
-          cardNum: authResult.CARD_Num,
-          cardQuota: authResult.CARD_Quota,
-          applNum: authResult.applNum,
-          resultCode: authResult.resultCode,
-          resultMsg: authResult.resultMsg
-        }),
-        paidAt: new Date()
-      },
-      include: {
-        items: {
-          include: { product: true }
+          // 망취소 요청
+          const netCancelData = new URLSearchParams({
+            mid,
+            authToken,
+            timestamp,
+            signature,
+            verification,
+            charset: 'UTF-8',
+            format: 'JSON'
+          })
+
+          const expectedNetCancelUrl = getNetCancelUrl(idcName)
+          await fetch(expectedNetCancelUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: netCancelData.toString()
+          })
+
+          return NextResponse.redirect(
+            `${baseUrl}/shop/order/complete?error=amount_mismatch&message=${encodeURIComponent('결제 금액이 일치하지 않습니다.')}`
+          )
         }
-      }
-    })
 
-    // 재고 차감
-    for (const item of order.items) {
-      if (item.optionId) {
-        await prisma.productOption.update({
-          where: { id: item.optionId },
+        // 주문 상태를 결제 완료로 업데이트
+        await prisma.order.update({
+          where: { orderNo },
           data: {
-            stock: { decrement: item.quantity }
+            status: 'paid',
+            paymentMethod: 'card',
+            paymentInfo: JSON.stringify({
+              tid,
+              cardName: authResult.CARD_BankCode,
+              cardNo: authResult.CARD_Num,
+              cardQuota: authResult.CARD_Quota,
+              applNum: authResult.applNum,
+              applDate: authResult.applDate,
+              applTime: authResult.applTime
+            }),
+            paidAt: new Date()
+          }
+        })
+
+        // 재고 차감 및 판매 수량 증가
+        for (const item of order.items) {
+          if (item.optionId) {
+            await prisma.productOption.update({
+              where: { id: item.optionId },
+              data: {
+                stock: { decrement: item.quantity }
+              }
+            })
+          }
+          await prisma.product.update({
+            where: { id: item.productId },
+            data: {
+              soldCount: { increment: item.quantity }
+            }
+          })
+        }
+
+        // 장바구니 비우기는 클라이언트에서 처리
+      }
+
+      // 주문 완료 페이지로 리다이렉트
+      return NextResponse.redirect(`${baseUrl}/shop/order/complete?orderNo=${orderNo}`)
+    } else {
+      // 승인 실패
+      console.error('이니시스 승인 실패:', authResult)
+
+      const orderNo = body.orderNumber || body.MOID
+      if (orderNo) {
+        await prisma.order.updateMany({
+          where: { orderNo },
+          data: {
+            status: 'cancelled',
+            cancelReason: `결제 승인 실패: ${authResult.resultMsg}`,
+            cancelledAt: new Date()
           }
         })
       }
 
-      // 상품 판매 수량 증가
-      await prisma.product.update({
-        where: { id: item.productId },
-        data: {
-          soldCount: { increment: item.quantity }
-        }
-      })
+      return NextResponse.redirect(
+        `${baseUrl}/shop/order/complete?error=approval_failed&message=${encodeURIComponent(authResult.resultMsg || '결제 승인에 실패했습니다.')}`
+      )
     }
-
-    console.log('결제 완료:', order.orderNo)
-
-    // 성공 페이지로 리다이렉트
-    return NextResponse.redirect(
-      `${baseUrl}/shop/order/complete?orderNo=${order.orderNo}`
-    )
-
   } catch (error) {
-    console.error('결제 콜백 처리 에러:', error)
-    const baseUrl = process.env.NEXT_PUBLIC_URL || 'http://localhost:3004'
+    console.error('결제 처리 에러:', error)
     return NextResponse.redirect(
-      `${baseUrl}/shop/order/complete?error=system_error&message=${encodeURIComponent('결제 처리 중 오류가 발생했습니다.')}`
+      `${baseUrl}/shop/order/complete?error=server_error&message=${encodeURIComponent('결제 처리 중 오류가 발생했습니다.')}`
     )
   }
-}
-
-// GET 요청도 처리 (일부 PG사는 GET으로 리다이렉트)
-export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url)
-  const orderNo = searchParams.get('orderNo')
-  const error = searchParams.get('error')
-
-  const baseUrl = process.env.NEXT_PUBLIC_URL || 'http://localhost:3004'
-
-  if (error) {
-    return NextResponse.redirect(
-      `${baseUrl}/shop/order/complete?error=${error}&message=${searchParams.get('message') || '결제가 취소되었습니다.'}`
-    )
-  }
-
-  if (orderNo) {
-    return NextResponse.redirect(
-      `${baseUrl}/shop/order/complete?orderNo=${orderNo}`
-    )
-  }
-
-  return NextResponse.redirect(`${baseUrl}/shop`)
 }
