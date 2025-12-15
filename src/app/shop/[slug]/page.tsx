@@ -23,6 +23,7 @@ import {
   Plus,
   Check,
   AlertCircle,
+  X,
 } from "lucide-react"
 
 interface ProductOption {
@@ -92,6 +93,7 @@ export default function ProductDetailPage() {
   // 장바구니 추가 상태
   const [addingToCart, setAddingToCart] = useState(false)
   const [cartMessage, setCartMessage] = useState<string | null>(null)
+  const [showCartModal, setShowCartModal] = useState(false)
 
   useEffect(() => {
     fetchProduct()
@@ -283,11 +285,16 @@ export default function ProductDetailPage() {
     // 장바구니 이벤트 발생 (헤더 업데이트용)
     window.dispatchEvent(new Event("cartUpdated"))
 
-    setCartMessage("장바구니에 추가되었습니다.")
-    setTimeout(() => {
-      setCartMessage(null)
-      setAddingToCart(false)
-    }, 1500)
+    setAddingToCart(false)
+    setShowCartModal(true)
+  }
+
+  // 장바구니에서 주문하기
+  const goToOrderFromCart = () => {
+    // 장바구니에 있는 해당 상품만 주문 정보로 저장
+    const existingCart: CartItem[] = JSON.parse(localStorage.getItem("cart") || "[]")
+    localStorage.setItem("orderItems", JSON.stringify(existingCart))
+    router.push("/shop/order")
   }
 
   // 바로 구매
@@ -634,6 +641,61 @@ export default function ProductDetailPage() {
           )}
         </div>
       </main>
+
+      {/* 장바구니 추가 확인 모달 */}
+      {showCartModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* 오버레이 */}
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setShowCartModal(false)}
+          />
+          {/* 모달 */}
+          <div className="relative bg-background rounded-lg shadow-lg max-w-sm w-full mx-4 p-6">
+            <button
+              onClick={() => setShowCartModal(false)}
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center justify-center w-12 h-12 bg-green-100 rounded-full mb-3">
+                <Check className="h-6 w-6 text-green-600" />
+              </div>
+              <h3 className="text-lg font-bold mb-1">장바구니에 담았습니다</h3>
+              <p className="text-sm text-muted-foreground">
+                주문서로 이동하시겠습니까?
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setShowCartModal(false)}
+              >
+                쇼핑 계속하기
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={goToOrderFromCart}
+              >
+                주문서로 이동
+              </Button>
+            </div>
+
+            <div className="mt-4 text-center">
+              <button
+                onClick={() => router.push("/shop/cart")}
+                className="text-sm text-muted-foreground hover:text-foreground underline"
+              >
+                장바구니 보기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>
