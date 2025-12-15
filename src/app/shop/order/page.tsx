@@ -26,7 +26,7 @@ import {
   Check,
 } from "lucide-react"
 
-// 이니시스 결제 데이터 타입
+// 이니시스 결제 데이터 타입 (예제와 동일하게 필수 필드만)
 interface InicisPaymentData {
   version: string
   mid: string
@@ -43,12 +43,9 @@ interface InicisPaymentData {
   mKey: string
   use_chkfake: string
   returnUrl: string
-  popupUrl: string
   closeUrl: string
   gopaymethod: string
-  payViewType: string
   acceptmethod: string
-  quotabase: string
   payUrl: string
   testMode: boolean
 }
@@ -232,12 +229,9 @@ export default function OrderPage() {
       mKey: payment.mKey,
       use_chkfake: payment.use_chkfake,
       returnUrl: payment.returnUrl,
-      popupUrl: payment.popupUrl,
       closeUrl: payment.closeUrl,
       gopaymethod: payment.gopaymethod,
-      payViewType: payment.payViewType,
       acceptmethod: payment.acceptmethod,
-      quotabase: payment.quotabase,
     }
 
     Object.entries(fields).forEach(([name, value]) => {
@@ -806,14 +800,13 @@ export default function OrderPage() {
         </div>
       </main>
 
-      {/* 이니시스 결제 스크립트 (테스트 서버) */}
+      {/* 이니시스 결제 스크립트 - head에 직접 로드 (예제와 동일하게) */}
       <Script
         src="https://stgstdpay.inicis.com/stdjs/INIStdPay.js"
-        strategy="afterInteractive"
-        onLoad={handleInicisScriptLoad}
+        strategy="beforeInteractive"
       />
 
-      {/* 이니시스 결제 폼 (숨김) */}
+      {/* 이니시스 결제 폼 (숨김) - 페이지에 미리 존재해야 함 */}
       <form
         id="inicisPayForm"
         ref={paymentFormRef}

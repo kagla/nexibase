@@ -239,18 +239,15 @@ export async function POST(request: NextRequest) {
       mKey,
       use_chkfake: 'Y',
 
-      // URL 설정
+      // URL 설정 (예제와 동일)
       returnUrl: `${baseUrl}/api/shop/payment/inicis/return`,
-      popupUrl: `${baseUrl}/api/shop/payment/inicis/return`,  // overlay 모드에서 사용
       closeUrl: `${baseUrl}/api/shop/payment/inicis/close`,
 
-      // 결제 방식
+      // 결제 방식 (예제와 동일 - payViewType 제거하면 기본값이 overlay/모달)
       gopaymethod: 'Card',
-      payViewType: 'overlay',  // overlay: 모달 (부모 페이지 위에 레이어로 표시)
 
-      // 추가 옵션
-      acceptmethod: 'below1000:centerCd(Y)',  // 1000원 미만 결제 허용, 결제창 가운데 표시
-      quotabase: '2:3:4:5:6:7:8:9:10:11:12',  // 할부 개월 수
+      // 추가 옵션 (예제 참고: HPP(1):va_receipt:below1000:centerCd(Y))
+      acceptmethod: 'below1000:centerCd(Y)',
 
       // 결제 스크립트 URL
       payUrl,
