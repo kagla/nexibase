@@ -9,6 +9,15 @@
  * 동작 방식:
  * - 지정 테마에 컴포넌트가 있으면 해당 컴포넌트 사용
  * - 없으면 default 테마에서 fallback
+ *
+ * 폴더 구조:
+ * src/themes/default/
+ * ├── Header.tsx, Footer.tsx, HomePage.tsx
+ * ├── auth/LoginPage.tsx, SignupPage.tsx
+ * ├── board/BoardListPage.tsx, BoardPostPage.tsx, ...
+ * ├── content/ContentPage.tsx
+ * ├── policy/PolicyPage.tsx
+ * └── admin/...
  */
 
 const fs = require('fs')
@@ -43,21 +52,38 @@ if (theme !== 'default' && !fs.existsSync(themeDir)) {
   console.log(`[prebuild] 경고: ${theme} 테마 폴더가 없습니다. default 테마를 사용합니다.`)
 }
 
-// 기본 컴포넌트 목록
-const components = ['Header', 'Footer', 'HomePage']
+// 컴포넌트 목록 (폴더/파일명)
+const components = [
+  // 루트 레벨 컴포넌트
+  { name: 'Header', path: 'Header' },
+  { name: 'Footer', path: 'Footer' },
+  { name: 'HomePage', path: 'HomePage' },
+  // auth
+  { name: 'LoginPage', path: 'auth/LoginPage' },
+  { name: 'SignupPage', path: 'auth/SignupPage' },
+  // board
+  { name: 'BoardListPage', path: 'board/BoardListPage' },
+  { name: 'BoardPostPage', path: 'board/BoardPostPage' },
+  { name: 'BoardWritePage', path: 'board/BoardWritePage' },
+  { name: 'BoardEditPage', path: 'board/BoardEditPage' },
+  // content
+  { name: 'ContentPage', path: 'content/ContentPage' },
+  // policy
+  { name: 'PolicyPage', path: 'policy/PolicyPage' },
+]
 
 // 각 컴포넌트별로 어느 테마에서 가져올지 결정
 const componentSources = components.map(comp => {
-  const themeCompPath = path.join(themeDir, `${comp}.tsx`)
-  const defaultCompPath = path.join(defaultDir, `${comp}.tsx`)
+  const themeCompPath = path.join(themeDir, `${comp.path}.tsx`)
+  const defaultCompPath = path.join(defaultDir, `${comp.path}.tsx`)
 
   // 지정 테마에 있으면 지정 테마에서, 없으면 default에서
   if (theme !== 'default' && fs.existsSync(themeCompPath)) {
-    return { name: comp, source: theme }
+    return { name: comp.name, path: comp.path, source: theme }
   } else if (fs.existsSync(defaultCompPath)) {
-    return { name: comp, source: 'default' }
+    return { name: comp.name, path: comp.path, source: 'default' }
   } else {
-    return { name: comp, source: null }
+    return { name: comp.name, path: comp.path, source: null }
   }
 })
 
@@ -85,16 +111,15 @@ const indexContent = `/**
  */
 
 ${availableComponents.map(c =>
-  `export { default as ${c.name} } from './${c.source}/${c.name}'`
+  `export { default as ${c.name} } from './${c.source}/${c.path}'`
 ).join('\n')}
 `
 
 fs.writeFileSync(indexPath, indexContent)
 console.log(`[prebuild] src/themes/index.ts 생성 완료`)
+console.log(`[prebuild] 총 ${availableComponents.length}개 컴포넌트`)
 
-if (theme === 'default') {
-  console.log(`[prebuild] 컴포넌트: ${availableComponents.map(c => c.name).join(', ')}`)
-} else {
+if (theme !== 'default') {
   if (customComponents.length > 0) {
     console.log(`[prebuild] ${theme} 테마: ${customComponents.map(c => c.name).join(', ')}`)
   }
