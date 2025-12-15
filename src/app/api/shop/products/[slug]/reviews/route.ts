@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
+import { unlink } from 'fs/promises'
+import path from 'path'
 
 // 상품 리뷰 목록 조회
 export async function GET(
@@ -308,6 +310,36 @@ export async function DELETE(
     // 해당 상품의 리뷰인지 확인
     if (existingReview.productId !== product.id) {
       return NextResponse.json({ error: '해당 상품의 리뷰가 아닙니다.' }, { status: 400 })
+    }
+
+    // 리뷰 이미지 삭제
+    if (existingReview.images) {
+      try {
+        const images = JSON.parse(existingReview.images)
+        if (Array.isArray(images)) {
+          for (const imageUrl of images) {
+            // /uploads/2025/12/xxx.webp -> public/uploads/2025/12/xxx.webp
+            const filePath = path.join(process.cwd(), 'public', imageUrl)
+            // 썸네일 경로: xxx.webp -> xxx-thumb.webp
+            const thumbPath = filePath.replace(/(\.(webp|gif))$/i, '-thumb.webp')
+
+            // 원본 이미지 삭제
+            try {
+              await unlink(filePath)
+            } catch {
+              // 파일이 없어도 무시
+            }
+            // 썸네일 이미지 삭제
+            try {
+              await unlink(thumbPath)
+            } catch {
+              // 파일이 없어도 무시
+            }
+          }
+        }
+      } catch {
+        // JSON 파싱 에러 무시
+      }
     }
 
     // 리뷰 삭제 (소프트 삭제)
