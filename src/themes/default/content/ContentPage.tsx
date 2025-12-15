@@ -5,7 +5,7 @@ import { useParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Loader2, FileText, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Header } from "@/themes"
+import { Header, Footer } from "@/themes"
 import Link from "next/link"
 
 interface Content {
@@ -50,20 +50,21 @@ export default function ContentPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background flex flex-col">
         <Header />
-        <div className="flex items-center justify-center py-20">
+        <div className="flex-1 flex items-center justify-center py-20">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
+        <Footer />
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background flex flex-col">
         <Header />
-        <div className="flex items-center justify-center py-20">
+        <div className="flex-1 flex items-center justify-center py-20">
           <Card className="max-w-md w-full mx-4">
             <CardContent className="pt-6 text-center">
               <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -77,6 +78,7 @@ export default function ContentPage() {
             </CardContent>
           </Card>
         </div>
+        <Footer />
       </div>
     )
   }
@@ -86,9 +88,9 @@ export default function ContentPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <Header />
-      <div className="container max-w-4xl mx-auto px-4 py-8">
+      <div className="flex-1 container max-w-4xl mx-auto px-4 py-8">
         <Card>
           <CardHeader>
             <CardTitle className="text-2xl">{content.title}</CardTitle>
@@ -113,6 +115,7 @@ export default function ContentPage() {
           </Button>
         </div>
       </div>
+      <Footer />
     </div>
   )
 }
