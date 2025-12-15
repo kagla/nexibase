@@ -54,10 +54,10 @@ export async function POST(request: NextRequest) {
   const protocol = request.headers.get('x-forwarded-proto') || 'http'
   const baseUrl = process.env.NEXT_PUBLIC_URL || `${protocol}://${host}`
 
-  // 리다이렉트 헬퍼 함수
+  // 리다이렉트 헬퍼 함수 (303: POST → GET 변환)
   const redirectTo = (path: string) => {
     const url = new URL(path, baseUrl)
-    return NextResponse.redirect(url.toString())
+    return NextResponse.redirect(url.toString(), 303)
   }
 
   try {
