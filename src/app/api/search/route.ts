@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-// FULLTEXT 검색 API
+// 통합 검색 API (게시글, 콘텐츠, 정책)
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const query = searchParams.get('q')?.trim()
+    const type = searchParams.get('type') || 'all' // all, posts, contents, policies
     const boardSlug = searchParams.get('board') || null
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '20')
-    const sort = searchParams.get('sort') || 'relevance' // relevance, latest, popular
+    const sort = searchParams.get('sort') || 'relevance'
 
     if (!query || query.length < 2) {
       return NextResponse.json(
@@ -18,41 +19,120 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const offset = (page - 1) * limit
-
-    // 게시판 필터 조건
-    let boardCondition = ''
-    if (boardSlug) {
-      const board = await prisma.board.findUnique({
-        where: { slug: boardSlug },
-        select: { id: true }
-      })
-      if (board) {
-        boardCondition = `AND p.boardId = ${board.id}`
-      }
+    // 각 타입별 검색 결과
+    const results: {
+      posts: { items: any[]; total: number }
+      contents: { items: any[]; total: number }
+      policies: { items: any[]; total: number }
+    } = {
+      posts: { items: [], total: 0 },
+      contents: { items: [], total: 0 },
+      policies: { items: [], total: 0 }
     }
 
-    // 정렬 조건
-    let orderBy = ''
-    switch (sort) {
-      case 'latest':
-        orderBy = 'ORDER BY p.createdAt DESC'
-        break
-      case 'popular':
-        orderBy = 'ORDER BY p.viewCount DESC, p.createdAt DESC'
-        break
-      case 'relevance':
-      default:
-        orderBy = 'ORDER BY relevance DESC, p.createdAt DESC'
-        break
+    // 게시글 검색
+    if (type === 'all' || type === 'posts') {
+      const postsResult = await searchPosts(query, page, limit, sort, boardSlug)
+      results.posts = postsResult
     }
 
-    // MySQL FULLTEXT 검색 (자연어 모드)
-    // 검색어를 + 로 연결하여 boolean 모드로 검색
-    const searchTerms = query.split(/\s+/).filter(term => term.length >= 2)
-    const booleanQuery = searchTerms.map(term => `+${term}*`).join(' ')
+    // 콘텐츠 검색
+    if (type === 'all' || type === 'contents') {
+      const contentsResult = await searchContents(query, type === 'contents' ? page : 1, type === 'contents' ? limit : 5)
+      results.contents = contentsResult
+    }
 
-    // 검색 결과 조회
+    // 정책 검색
+    if (type === 'all' || type === 'policies') {
+      const policiesResult = await searchPolicies(query, type === 'policies' ? page : 1, type === 'policies' ? limit : 5)
+      results.policies = policiesResult
+    }
+
+    // 전체 결과 수
+    const totalAll = results.posts.total + results.contents.total + results.policies.total
+
+    // 게시판 목록 (필터용)
+    const boards = await prisma.board.findMany({
+      where: { isActive: true },
+      select: { slug: true, name: true },
+      orderBy: { name: 'asc' }
+    })
+
+    // 현재 타입에 따른 페이지네이션
+    let currentTotal = totalAll
+    let currentTotalPages = 1
+    if (type === 'posts') {
+      currentTotal = results.posts.total
+      currentTotalPages = Math.ceil(currentTotal / limit)
+    } else if (type === 'contents') {
+      currentTotal = results.contents.total
+      currentTotalPages = Math.ceil(currentTotal / limit)
+    } else if (type === 'policies') {
+      currentTotal = results.policies.total
+      currentTotalPages = Math.ceil(currentTotal / limit)
+    }
+
+    return NextResponse.json({
+      success: true,
+      query,
+      type,
+      results,
+      counts: {
+        all: totalAll,
+        posts: results.posts.total,
+        contents: results.contents.total,
+        policies: results.policies.total
+      },
+      pagination: {
+        page,
+        limit,
+        total: currentTotal,
+        totalPages: currentTotalPages
+      },
+      boards
+    })
+  } catch (error) {
+    console.error('검색 에러:', error)
+
+    // 폴백 검색
+    try {
+      return await fallbackSearch(request)
+    } catch (fallbackError) {
+      console.error('폴백 검색 에러:', fallbackError)
+      return NextResponse.json(
+        { error: '검색 중 오류가 발생했습니다.' },
+        { status: 500 }
+      )
+    }
+  }
+}
+
+// 게시글 검색 (FULLTEXT)
+async function searchPosts(
+  query: string,
+  page: number,
+  limit: number,
+  sort: string,
+  boardSlug: string | null
+): Promise<{ items: any[]; total: number }> {
+  const offset = (page - 1) * limit
+  const searchTerms = query.split(/\s+/).filter(term => term.length >= 2)
+  const booleanQuery = searchTerms.length > 0
+    ? searchTerms.map(term => `+${term}*`).join(' ')
+    : `+${query}*`
+
+  // 게시판 필터
+  let boardId: number | null = null
+  if (boardSlug) {
+    const board = await prisma.board.findUnique({
+      where: { slug: boardSlug },
+      select: { id: true }
+    })
+    boardId = board?.id || null
+  }
+
+  try {
+    // FULLTEXT 검색 시도
     const posts = await prisma.$queryRaw<Array<{
       id: number
       title: string
@@ -91,7 +171,7 @@ export async function GET(request: NextRequest) {
         AND p.status = 'published'
         AND p.isSecret = false
         AND b.isActive = true
-        ${boardCondition ? prisma.$queryRaw`${boardCondition}` : prisma.$queryRaw``}
+        ${boardId ? prisma.$queryRaw`AND p.boardId = ${boardId}` : prisma.$queryRaw``}
       ${sort === 'latest'
         ? prisma.$queryRaw`ORDER BY p.createdAt DESC`
         : sort === 'popular'
@@ -102,7 +182,6 @@ export async function GET(request: NextRequest) {
       OFFSET ${offset}
     `
 
-    // 총 검색 결과 수
     const countResult = await prisma.$queryRaw<Array<{ total: bigint }>>`
       SELECT COUNT(*) as total
       FROM posts p
@@ -111,14 +190,12 @@ export async function GET(request: NextRequest) {
         AND p.status = 'published'
         AND p.isSecret = false
         AND b.isActive = true
-        ${boardCondition ? prisma.$queryRaw`${boardCondition}` : prisma.$queryRaw``}
+        ${boardId ? prisma.$queryRaw`AND p.boardId = ${boardId}` : prisma.$queryRaw``}
     `
 
     const total = Number(countResult[0]?.total || 0)
-    const totalPages = Math.ceil(total / limit)
 
-    // 결과 포맷팅
-    const formattedPosts = posts.map(post => ({
+    const items = posts.map(post => ({
       id: post.id,
       title: post.title,
       excerpt: post.content.replace(/<[^>]*>/g, '').substring(0, 150) + '...',
@@ -138,70 +215,31 @@ export async function GET(request: NextRequest) {
       }
     }))
 
-    // 검색 가능한 게시판 목록
-    const boards = await prisma.board.findMany({
-      where: { isActive: true },
-      select: { slug: true, name: true },
-      orderBy: { name: 'asc' }
-    })
-
-    return NextResponse.json({
-      success: true,
-      query,
-      posts: formattedPosts,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages
-      },
-      boards
-    })
-  } catch (error) {
-    console.error('검색 에러:', error)
-
-    // FULLTEXT 인덱스가 없는 경우 LIKE 검색으로 폴백
-    try {
-      return await fallbackSearch(request)
-    } catch (fallbackError) {
-      console.error('폴백 검색 에러:', fallbackError)
-      return NextResponse.json(
-        { error: '검색 중 오류가 발생했습니다.' },
-        { status: 500 }
-      )
-    }
+    return { items, total }
+  } catch {
+    // FULLTEXT 실패 시 LIKE 검색
+    return searchPostsLike(query, page, limit, sort, boardSlug)
   }
 }
 
-// FULLTEXT 인덱스가 없을 때 LIKE 검색 폴백
-async function fallbackSearch(request: NextRequest) {
-  const { searchParams } = new URL(request.url)
-  const query = searchParams.get('q')?.trim()
-  const boardSlug = searchParams.get('board') || null
-  const page = parseInt(searchParams.get('page') || '1')
-  const limit = parseInt(searchParams.get('limit') || '20')
-  const sort = searchParams.get('sort') || 'latest'
-
-  if (!query || query.length < 2) {
-    return NextResponse.json(
-      { error: '검색어는 2자 이상 입력해주세요.' },
-      { status: 400 }
-    )
-  }
-
+// 게시글 LIKE 검색 (폴백)
+async function searchPostsLike(
+  query: string,
+  page: number,
+  limit: number,
+  sort: string,
+  boardSlug: string | null
+): Promise<{ items: any[]; total: number }> {
   const skip = (page - 1) * limit
 
-  // 게시판 필터
   const boardFilter = boardSlug
     ? { board: { slug: boardSlug, isActive: true } }
     : { board: { isActive: true } }
 
-  // 정렬 조건
   const orderBy = sort === 'popular'
     ? [{ viewCount: 'desc' as const }, { createdAt: 'desc' as const }]
     : [{ createdAt: 'desc' as const }]
 
-  // LIKE 검색
   const [posts, total] = await Promise.all([
     prisma.post.findMany({
       where: {
@@ -226,18 +264,10 @@ async function fallbackSearch(request: NextRequest) {
         commentCount: true,
         createdAt: true,
         author: {
-          select: {
-            id: true,
-            nickname: true,
-            name: true
-          }
+          select: { id: true, nickname: true, name: true }
         },
         board: {
-          select: {
-            id: true,
-            slug: true,
-            name: true
-          }
+          select: { id: true, slug: true, name: true }
         }
       },
       orderBy,
@@ -261,9 +291,7 @@ async function fallbackSearch(request: NextRequest) {
     })
   ])
 
-  const totalPages = Math.ceil(total / limit)
-
-  const formattedPosts = posts.map(post => ({
+  const items = posts.map(post => ({
     id: post.id,
     title: post.title,
     excerpt: post.content.replace(/<[^>]*>/g, '').substring(0, 150) + '...',
@@ -275,23 +303,205 @@ async function fallbackSearch(request: NextRequest) {
     board: post.board
   }))
 
+  return { items, total }
+}
+
+// 콘텐츠 검색
+async function searchContents(
+  query: string,
+  page: number,
+  limit: number
+): Promise<{ items: any[]; total: number }> {
+  const skip = (page - 1) * limit
+
+  const [contents, total] = await Promise.all([
+    prisma.content.findMany({
+      where: {
+        AND: [
+          {
+            OR: [
+              { title: { contains: query } },
+              { content: { contains: query } }
+            ]
+          },
+          { isPublic: true }
+        ]
+      },
+      select: {
+        id: true,
+        slug: true,
+        title: true,
+        content: true,
+        updatedAt: true
+      },
+      orderBy: { updatedAt: 'desc' },
+      skip,
+      take: limit
+    }),
+    prisma.content.count({
+      where: {
+        AND: [
+          {
+            OR: [
+              { title: { contains: query } },
+              { content: { contains: query } }
+            ]
+          },
+          { isPublic: true }
+        ]
+      }
+    })
+  ])
+
+  const items = contents.map(content => ({
+    id: content.id,
+    slug: content.slug,
+    title: content.title,
+    excerpt: content.content.replace(/<[^>]*>/g, '').substring(0, 150) + '...',
+    updatedAt: content.updatedAt
+  }))
+
+  return { items, total }
+}
+
+// 정책 검색
+async function searchPolicies(
+  query: string,
+  page: number,
+  limit: number
+): Promise<{ items: any[]; total: number }> {
+  const skip = (page - 1) * limit
+
+  const [policies, total] = await Promise.all([
+    prisma.policy.findMany({
+      where: {
+        AND: [
+          {
+            OR: [
+              { title: { contains: query } },
+              { content: { contains: query } }
+            ]
+          },
+          { isActive: true }
+        ]
+      },
+      select: {
+        id: true,
+        slug: true,
+        version: true,
+        title: true,
+        content: true,
+        updatedAt: true
+      },
+      orderBy: { updatedAt: 'desc' },
+      skip,
+      take: limit
+    }),
+    prisma.policy.count({
+      where: {
+        AND: [
+          {
+            OR: [
+              { title: { contains: query } },
+              { content: { contains: query } }
+            ]
+          },
+          { isActive: true }
+        ]
+      }
+    })
+  ])
+
+  const items = policies.map(policy => ({
+    id: policy.id,
+    slug: policy.slug,
+    version: policy.version,
+    title: policy.title,
+    excerpt: policy.content.replace(/<[^>]*>/g, '').substring(0, 150) + '...',
+    updatedAt: policy.updatedAt
+  }))
+
+  return { items, total }
+}
+
+// 폴백 검색 (전체)
+async function fallbackSearch(request: NextRequest) {
+  const { searchParams } = new URL(request.url)
+  const query = searchParams.get('q')?.trim()
+  const type = searchParams.get('type') || 'all'
+  const boardSlug = searchParams.get('board') || null
+  const page = parseInt(searchParams.get('page') || '1')
+  const limit = parseInt(searchParams.get('limit') || '20')
+  const sort = searchParams.get('sort') || 'latest'
+
+  if (!query || query.length < 2) {
+    return NextResponse.json(
+      { error: '검색어는 2자 이상 입력해주세요.' },
+      { status: 400 }
+    )
+  }
+
+  const results: {
+    posts: { items: any[]; total: number }
+    contents: { items: any[]; total: number }
+    policies: { items: any[]; total: number }
+  } = {
+    posts: { items: [], total: 0 },
+    contents: { items: [], total: 0 },
+    policies: { items: [], total: 0 }
+  }
+
+  if (type === 'all' || type === 'posts') {
+    results.posts = await searchPostsLike(query, page, limit, sort, boardSlug)
+  }
+
+  if (type === 'all' || type === 'contents') {
+    results.contents = await searchContents(query, type === 'contents' ? page : 1, type === 'contents' ? limit : 5)
+  }
+
+  if (type === 'all' || type === 'policies') {
+    results.policies = await searchPolicies(query, type === 'policies' ? page : 1, type === 'policies' ? limit : 5)
+  }
+
+  const totalAll = results.posts.total + results.contents.total + results.policies.total
+
   const boards = await prisma.board.findMany({
     where: { isActive: true },
     select: { slug: true, name: true },
     orderBy: { name: 'asc' }
   })
 
+  let currentTotal = totalAll
+  let currentTotalPages = 1
+  if (type === 'posts') {
+    currentTotal = results.posts.total
+    currentTotalPages = Math.ceil(currentTotal / limit)
+  } else if (type === 'contents') {
+    currentTotal = results.contents.total
+    currentTotalPages = Math.ceil(currentTotal / limit)
+  } else if (type === 'policies') {
+    currentTotal = results.policies.total
+    currentTotalPages = Math.ceil(currentTotal / limit)
+  }
+
   return NextResponse.json({
     success: true,
     query,
-    posts: formattedPosts,
+    type,
+    results,
+    counts: {
+      all: totalAll,
+      posts: results.posts.total,
+      contents: results.contents.total,
+      policies: results.policies.total
+    },
     pagination: {
       page,
       limit,
-      total,
-      totalPages
+      total: currentTotal,
+      totalPages: currentTotalPages
     },
     boards,
-    searchMode: 'fallback' // LIKE 검색 사용 표시
+    searchMode: 'fallback'
   })
 }

@@ -16,11 +16,12 @@ import {
 import { Header, Footer } from "@/themes"
 import {
   Search, Loader2, FileText, Eye, MessageSquare, ThumbsUp,
-  ChevronLeft, ChevronRight, Clock, TrendingUp, Sparkles
+  ChevronLeft, ChevronRight, Clock, TrendingUp, Sparkles,
+  BookOpen, ScrollText, LayoutGrid
 } from "lucide-react"
 import Link from "next/link"
 
-interface SearchResult {
+interface PostResult {
   id: number
   title: string
   excerpt: string
@@ -40,6 +41,23 @@ interface SearchResult {
   }
 }
 
+interface ContentResult {
+  id: number
+  slug: string
+  title: string
+  excerpt: string
+  updatedAt: string
+}
+
+interface PolicyResult {
+  id: number
+  slug: string
+  version: string
+  title: string
+  excerpt: string
+  updatedAt: string
+}
+
 interface BoardOption {
   slug: string
   name: string
@@ -48,7 +66,18 @@ interface BoardOption {
 interface SearchResponse {
   success: boolean
   query: string
-  posts: SearchResult[]
+  type: string
+  results: {
+    posts: { items: PostResult[]; total: number }
+    contents: { items: ContentResult[]; total: number }
+    policies: { items: PolicyResult[]; total: number }
+  }
+  counts: {
+    all: number
+    posts: number
+    contents: number
+    policies: number
+  }
   pagination: {
     page: number
     limit: number
@@ -56,32 +85,30 @@ interface SearchResponse {
     totalPages: number
   }
   boards: BoardOption[]
-  searchMode?: string
 }
+
+type SearchType = 'all' | 'posts' | 'contents' | 'policies'
 
 export default function SearchPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
 
   const [query, setQuery] = useState(searchParams.get('q') || '')
-  const [results, setResults] = useState<SearchResult[]>([])
-  const [boards, setBoards] = useState<BoardOption[]>([])
   const [loading, setLoading] = useState(false)
   const [searched, setSearched] = useState(false)
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 20,
-    total: 0,
-    totalPages: 0
-  })
+  const [data, setData] = useState<SearchResponse | null>(null)
 
   // 필터 상태
+  const [selectedType, setSelectedType] = useState<SearchType>(
+    (searchParams.get('type') as SearchType) || 'all'
+  )
   const [selectedBoard, setSelectedBoard] = useState(searchParams.get('board') || 'all')
   const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'relevance')
 
   // 검색 실행
   const performSearch = useCallback(async (
     searchQuery: string,
+    type: SearchType = 'all',
     page: number = 1,
     board: string = 'all',
     sort: string = 'relevance'
@@ -96,6 +123,7 @@ export default function SearchPage() {
     try {
       const params = new URLSearchParams({
         q: searchQuery.trim(),
+        type,
         page: page.toString(),
         sort
       })
@@ -105,19 +133,16 @@ export default function SearchPage() {
       }
 
       const response = await fetch(`/api/search?${params}`)
-      const data: SearchResponse = await response.json()
+      const result: SearchResponse = await response.json()
 
-      if (data.success) {
-        setResults(data.posts)
-        setPagination(data.pagination)
-        setBoards(data.boards)
+      if (result.success) {
+        setData(result)
       } else {
-        setResults([])
-        setPagination({ page: 1, limit: 20, total: 0, totalPages: 0 })
+        setData(null)
       }
     } catch (error) {
       console.error('검색 에러:', error)
-      setResults([])
+      setData(null)
     } finally {
       setLoading(false)
     }
@@ -126,15 +151,17 @@ export default function SearchPage() {
   // URL 파라미터 변경 시 검색
   useEffect(() => {
     const q = searchParams.get('q')
+    const type = (searchParams.get('type') as SearchType) || 'all'
     const page = parseInt(searchParams.get('page') || '1')
     const board = searchParams.get('board') || 'all'
     const sort = searchParams.get('sort') || 'relevance'
 
     if (q) {
       setQuery(q)
+      setSelectedType(type)
       setSelectedBoard(board)
       setSortBy(sort)
-      performSearch(q, page, board, sort)
+      performSearch(q, type, page, board, sort)
     }
   }, [searchParams, performSearch])
 
@@ -148,6 +175,7 @@ export default function SearchPage() {
 
     const params = new URLSearchParams({
       q: query.trim(),
+      type: selectedType,
       sort: sortBy
     })
     if (selectedBoard !== 'all') {
@@ -157,10 +185,25 @@ export default function SearchPage() {
     router.push(`/search?${params}`)
   }
 
+  // 타입 변경
+  const handleTypeChange = (type: SearchType) => {
+    setSelectedType(type)
+    const params = new URLSearchParams({
+      q: query.trim(),
+      type,
+      sort: sortBy
+    })
+    if (selectedBoard !== 'all' && type === 'posts') {
+      params.set('board', selectedBoard)
+    }
+    router.push(`/search?${params}`)
+  }
+
   // 필터 변경
   const handleFilterChange = (board: string, sort: string) => {
     const params = new URLSearchParams({
       q: query.trim(),
+      type: selectedType,
       sort
     })
     if (board !== 'all') {
@@ -173,6 +216,7 @@ export default function SearchPage() {
   const handlePageChange = (newPage: number) => {
     const params = new URLSearchParams({
       q: query.trim(),
+      type: selectedType,
       page: newPage.toString(),
       sort: sortBy
     })
@@ -199,11 +243,18 @@ export default function SearchPage() {
   }
 
   // 검색어 하이라이팅
-  const highlightText = (text: string, query: string) => {
-    if (!query.trim()) return text
-    const regex = new RegExp(`(${query.split(/\s+/).join('|')})`, 'gi')
+  const highlightText = (text: string, searchQuery: string) => {
+    if (!searchQuery.trim()) return text
+    const regex = new RegExp(`(${searchQuery.split(/\s+/).join('|')})`, 'gi')
     return text.replace(regex, '<mark class="bg-yellow-200 dark:bg-yellow-800 px-0.5 rounded">$1</mark>')
   }
+
+  const tabs = [
+    { key: 'all' as SearchType, label: '전체', icon: LayoutGrid, count: data?.counts.all || 0 },
+    { key: 'posts' as SearchType, label: '게시글', icon: FileText, count: data?.counts.posts || 0 },
+    { key: 'contents' as SearchType, label: '콘텐츠', icon: BookOpen, count: data?.counts.contents || 0 },
+    { key: 'policies' as SearchType, label: '정책/약관', icon: ScrollText, count: data?.counts.policies || 0 },
+  ]
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -212,10 +263,10 @@ export default function SearchPage() {
       <main className="flex-1">
         <div className="max-w-4xl mx-auto px-4 py-8">
           {/* 검색 헤더 */}
-          <div className="mb-8">
+          <div className="mb-6">
             <h1 className="text-2xl font-bold mb-4 flex items-center gap-2">
               <Search className="h-6 w-6" />
-              검색
+              통합 검색
             </h1>
 
             {/* 검색 폼 */}
@@ -235,172 +286,504 @@ export default function SearchPage() {
                   검색
                 </Button>
               </div>
-
-              {/* 필터 */}
-              <div className="flex flex-wrap gap-3">
-                <Select
-                  value={selectedBoard}
-                  onValueChange={(value) => {
-                    setSelectedBoard(value)
-                    if (searched) handleFilterChange(value, sortBy)
-                  }}
-                >
-                  <SelectTrigger className="w-[160px]">
-                    <SelectValue placeholder="게시판 선택" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">전체 게시판</SelectItem>
-                    {boards.map((board) => (
-                      <SelectItem key={board.slug} value={board.slug}>
-                        {board.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <Select
-                  value={sortBy}
-                  onValueChange={(value) => {
-                    setSortBy(value)
-                    if (searched) handleFilterChange(selectedBoard, value)
-                  }}
-                >
-                  <SelectTrigger className="w-[140px]">
-                    <SelectValue placeholder="정렬" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="relevance">
-                      <span className="flex items-center gap-2">
-                        <Sparkles className="h-4 w-4" />
-                        정확도순
-                      </span>
-                    </SelectItem>
-                    <SelectItem value="latest">
-                      <span className="flex items-center gap-2">
-                        <Clock className="h-4 w-4" />
-                        최신순
-                      </span>
-                    </SelectItem>
-                    <SelectItem value="popular">
-                      <span className="flex items-center gap-2">
-                        <TrendingUp className="h-4 w-4" />
-                        인기순
-                      </span>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
             </form>
           </div>
+
+          {/* 탭 네비게이션 */}
+          {searched && data && (
+            <div className="mb-4">
+              <div className="flex gap-1 p-1 bg-muted rounded-lg">
+                {tabs.map((tab) => {
+                  const Icon = tab.icon
+                  return (
+                    <button
+                      key={tab.key}
+                      onClick={() => handleTypeChange(tab.key)}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors flex-1 justify-center ${
+                        selectedType === tab.key
+                          ? 'bg-background text-foreground shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span>{tab.label}</span>
+                      <Badge variant="secondary" className="text-xs">
+                        {tab.count.toLocaleString()}
+                      </Badge>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* 게시글 필터 (게시글 탭일 때만) */}
+          {searched && data && selectedType === 'posts' && (
+            <div className="flex flex-wrap gap-3 mb-4">
+              <Select
+                value={selectedBoard}
+                onValueChange={(value) => {
+                  setSelectedBoard(value)
+                  handleFilterChange(value, sortBy)
+                }}
+              >
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="게시판 선택" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">전체 게시판</SelectItem>
+                  {data.boards.map((board) => (
+                    <SelectItem key={board.slug} value={board.slug}>
+                      {board.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={sortBy}
+                onValueChange={(value) => {
+                  setSortBy(value)
+                  handleFilterChange(selectedBoard, value)
+                }}
+              >
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="정렬" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="relevance">
+                    <span className="flex items-center gap-2">
+                      <Sparkles className="h-4 w-4" />
+                      정확도순
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="latest">
+                    <span className="flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      최신순
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="popular">
+                    <span className="flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4" />
+                      인기순
+                    </span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {/* 검색 결과 */}
           {loading ? (
             <div className="flex items-center justify-center py-20">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
-          ) : searched ? (
+          ) : searched && data ? (
             <>
               {/* 결과 요약 */}
               <div className="mb-4 text-sm text-muted-foreground">
-                <span className="font-medium text-foreground">&quot;{searchParams.get('q')}&quot;</span>
-                {' '}검색 결과 총 <span className="font-semibold text-primary">{pagination.total.toLocaleString()}</span>건
+                <span className="font-medium text-foreground">&quot;{data.query}&quot;</span>
+                {' '}검색 결과 총 <span className="font-semibold text-primary">{data.counts.all.toLocaleString()}</span>건
               </div>
 
-              {results.length > 0 ? (
+              {/* 전체 탭: 각 카테고리별 미리보기 */}
+              {selectedType === 'all' && (
+                <div className="space-y-6">
+                  {/* 게시글 섹션 */}
+                  {data.results.posts.total > 0 && (
+                    <Card>
+                      <div className="border-b px-4 py-3 flex items-center justify-between">
+                        <h2 className="font-semibold flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-primary" />
+                          게시글
+                          <Badge variant="secondary">{data.results.posts.total}</Badge>
+                        </h2>
+                        {data.results.posts.total > 5 && (
+                          <button
+                            onClick={() => handleTypeChange('posts')}
+                            className="text-sm text-primary hover:underline"
+                          >
+                            더보기 →
+                          </button>
+                        )}
+                      </div>
+                      <CardContent className="p-0 divide-y">
+                        {data.results.posts.items.slice(0, 5).map((post) => (
+                          <Link
+                            key={post.id}
+                            href={`/board/${post.board.slug}/${post.id}`}
+                            className="block px-4 py-3 hover:bg-muted/50 transition-colors"
+                          >
+                            <div className="flex items-center gap-2 mb-1">
+                              <Badge variant="outline" className="text-xs shrink-0">
+                                {post.board.name}
+                              </Badge>
+                              <h3
+                                className="font-medium truncate text-sm"
+                                dangerouslySetInnerHTML={{
+                                  __html: highlightText(post.title, data.query)
+                                }}
+                              />
+                            </div>
+                            <p
+                              className="text-xs text-muted-foreground line-clamp-1"
+                              dangerouslySetInnerHTML={{
+                                __html: highlightText(post.excerpt, data.query)
+                              }}
+                            />
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                              <span>{post.author.nickname || post.author.name}</span>
+                              <span>{formatTimeAgo(post.createdAt)}</span>
+                              <span className="flex items-center gap-1">
+                                <Eye className="h-3 w-3" />
+                                {post.viewCount}
+                              </span>
+                            </div>
+                          </Link>
+                        ))}
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* 콘텐츠 섹션 */}
+                  {data.results.contents.total > 0 && (
+                    <Card>
+                      <div className="border-b px-4 py-3 flex items-center justify-between">
+                        <h2 className="font-semibold flex items-center gap-2">
+                          <BookOpen className="h-4 w-4 text-green-600" />
+                          콘텐츠
+                          <Badge variant="secondary">{data.results.contents.total}</Badge>
+                        </h2>
+                        {data.results.contents.total > 5 && (
+                          <button
+                            onClick={() => handleTypeChange('contents')}
+                            className="text-sm text-primary hover:underline"
+                          >
+                            더보기 →
+                          </button>
+                        )}
+                      </div>
+                      <CardContent className="p-0 divide-y">
+                        {data.results.contents.items.slice(0, 5).map((content) => (
+                          <Link
+                            key={content.id}
+                            href={`/content/${content.slug}`}
+                            className="block px-4 py-3 hover:bg-muted/50 transition-colors"
+                          >
+                            <h3
+                              className="font-medium text-sm mb-1"
+                              dangerouslySetInnerHTML={{
+                                __html: highlightText(content.title, data.query)
+                              }}
+                            />
+                            <p
+                              className="text-xs text-muted-foreground line-clamp-1"
+                              dangerouslySetInnerHTML={{
+                                __html: highlightText(content.excerpt, data.query)
+                              }}
+                            />
+                          </Link>
+                        ))}
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* 정책 섹션 */}
+                  {data.results.policies.total > 0 && (
+                    <Card>
+                      <div className="border-b px-4 py-3 flex items-center justify-between">
+                        <h2 className="font-semibold flex items-center gap-2">
+                          <ScrollText className="h-4 w-4 text-purple-600" />
+                          정책/약관
+                          <Badge variant="secondary">{data.results.policies.total}</Badge>
+                        </h2>
+                        {data.results.policies.total > 5 && (
+                          <button
+                            onClick={() => handleTypeChange('policies')}
+                            className="text-sm text-primary hover:underline"
+                          >
+                            더보기 →
+                          </button>
+                        )}
+                      </div>
+                      <CardContent className="p-0 divide-y">
+                        {data.results.policies.items.slice(0, 5).map((policy) => (
+                          <Link
+                            key={policy.id}
+                            href={`/policy/${policy.slug}`}
+                            className="block px-4 py-3 hover:bg-muted/50 transition-colors"
+                          >
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3
+                                className="font-medium text-sm"
+                                dangerouslySetInnerHTML={{
+                                  __html: highlightText(policy.title, data.query)
+                                }}
+                              />
+                              <Badge variant="outline" className="text-xs">v{policy.version}</Badge>
+                            </div>
+                            <p
+                              className="text-xs text-muted-foreground line-clamp-1"
+                              dangerouslySetInnerHTML={{
+                                __html: highlightText(policy.excerpt, data.query)
+                              }}
+                            />
+                          </Link>
+                        ))}
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* 결과 없음 */}
+                  {data.counts.all === 0 && (
+                    <Card>
+                      <CardContent className="py-16 text-center">
+                        <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                        <h3 className="text-lg font-semibold mb-2">검색 결과가 없습니다</h3>
+                        <p className="text-muted-foreground mb-4">
+                          다른 검색어를 시도해 보세요.
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              )}
+
+              {/* 게시글 탭 */}
+              {selectedType === 'posts' && (
                 <>
-                  {/* 결과 목록 */}
-                  <Card>
-                    <CardContent className="p-0 divide-y">
-                      {results.map((result) => (
-                        <Link
-                          key={result.id}
-                          href={`/board/${result.board.slug}/${result.id}`}
-                          className="block px-4 py-4 hover:bg-muted/50 transition-colors"
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className="flex-1 min-w-0">
+                  {data.results.posts.items.length > 0 ? (
+                    <>
+                      <Card>
+                        <CardContent className="p-0 divide-y">
+                          {data.results.posts.items.map((post) => (
+                            <Link
+                              key={post.id}
+                              href={`/board/${post.board.slug}/${post.id}`}
+                              className="block px-4 py-4 hover:bg-muted/50 transition-colors"
+                            >
+                              <div className="flex items-start gap-3">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <Badge variant="outline" className="text-xs shrink-0">
+                                      {post.board.name}
+                                    </Badge>
+                                    <h3
+                                      className="font-medium truncate"
+                                      dangerouslySetInnerHTML={{
+                                        __html: highlightText(post.title, data.query)
+                                      }}
+                                    />
+                                  </div>
+                                  <p
+                                    className="text-sm text-muted-foreground line-clamp-2 mb-2"
+                                    dangerouslySetInnerHTML={{
+                                      __html: highlightText(post.excerpt, data.query)
+                                    }}
+                                  />
+                                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                                    <span>{post.author.nickname || post.author.name}</span>
+                                    <span>{formatTimeAgo(post.createdAt)}</span>
+                                    <span className="flex items-center gap-1">
+                                      <Eye className="h-3 w-3" />
+                                      {post.viewCount}
+                                    </span>
+                                    <span className="flex items-center gap-1">
+                                      <ThumbsUp className="h-3 w-3" />
+                                      {post.likeCount}
+                                    </span>
+                                    <span className="flex items-center gap-1">
+                                      <MessageSquare className="h-3 w-3" />
+                                      {post.commentCount}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </Link>
+                          ))}
+                        </CardContent>
+                      </Card>
+
+                      {/* 페이지네이션 */}
+                      {data.pagination.totalPages > 1 && (
+                        <div className="flex justify-center items-center gap-2 mt-6">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handlePageChange(data.pagination.page - 1)}
+                            disabled={data.pagination.page === 1}
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                            이전
+                          </Button>
+                          <span className="text-sm text-muted-foreground px-4">
+                            {data.pagination.page} / {data.pagination.totalPages}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handlePageChange(data.pagination.page + 1)}
+                            disabled={data.pagination.page === data.pagination.totalPages}
+                          >
+                            다음
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <Card>
+                      <CardContent className="py-16 text-center">
+                        <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                        <h3 className="text-lg font-semibold mb-2">게시글 검색 결과가 없습니다</h3>
+                      </CardContent>
+                    </Card>
+                  )}
+                </>
+              )}
+
+              {/* 콘텐츠 탭 */}
+              {selectedType === 'contents' && (
+                <>
+                  {data.results.contents.items.length > 0 ? (
+                    <>
+                      <Card>
+                        <CardContent className="p-0 divide-y">
+                          {data.results.contents.items.map((content) => (
+                            <Link
+                              key={content.id}
+                              href={`/content/${content.slug}`}
+                              className="block px-4 py-4 hover:bg-muted/50 transition-colors"
+                            >
+                              <h3
+                                className="font-medium mb-1"
+                                dangerouslySetInnerHTML={{
+                                  __html: highlightText(content.title, data.query)
+                                }}
+                              />
+                              <p
+                                className="text-sm text-muted-foreground line-clamp-2 mb-2"
+                                dangerouslySetInnerHTML={{
+                                  __html: highlightText(content.excerpt, data.query)
+                                }}
+                              />
+                              <div className="text-xs text-muted-foreground">
+                                마지막 수정: {formatTimeAgo(content.updatedAt)}
+                              </div>
+                            </Link>
+                          ))}
+                        </CardContent>
+                      </Card>
+
+                      {data.pagination.totalPages > 1 && (
+                        <div className="flex justify-center items-center gap-2 mt-6">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handlePageChange(data.pagination.page - 1)}
+                            disabled={data.pagination.page === 1}
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                            이전
+                          </Button>
+                          <span className="text-sm text-muted-foreground px-4">
+                            {data.pagination.page} / {data.pagination.totalPages}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handlePageChange(data.pagination.page + 1)}
+                            disabled={data.pagination.page === data.pagination.totalPages}
+                          >
+                            다음
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <Card>
+                      <CardContent className="py-16 text-center">
+                        <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                        <h3 className="text-lg font-semibold mb-2">콘텐츠 검색 결과가 없습니다</h3>
+                      </CardContent>
+                    </Card>
+                  )}
+                </>
+              )}
+
+              {/* 정책 탭 */}
+              {selectedType === 'policies' && (
+                <>
+                  {data.results.policies.items.length > 0 ? (
+                    <>
+                      <Card>
+                        <CardContent className="p-0 divide-y">
+                          {data.results.policies.items.map((policy) => (
+                            <Link
+                              key={policy.id}
+                              href={`/policy/${policy.slug}`}
+                              className="block px-4 py-4 hover:bg-muted/50 transition-colors"
+                            >
                               <div className="flex items-center gap-2 mb-1">
-                                <Badge variant="outline" className="text-xs shrink-0">
-                                  {result.board.name}
-                                </Badge>
                                 <h3
-                                  className="font-medium truncate"
+                                  className="font-medium"
                                   dangerouslySetInnerHTML={{
-                                    __html: highlightText(result.title, searchParams.get('q') || '')
+                                    __html: highlightText(policy.title, data.query)
                                   }}
                                 />
+                                <Badge variant="outline" className="text-xs">v{policy.version}</Badge>
                               </div>
                               <p
                                 className="text-sm text-muted-foreground line-clamp-2 mb-2"
                                 dangerouslySetInnerHTML={{
-                                  __html: highlightText(result.excerpt, searchParams.get('q') || '')
+                                  __html: highlightText(policy.excerpt, data.query)
                                 }}
                               />
-                              <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                                <span>{result.author.nickname || result.author.name}</span>
-                                <span>{formatTimeAgo(result.createdAt)}</span>
-                                <span className="flex items-center gap-1">
-                                  <Eye className="h-3 w-3" />
-                                  {result.viewCount}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <ThumbsUp className="h-3 w-3" />
-                                  {result.likeCount}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <MessageSquare className="h-3 w-3" />
-                                  {result.commentCount}
-                                </span>
+                              <div className="text-xs text-muted-foreground">
+                                마지막 수정: {formatTimeAgo(policy.updatedAt)}
                               </div>
-                            </div>
-                          </div>
-                        </Link>
-                      ))}
-                    </CardContent>
-                  </Card>
+                            </Link>
+                          ))}
+                        </CardContent>
+                      </Card>
 
-                  {/* 페이지네이션 */}
-                  {pagination.totalPages > 1 && (
-                    <div className="flex justify-center items-center gap-2 mt-6">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handlePageChange(pagination.page - 1)}
-                        disabled={pagination.page === 1}
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                        이전
-                      </Button>
-                      <span className="text-sm text-muted-foreground px-4">
-                        {pagination.page} / {pagination.totalPages}
-                      </span>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handlePageChange(pagination.page + 1)}
-                        disabled={pagination.page === pagination.totalPages}
-                      >
-                        다음
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                    </div>
+                      {data.pagination.totalPages > 1 && (
+                        <div className="flex justify-center items-center gap-2 mt-6">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handlePageChange(data.pagination.page - 1)}
+                            disabled={data.pagination.page === 1}
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                            이전
+                          </Button>
+                          <span className="text-sm text-muted-foreground px-4">
+                            {data.pagination.page} / {data.pagination.totalPages}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handlePageChange(data.pagination.page + 1)}
+                            disabled={data.pagination.page === data.pagination.totalPages}
+                          >
+                            다음
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <Card>
+                      <CardContent className="py-16 text-center">
+                        <ScrollText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                        <h3 className="text-lg font-semibold mb-2">정책/약관 검색 결과가 없습니다</h3>
+                      </CardContent>
+                    </Card>
                   )}
                 </>
-              ) : (
-                <Card>
-                  <CardContent className="py-16 text-center">
-                    <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">검색 결과가 없습니다</h3>
-                    <p className="text-muted-foreground mb-4">
-                      다른 검색어를 시도해 보세요.
-                    </p>
-                    <ul className="text-sm text-muted-foreground text-left max-w-xs mx-auto space-y-1">
-                      <li>• 검색어의 철자가 정확한지 확인하세요</li>
-                      <li>• 더 일반적인 검색어를 사용해 보세요</li>
-                      <li>• 게시판 필터를 &quot;전체 게시판&quot;으로 변경해 보세요</li>
-                    </ul>
-                  </CardContent>
-                </Card>
               )}
             </>
           ) : (
@@ -409,7 +792,7 @@ export default function SearchPage() {
                 <Search className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                 <h3 className="text-lg font-semibold mb-2">검색어를 입력하세요</h3>
                 <p className="text-muted-foreground">
-                  게시글의 제목과 내용에서 검색합니다.
+                  게시글, 콘텐츠, 정책/약관에서 통합 검색합니다.
                 </p>
               </CardContent>
             </Card>
