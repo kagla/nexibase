@@ -5,7 +5,8 @@ import { prisma } from '@/lib/prisma'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { zipCode, totalAmount } = body
+    const { zipCode, totalAmount, totalPrice } = body
+    const amount = totalAmount || totalPrice || 0  // 둘 다 지원
 
     if (!zipCode) {
       return NextResponse.json({ error: '우편번호가 필요합니다.' }, { status: 400 })
@@ -67,7 +68,7 @@ export async function POST(request: NextRequest) {
     let fee = matchedPolicy.fee
     let isFreeShipping = false
 
-    if (matchedPolicy.freeAmount && totalAmount >= matchedPolicy.freeAmount) {
+    if (matchedPolicy.freeAmount && amount >= matchedPolicy.freeAmount) {
       fee = 0
       isFreeShipping = true
     }
