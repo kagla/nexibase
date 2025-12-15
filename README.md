@@ -206,28 +206,28 @@ nexibase/
 
 ### 부분 커스터마이징
 
-**컴포넌트/유틸리티만 부분 복사 가능**합니다. 라우트는 전체 복사해야 합니다.
+> ⚠️ **핵심**: `app/` 폴더가 존재하는 순간, Next.js는 **모든 라우트를 `app/`에서만 찾습니다.**
+> `app/components`만 만들어도 `app/` 폴더가 존재하므로 라우트 전체 복사가 필수입니다.
+
+**컴포넌트/유틸리티는 부분 복사 가능**하지만, 라우트는 반드시 전체 복사해야 합니다.
 
 ```bash
-# ✅ 가능: 컴포넌트만 부분 커스터마이징 (라우트는 src/app 사용)
+# ❌ 잘못된 예: 컴포넌트만 복사
 mkdir -p app/components/layout
 cp src/components/layout/Header.tsx app/components/layout/
+# → app/ 폴더가 생성되어 모든 페이지 404 발생!
 
-# ✅ 가능: 유틸리티만 부분 커스터마이징
+# ✅ 올바른 예: 라우트 전체 복사 + 컴포넌트 부분 복사
+cp -r src/app/* app/                    # 라우트 전체 복사 (필수)
+mkdir -p app/components/layout
+cp src/components/layout/Header.tsx app/components/layout/  # 수정할 컴포넌트만
 mkdir -p app/lib
-cp src/lib/utils.ts app/lib/
-
-# ❌ 불가능: 라우트 부분 복사
-# app/ 폴더가 있으면 src/app/의 라우트는 무시됨
-# 예: app/policy만 복사하면 /login 접속 시 404 발생
+cp src/lib/utils.ts app/lib/            # 수정할 유틸만
 ```
 
-**라우트를 커스터마이징하려면 반드시 전체 복사:**
-```bash
-mkdir -p app
-cp -r src/app/* app/
-# 이후 원하는 라우트만 수정
-```
+**요약:**
+- `app/` 폴더 사용 시 → 라우트(`src/app/*`) 전체 복사 필수
+- 컴포넌트/유틸리티 → 수정이 필요한 파일만 복사 가능
 
 ### 주의사항
 
