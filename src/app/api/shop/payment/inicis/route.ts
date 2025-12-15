@@ -75,7 +75,8 @@ export async function POST(request: NextRequest) {
       zipCode,
       address,
       addressDetail,
-      deliveryMemo
+      deliveryMemo,
+      baseUrl: clientBaseUrl  // 클라이언트에서 전달받은 baseUrl
     } = body
 
     if (!items || items.length === 0) {
@@ -205,7 +206,8 @@ export async function POST(request: NextRequest) {
       ? 'https://stgstdpay.inicis.com/stdjs/INIStdPay.js'
       : 'https://stdpay.inicis.com/stdjs/INIStdPay.js'
 
-    const baseUrl = process.env.NEXT_PUBLIC_URL || 'http://localhost:3004'
+    // 클라이언트에서 전달받은 URL 사용 (이니시스는 요청 페이지와 동일한 도메인 필요)
+    const baseUrl = clientBaseUrl || process.env.NEXT_PUBLIC_URL || 'http://localhost:3003'
 
     // 해시 데이터 생성 (이니시스 웹표준 방식)
     // signature: oid, price, timestamp 해시

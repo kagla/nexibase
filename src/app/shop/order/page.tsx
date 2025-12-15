@@ -311,6 +311,9 @@ export default function OrderPage() {
     try {
       // 카드결제인 경우 이니시스 결제 진행
       if (paymentMethod === "card") {
+        // 현재 접속 URL을 자동으로 감지 (포트 변경에도 대응)
+        const currentBaseUrl = window.location.origin
+
         const res = await fetch("/api/shop/payment/inicis", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -329,6 +332,7 @@ export default function OrderPage() {
             address,
             addressDetail: addressDetail || null,
             deliveryMemo: deliveryMemo || null,
+            baseUrl: currentBaseUrl,  // 현재 접속 URL 전달
           }),
         })
 
