@@ -311,11 +311,11 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// 주문번호 생성 (ORD-YYYYMMDD-XXXX)
+// 주문번호 생성 (ORD20251215-0001)
 async function generateOrderNo(): Promise<string> {
   const today = new Date()
   const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '')
-  const prefix = `ORD-${dateStr}-`
+  const prefix = `ORD${dateStr}`
 
   // 오늘 마지막 주문번호 조회
   const lastOrder = await prisma.order.findFirst({
@@ -327,11 +327,14 @@ async function generateOrderNo(): Promise<string> {
 
   let sequence = 1
   if (lastOrder) {
-    const lastSeq = parseInt(lastOrder.orderNo.split('-')[2])
-    sequence = lastSeq + 1
+    // ORD20251215-0001 형식에서 마지막 4자리 추출
+    const lastSeq = parseInt(lastOrder.orderNo.slice(-4))
+    if (!isNaN(lastSeq)) {
+      sequence = lastSeq + 1
+    }
   }
 
-  return `${prefix}${String(sequence).padStart(4, '0')}`
+  return `${prefix}-${String(sequence).padStart(4, '0')}`
 }
 
 // 배송비 계산
