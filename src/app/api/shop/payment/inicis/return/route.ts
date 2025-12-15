@@ -49,7 +49,16 @@ function getNetCancelUrl(idcName: string): string {
 
 // 결제 승인 결과 처리 (POST)
 export async function POST(request: NextRequest) {
-  const baseUrl = process.env.NEXT_PUBLIC_URL || 'http://localhost:3004'
+  // request에서 호스트 정보를 가져와 baseUrl 생성
+  const host = request.headers.get('host') || 'localhost:3004'
+  const protocol = request.headers.get('x-forwarded-proto') || 'http'
+  const baseUrl = process.env.NEXT_PUBLIC_URL || `${protocol}://${host}`
+
+  // 리다이렉트 헬퍼 함수
+  const redirectTo = (path: string) => {
+    const url = new URL(path, baseUrl)
+    return NextResponse.redirect(url.toString())
+  }
 
   try {
     // form-urlencoded 데이터 파싱
@@ -80,9 +89,7 @@ export async function POST(request: NextRequest) {
       }
 
       // 에러 페이지로 리다이렉트
-      return NextResponse.redirect(
-        `${baseUrl}/shop/order/complete?error=payment_failed&message=${encodeURIComponent(resultMsg || '결제 인증에 실패했습니다.')}`
-      )
+      return redirectTo(`/shop/order/complete?error=payment_failed&message=${encodeURIComponent(resultMsg || '결제 인증에 실패했습니다.')}`)
     }
 
     // 인증 성공 - 승인 요청
@@ -166,9 +173,7 @@ export async function POST(request: NextRequest) {
             body: netCancelData.toString()
           })
 
-          return NextResponse.redirect(
-            `${baseUrl}/shop/order/complete?error=amount_mismatch&message=${encodeURIComponent('결제 금액이 일치하지 않습니다.')}`
-          )
+          return redirectTo(`/shop/order/complete?error=amount_mismatch&message=${encodeURIComponent('결제 금액이 일치하지 않습니다.')}`)
         }
 
         // 주문 상태를 결제 완료로 업데이트
@@ -212,7 +217,7 @@ export async function POST(request: NextRequest) {
       }
 
       // 주문 완료 페이지로 리다이렉트
-      return NextResponse.redirect(`${baseUrl}/shop/order/complete?orderNo=${orderNo}`)
+      return redirectTo(`/shop/order/complete?orderNo=${orderNo}`)
     } else {
       // 승인 실패
       console.error('이니시스 승인 실패:', authResult)
@@ -229,14 +234,10 @@ export async function POST(request: NextRequest) {
         })
       }
 
-      return NextResponse.redirect(
-        `${baseUrl}/shop/order/complete?error=approval_failed&message=${encodeURIComponent(authResult.resultMsg || '결제 승인에 실패했습니다.')}`
-      )
+      return redirectTo(`/shop/order/complete?error=approval_failed&message=${encodeURIComponent(authResult.resultMsg || '결제 승인에 실패했습니다.')}`)
     }
   } catch (error) {
     console.error('결제 처리 에러:', error)
-    return NextResponse.redirect(
-      `${baseUrl}/shop/order/complete?error=server_error&message=${encodeURIComponent('결제 처리 중 오류가 발생했습니다.')}`
-    )
+    return redirectTo(`/shop/order/complete?error=server_error&message=${encodeURIComponent('결제 처리 중 오류가 발생했습니다.')}`)
   }
 }
