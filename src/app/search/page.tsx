@@ -188,8 +188,10 @@ export default function SearchPage() {
   // 타입 변경
   const handleTypeChange = (type: SearchType) => {
     setSelectedType(type)
+    // 검색된 쿼리(data.query) 사용하여 입력창 변경과 무관하게 동작
+    const searchedQuery = data?.query || query.trim()
     const params = new URLSearchParams({
-      q: query.trim(),
+      q: searchedQuery,
       type,
       sort: sortBy
     })
@@ -201,8 +203,9 @@ export default function SearchPage() {
 
   // 필터 변경
   const handleFilterChange = (board: string, sort: string) => {
+    const searchedQuery = data?.query || query.trim()
     const params = new URLSearchParams({
-      q: query.trim(),
+      q: searchedQuery,
       type: selectedType,
       sort
     })
@@ -214,8 +217,9 @@ export default function SearchPage() {
 
   // 페이지 변경
   const handlePageChange = (newPage: number) => {
+    const searchedQuery = data?.query || query.trim()
     const params = new URLSearchParams({
-      q: query.trim(),
+      q: searchedQuery,
       type: selectedType,
       page: newPage.toString(),
       sort: sortBy
