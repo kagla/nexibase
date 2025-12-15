@@ -50,6 +50,33 @@
 
 ---
 
+## 코딩 규칙
+
+### 탭/상태 URL 반영
+페이지 내 탭이나 상태가 있는 경우, URL 쿼리 파라미터에 반영하여 새로고침 시에도 상태가 유지되도록 구현:
+
+```tsx
+import { useSearchParams } from "next/navigation"
+
+// URL에서 탭 상태 읽기
+const searchParams = useSearchParams()
+const tabParam = searchParams.get('tab')
+const activeTab = (tabParam === 'options' || tabParam === 'images') ? tabParam : 'basic'
+
+// 탭 변경 시 URL 업데이트
+const setActiveTab = (tab: string) => {
+  const params = new URLSearchParams(searchParams.toString())
+  if (tab === 'basic') {
+    params.delete('tab')
+  } else {
+    params.set('tab', tab)
+  }
+  router.replace(`/path/${id}${params.toString() ? `?${params}` : ''}`)
+}
+```
+
+---
+
 ## 문서
 
 ### docs 폴더
