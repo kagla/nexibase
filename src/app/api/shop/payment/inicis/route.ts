@@ -26,18 +26,19 @@ async function getShopSettings() {
   return settingsMap
 }
 
-// 주문번호 생성 (YYMMDDHH-XXXXXXX = 16자리, 중복 체크)
+// 주문번호 생성 (YYMMDDHH-iiXXXXX = 16자리, ii=분, 중복 체크)
 async function generateOrderNo(): Promise<string> {
   const now = new Date()
   const yy = String(now.getFullYear()).slice(-2)
   const MM = String(now.getMonth() + 1).padStart(2, '0')
   const dd = String(now.getDate()).padStart(2, '0')
   const hh = String(now.getHours()).padStart(2, '0')
+  const ii = String(now.getMinutes()).padStart(2, '0')
 
   // 최대 10번 시도
   for (let i = 0; i < 10; i++) {
-    const rand = String(Math.floor(Math.random() * 10000000)).padStart(7, '0')
-    const orderNo = `${yy}${MM}${dd}${hh}-${rand}`
+    const rand = String(Math.floor(Math.random() * 100000)).padStart(5, '0')
+    const orderNo = `${yy}${MM}${dd}${hh}-${ii}${rand}`
 
     // 중복 체크
     const exists = await prisma.order.findUnique({ where: { orderNo } })
@@ -46,9 +47,10 @@ async function generateOrderNo(): Promise<string> {
     }
   }
 
-  // 10번 실패 시 타임스탬프 추가
-  const ts = Date.now().toString().slice(-6)
-  return `${yy}${MM}${dd}${hh}-${ts}0`
+  // 10번 실패 시 초+랜덤
+  const ss = String(now.getSeconds()).padStart(2, '0')
+  const rand = String(Math.floor(Math.random() * 1000)).padStart(3, '0')
+  return `${yy}${MM}${dd}${hh}-${ii}${ss}${rand}`
 }
 
 // SHA256 해시 생성
