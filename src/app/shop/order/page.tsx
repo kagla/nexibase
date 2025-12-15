@@ -82,10 +82,9 @@ export default function OrderPage() {
   const [shopSettings, setShopSettings] = useState<ShopSettings | null>(null)
 
   // 이니시스 결제
-  const [inicisScriptUrl, setInicisScriptUrl] = useState<string | null>(null)
   const [inicisReady, setInicisReady] = useState(false)
   const paymentFormRef = useRef<HTMLFormElement>(null)
-  const [pendingOrderNo, setPendingOrderNo] = useState<string | null>(null)
+  const [, setPendingOrderNo] = useState<string | null>(null)
 
   // 배송비
   const [deliveryFee, setDeliveryFee] = useState(0)
@@ -348,29 +347,23 @@ export default function OrderPage() {
         // 카드결제는 장바구니를 미리 삭제하지 않음 (결제 완료 페이지에서 삭제)
         // 결제 취소 시에도 장바구니가 유지됨
 
-        // 이니시스 스크립트 URL 설정 및 결제창 호출
-        setInicisScriptUrl(data.payment.payUrl)
-
-        // 스크립트 로드 후 결제창 호출
+        // 결제창 호출 (스크립트는 페이지 로드 시 미리 로드됨)
         const orderNo = data.order.orderNo
-        const checkAndPay = () => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const win = window as any
-          if (win.INIStdPay) {
-            openInicisPayment(data.payment, orderNo)
-          } else {
-            setTimeout(checkAndPay, 100)
-          }
-        }
 
-        // 스크립트가 이미 로드되어 있으면 바로 호출
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const win = window as any
         if (win.INIStdPay) {
           openInicisPayment(data.payment, orderNo)
         } else {
           // 스크립트 로드 대기
-          setTimeout(checkAndPay, 500)
+          const checkAndPay = () => {
+            if (win.INIStdPay) {
+              openInicisPayment(data.payment, orderNo)
+            } else {
+              setTimeout(checkAndPay, 100)
+            }
+          }
+          setTimeout(checkAndPay, 100)
         }
 
         return
@@ -477,20 +470,19 @@ export default function OrderPage() {
     <div className="min-h-screen bg-background flex flex-col">
       <Header />
 
-      {/* 이니시스 결제 스크립트 */}
-      {inicisScriptUrl && (
-        <Script
-          src={inicisScriptUrl}
-          strategy="afterInteractive"
-          onLoad={() => setInicisReady(true)}
-        />
-      )}
+      {/* 이니시스 결제 스크립트 - 항상 로드 */}
+      <Script
+        src="https://stgstdpay.inicis.com/stdjs/INIStdPay.js"
+        strategy="afterInteractive"
+        onLoad={() => setInicisReady(true)}
+      />
 
-      {/* 이니시스 결제 폼 (숨김) */}
+      {/* 이니시스 결제 폼 - body 레벨에서 작동하도록 portal 없이 직접 배치 */}
       <form
         id="inicisPayForm"
         ref={paymentFormRef}
         method="post"
+        acceptCharset="UTF-8"
         style={{ display: "none" }}
       />
 
