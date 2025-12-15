@@ -23,6 +23,12 @@ interface SiteSettings {
   site_logo: string
 }
 
+interface Board {
+  id: number
+  slug: string
+  name: string
+}
+
 export default function Header() {
   const [user, setUser] = useState<UserInfo | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -31,6 +37,11 @@ export default function Header() {
     site_name: 'NexiBase',
     site_logo: ''
   })
+  const [boards, setBoards] = useState<Board[]>([])
+  const [boardMenuOpen, setBoardMenuOpen] = useState(false)
+  const [infoMenuOpen, setInfoMenuOpen] = useState(false)
+  const boardMenuRef = useRef<HTMLDivElement>(null)
+  const infoMenuRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
   const { theme, setTheme } = useTheme()
 
@@ -41,10 +52,11 @@ export default function Header() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // 사용자 정보와 설정을 병렬로 가져옴
-        const [userResponse, settingsResponse] = await Promise.all([
+        // 사용자 정보, 설정, 게시판 목록을 병렬로 가져옴
+        const [userResponse, settingsResponse, boardsResponse] = await Promise.all([
           fetch('/api/me'),
-          fetch('/api/settings')
+          fetch('/api/settings'),
+          fetch('/api/boards?limit=10')
         ])
 
         if (userResponse.ok) {
@@ -60,6 +72,11 @@ export default function Header() {
             site_name: settingsData.settings.site_name || 'NexiBase',
             site_logo: settingsData.settings.site_logo || ''
           })
+        }
+
+        if (boardsResponse.ok) {
+          const boardsData = await boardsResponse.json()
+          setBoards(boardsData.boards || [])
         }
       } catch (error) {
         console.error('데이터 조회 에러:', error)
@@ -99,12 +116,12 @@ export default function Header() {
     return theme === 'dark' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />
   }
 
-  const [infoMenuOpen, setInfoMenuOpen] = useState(false)
-  const infoMenuRef = useRef<HTMLDivElement>(null)
-
   // 드롭다운 외부 클릭 시 닫기
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      if (boardMenuRef.current && !boardMenuRef.current.contains(event.target as Node)) {
+        setBoardMenuOpen(false)
+      }
       if (infoMenuRef.current && !infoMenuRef.current.contains(event.target as Node)) {
         setInfoMenuOpen(false)
       }
@@ -131,6 +148,33 @@ export default function Header() {
               <h1 className="text-2xl font-bold text-primary">{settings.site_name}</h1>
             </Link>
             <nav className="hidden md:flex items-center space-x-2">
+              {/* 게시판 드롭다운 */}
+              {boards.length > 0 && (
+                <div className="relative" ref={boardMenuRef}>
+                  <Button
+                    variant="ghost"
+                    onClick={() => setBoardMenuOpen(!boardMenuOpen)}
+                    className="flex items-center gap-1"
+                  >
+                    게시판
+                    <ChevronDown className={`h-4 w-4 transition-transform ${boardMenuOpen ? 'rotate-180' : ''}`} />
+                  </Button>
+                  {boardMenuOpen && (
+                    <div className="absolute top-full left-0 mt-1 w-44 bg-background border rounded-md shadow-lg py-1 z-50">
+                      {boards.map((board) => (
+                        <Link
+                          key={board.id}
+                          href={`/board/${board.slug}`}
+                          className="block px-4 py-2 text-sm hover:bg-muted transition-colors"
+                          onClick={() => setBoardMenuOpen(false)}
+                        >
+                          {board.name}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
               {/* 소개 드롭다운 */}
               <div className="relative" ref={infoMenuRef}>
                 <Button
