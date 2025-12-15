@@ -145,6 +145,83 @@ export default function OrderPage() {
     }
   }, [zipCode, orderItems])
 
+  // 이니시스 iframe 스타일 강제 수정 (흰색 배경 문제 해결)
+  useEffect(() => {
+    // MutationObserver로 감지
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+          if (node instanceof HTMLElement) {
+            // iframe 감지
+            if (node.tagName === 'IFRAME' && (
+              (node as HTMLIFrameElement).src.includes('inicis') ||
+              node.id.includes('INI') ||
+              (node as HTMLIFrameElement).name.includes('INI')
+            )) {
+              node.style.backgroundColor = 'transparent'
+              // @ts-expect-error allowTransparency is not in standard types
+              node.allowTransparency = "true"
+              node.setAttribute('frameBorder', '0')
+            }
+            // div 컨테이너 감지
+            if (node.tagName === 'DIV' && (node.id.includes('INI') || node.className.includes('INI'))) {
+              node.style.backgroundColor = 'transparent'
+            }
+          }
+        })
+      })
+    })
+
+    observer.observe(document.body, { childList: true, subtree: true })
+
+    // 주기적으로 체크 (Observer가 놓칠 경우 대비)
+    const intervalId = setInterval(() => {
+      // 1. iframe 투명화
+      const iframes = document.querySelectorAll('iframe')
+      iframes.forEach(iframe => {
+        if (iframe.src.includes('inicis') || iframe.id.includes('INI') || iframe.name.includes('INI') || iframe.className.includes('inipay')) {
+          if (iframe.style.backgroundColor !== 'transparent') {
+            iframe.style.backgroundColor = 'transparent'
+            // @ts-expect-error allowTransparency
+            iframe.allowTransparency = "true"
+            iframe.setAttribute('frameBorder', '0')
+          }
+        }
+      })
+
+      // 2. 모달 컨테이너 투명화
+      const modalDiv = document.getElementById('inicisModalDiv')
+      if (modalDiv) {
+        modalDiv.style.backgroundColor = 'transparent'
+        modalDiv.style.border = 'none'
+        modalDiv.style.boxShadow = 'none'
+      }
+
+      const modalDialogs = document.querySelectorAll('.inipay_modal, .inipay_modal-body, .inipay_modal-content')
+      modalDialogs.forEach(el => {
+        if (el instanceof HTMLElement) {
+          el.style.backgroundColor = 'transparent'
+          el.style.border = 'none'
+          el.style.boxShadow = 'none'
+        }
+      })
+
+      // 3. 백드롭 (마스크) 반투명화
+      const backdrops = document.querySelectorAll('.modal-backdrop, .inipay_modal-backdrop')
+      backdrops.forEach(el => {
+        if (el instanceof HTMLElement) {
+          el.style.backgroundColor = 'rgba(0, 0, 0, 0.5)'
+          el.style.opacity = '0.5'
+        }
+      })
+    }, 500)
+
+    return () => {
+      observer.disconnect()
+      clearInterval(intervalId)
+    }
+  }, [])
+
   const loadOrderItems = () => {
     const items: OrderItem[] = JSON.parse(localStorage.getItem("orderItems") || "[]")
     if (items.length === 0) {
@@ -279,6 +356,7 @@ export default function OrderPage() {
         returnUrl: payment.returnUrl,
         closeUrl: payment.closeUrl,
         popupUrl: payment.popupUrl,
+        payViewType: "overlay",
         gopaymethod: payment.gopaymethod,
         acceptmethod: payment.acceptmethod,
       }
@@ -709,11 +787,10 @@ export default function OrderPage() {
                       <button
                         type="button"
                         onClick={() => setPaymentMethod("bank")}
-                        className={`p-4 border rounded-lg text-left transition-colors ${
-                          paymentMethod === "bank"
-                            ? "border-primary bg-primary/5"
-                            : "border-border hover:border-primary/50"
-                        }`}
+                        className={`p-4 border rounded-lg text-left transition-colors ${paymentMethod === "bank"
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:border-primary/50"
+                          }`}
                       >
                         <Building2 className="h-6 w-6 mb-2" />
                         <p className="font-medium">무통장입금</p>
@@ -724,11 +801,10 @@ export default function OrderPage() {
                       <button
                         type="button"
                         onClick={() => setPaymentMethod("card")}
-                        className={`p-4 border rounded-lg text-left transition-colors ${
-                          paymentMethod === "card"
-                            ? "border-primary bg-primary/5"
-                            : "border-border hover:border-primary/50"
-                        }`}
+                        className={`p-4 border rounded-lg text-left transition-colors ${paymentMethod === "card"
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:border-primary/50"
+                          }`}
                       >
                         <CreditCard className="h-6 w-6 mb-2" />
                         <p className="font-medium">카드결제</p>

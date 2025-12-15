@@ -63,7 +63,20 @@ export async function GET(request: NextRequest) {
     ? 'https://stgstdpay.inicis.com/stdjs/INIStdPay_popup.js'
     : 'https://stdpay.inicis.com/stdjs/INIStdPay_popup.js'
 
-  const html = `<script language="javascript" type="text/javascript" src="${popupScriptUrl}" charset="UTF-8"></script>`
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { background-color: transparent; margin: 0; padding: 0; overflow: hidden; }
+    </style>
+</head>
+<body style="background-color: transparent;">
+    <script language="javascript" type="text/javascript" src="${popupScriptUrl}" charset="UTF-8"></script>
+</body>
+</html>
+`
 
   return new NextResponse(html, {
     headers: { 'Content-Type': 'text/html; charset=utf-8' }
