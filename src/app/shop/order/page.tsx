@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
+import Script from "next/script"
 import { Header, Footer } from "@/themes"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -825,7 +826,13 @@ export default function OrderPage() {
         </div>
       </main>
 
-      {/* 이니시스 결제 폼 (숨김) - 스크립트는 동적으로 로드 */}
+      {/* 이니시스 스크립트 - beforeInteractive로 먼저 로드 */}
+      <Script
+        src="https://stgstdpay.inicis.com/stdjs/INIStdPay.js"
+        strategy="beforeInteractive"
+      />
+
+      {/* 이니시스 결제 폼 (숨김) */}
       <form
         id="inicisPayForm"
         ref={paymentFormRef}

@@ -56,18 +56,15 @@ export async function GET(request: NextRequest) {
     })
   }
 
-  // 결과가 없으면 빈 페이지 (overlay에서 사용)
-  const html = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>결제</title>
-</head>
-<body>
-</body>
-</html>
-`
+  // 결과가 없으면 이니시스 popup 스크립트 로드 (overlay 모드에서 결제창 표시용)
+  // 테스트/운영 환경 구분
+  const isTest = process.env.PG_TEST_MODE !== 'false'
+  const popupScriptUrl = isTest
+    ? 'https://stgstdpay.inicis.com/stdjs/INIStdPay_popup.js'
+    : 'https://stdpay.inicis.com/stdjs/INIStdPay_popup.js'
+
+  const html = `<script language="javascript" type="text/javascript" src="${popupScriptUrl}" charset="UTF-8"></script>`
+
   return new NextResponse(html, {
     headers: { 'Content-Type': 'text/html; charset=utf-8' }
   })
