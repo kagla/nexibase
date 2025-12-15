@@ -310,6 +310,9 @@ export default function ProductDetailPage() {
         const formData = new FormData()
         formData.append('file', file)
         formData.append('folder', 'reviews')
+        if (product) {
+          formData.append('productId', String(product.id))
+        }
 
         const res = await fetch('/api/upload', {
           method: 'POST',
