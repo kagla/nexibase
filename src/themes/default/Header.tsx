@@ -201,6 +201,13 @@ export default function Header() {
                     >
                       자주 묻는 질문
                     </Link>
+                    <Link
+                      href="/content/contact"
+                      className="block px-4 py-2 text-sm hover:bg-muted transition-colors"
+                      onClick={() => setInfoMenuOpen(false)}
+                    >
+                      문의하기
+                    </Link>
                   </div>
                 )}
               </div>
