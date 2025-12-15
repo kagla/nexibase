@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
-import Script from "next/script"
 import { Header, Footer } from "@/themes"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -81,8 +80,6 @@ export default function OrderPage() {
   const [shopSettings, setShopSettings] = useState<ShopSettings | null>(null)
 
   // 이니시스 결제 관련
-  const [paymentData, setPaymentData] = useState<InicisPaymentData | null>(null)
-  const [inicisScriptLoaded, setInicisScriptLoaded] = useState(false)
   const paymentFormRef = useRef<HTMLFormElement>(null)
 
 
@@ -199,68 +196,107 @@ export default function OrderPage() {
 
   const formatPrice = (price: number) => price.toLocaleString() + "원"
 
-  // 이니시스 결제 시작 함수
-  const startInicisPayment = (payment: InicisPaymentData) => {
-    // 폼에 데이터 설정
-    const form = paymentFormRef.current
-    if (!form) {
-      setError("결제 폼을 찾을 수 없습니다.")
-      setSubmitting(false)
-      return
-    }
+  // 이니시스 스크립트 동적 로드
+  const loadInicisScript = (): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const win = window as any
 
-    // 기존 폼 필드 제거
-    form.innerHTML = ""
+      // 이미 로드됨
+      if (win.INIStdPay) {
+        resolve()
+        return
+      }
 
-    // 폼 필드 추가
-    const fields: Record<string, string> = {
-      version: payment.version,
-      mid: payment.mid,
-      oid: payment.oid,
-      goodname: payment.goodname,
-      price: payment.price.toString(),
-      currency: payment.currency,
-      buyername: payment.buyername,
-      buyertel: payment.buyertel,
-      buyeremail: payment.buyeremail,
-      timestamp: payment.timestamp,
-      signature: payment.signature,
-      verification: payment.verification,
-      mKey: payment.mKey,
-      use_chkfake: payment.use_chkfake,
-      returnUrl: payment.returnUrl,
-      closeUrl: payment.closeUrl,
-      gopaymethod: payment.gopaymethod,
-      acceptmethod: payment.acceptmethod,
-    }
+      // 이미 스크립트 태그가 있는지 확인
+      const existingScript = document.querySelector('script[src*="INIStdPay.js"]')
+      if (existingScript) {
+        // 로드 대기
+        const checkLoaded = setInterval(() => {
+          if (win.INIStdPay) {
+            clearInterval(checkLoaded)
+            resolve()
+          }
+        }, 100)
+        setTimeout(() => {
+          clearInterval(checkLoaded)
+          reject(new Error("스크립트 로드 타임아웃"))
+        }, 10000)
+        return
+      }
 
-    Object.entries(fields).forEach(([name, value]) => {
-      const input = document.createElement("input")
-      input.type = "hidden"
-      input.name = name
-      input.value = value
-      form.appendChild(input)
+      // 스크립트 동적 생성
+      const script = document.createElement("script")
+      script.src = "https://stgstdpay.inicis.com/stdjs/INIStdPay.js"
+      script.type = "text/javascript"
+      script.charset = "UTF-8"
+      script.onload = () => {
+        console.log("이니시스 스크립트 로드 완료")
+        resolve()
+      }
+      script.onerror = () => {
+        reject(new Error("이니시스 스크립트 로드 실패"))
+      }
+      document.head.appendChild(script)
     })
-
-    // 이니시스 결제 호출
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const win = window as any
-    if (win.INIStdPay) {
-      win.INIStdPay.pay("inicisPayForm")
-    } else {
-      setError("결제 모듈을 로딩 중입니다. 잠시 후 다시 시도해주세요.")
-      setSubmitting(false)
-    }
   }
 
-  // 이니시스 스크립트 로드 완료 핸들러
-  const handleInicisScriptLoad = () => {
-    setInicisScriptLoaded(true)
-    // 결제 데이터가 있고 스크립트가 방금 로드된 경우 결제 시작
-    if (paymentData && submitting) {
-      setTimeout(() => {
-        startInicisPayment(paymentData)
-      }, 100)
+  // 이니시스 결제 시작 함수
+  const startInicisPayment = async (payment: InicisPaymentData) => {
+    try {
+      // 스크립트 로드 확인/대기
+      await loadInicisScript()
+
+      // 폼에 데이터 설정
+      const form = paymentFormRef.current
+      if (!form) {
+        setError("결제 폼을 찾을 수 없습니다.")
+        setSubmitting(false)
+        return
+      }
+
+      // 기존 폼 필드 제거
+      form.innerHTML = ""
+
+      // 폼 필드 추가
+      const fields: Record<string, string> = {
+        version: payment.version,
+        mid: payment.mid,
+        oid: payment.oid,
+        goodname: payment.goodname,
+        price: payment.price.toString(),
+        currency: payment.currency,
+        buyername: payment.buyername,
+        buyertel: payment.buyertel,
+        buyeremail: payment.buyeremail,
+        timestamp: payment.timestamp,
+        signature: payment.signature,
+        verification: payment.verification,
+        mKey: payment.mKey,
+        use_chkfake: payment.use_chkfake,
+        returnUrl: payment.returnUrl,
+        closeUrl: payment.closeUrl,
+        gopaymethod: payment.gopaymethod,
+        acceptmethod: payment.acceptmethod,
+      }
+
+      Object.entries(fields).forEach(([name, value]) => {
+        const input = document.createElement("input")
+        input.type = "hidden"
+        input.name = name
+        input.value = value
+        form.appendChild(input)
+      })
+
+      // 이니시스 결제 호출
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const win = window as any
+      console.log("INIStdPay.pay 호출", win.INIStdPay)
+      win.INIStdPay.pay("inicisPayForm")
+    } catch (err) {
+      console.error("결제 시작 에러:", err)
+      setError("결제 모듈을 로딩하지 못했습니다. 페이지를 새로고침 후 다시 시도해주세요.")
+      setSubmitting(false)
     }
   }
 
@@ -336,21 +372,8 @@ export default function OrderPage() {
         // 카드결제는 장바구니를 미리 삭제하지 않음 (결제 완료 페이지에서 삭제)
         // 결제 취소 시에도 장바구니가 유지됨
 
-        // 이니시스 결제 데이터 저장 (폼에 사용)
-        setPaymentData(data.payment)
-
-        // 이니시스 스크립트가 로드된 후 결제 시작
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const win = window as any
-        if (win.INIStdPay) {
-          // 스크립트가 이미 로드된 경우 바로 결제 시작
-          setTimeout(() => {
-            startInicisPayment(data.payment)
-          }, 100)
-        } else {
-          // 스크립트 로드 대기 (useEffect에서 로드 완료 시 처리)
-        }
-
+        // 이니시스 결제 시작 (스크립트 로드 포함)
+        await startInicisPayment(data.payment)
         return
       }
 
@@ -800,13 +823,7 @@ export default function OrderPage() {
         </div>
       </main>
 
-      {/* 이니시스 결제 스크립트 - head에 직접 로드 (예제와 동일하게) */}
-      <Script
-        src="https://stgstdpay.inicis.com/stdjs/INIStdPay.js"
-        strategy="beforeInteractive"
-      />
-
-      {/* 이니시스 결제 폼 (숨김) - 페이지에 미리 존재해야 함 */}
+      {/* 이니시스 결제 폼 (숨김) - 스크립트는 동적으로 로드 */}
       <form
         id="inicisPayForm"
         ref={paymentFormRef}
