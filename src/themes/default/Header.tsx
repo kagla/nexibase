@@ -5,7 +5,7 @@ import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { LogOut, Sun, Moon, ChevronDown, Search, Menu, X, Bell, ShoppingCart, Package } from "lucide-react"
+import { LogOut, Sun, Moon, ChevronDown, Search, Menu, X, Bell, ShoppingCart, Package, Settings } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter, usePathname } from "next/navigation"
@@ -243,6 +243,14 @@ export default function Header() {
                       <Button variant="ghost" size="icon" className="relative">
                         <Bell className="h-5 w-5" />
                       </Button>
+                      {/* 관리자 바로가기 */}
+                      {user.role === 'admin' && (
+                        <Link href="/admin">
+                          <Button variant="ghost" size="icon" title="관리자">
+                            <Settings className="h-5 w-5" />
+                          </Button>
+                        </Link>
+                      )}
                       <div className="flex items-center gap-2 pl-2 border-l">
                         <Avatar className="h-8 w-8">
                           <AvatarImage src={user.image || undefined} />
