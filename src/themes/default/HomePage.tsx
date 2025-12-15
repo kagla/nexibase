@@ -142,9 +142,9 @@ export default function HomePage() {
       <main className="flex-1">
         <div className="max-w-6xl mx-auto px-4 py-6">
           {/* 환영 배너 (좌 2열) + 통계 (우 2열 2행) */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             {/* 환영 배너 - 좌측 2열 */}
-            <Card className="lg:col-span-2 lg:row-span-2 bg-gradient-to-br from-primary/10 via-primary/5 to-background border-primary/20">
+            <Card className="col-span-2 lg:row-span-2 bg-gradient-to-br from-primary/10 via-primary/5 to-background border-primary/20">
               <CardContent className="p-6 h-full flex flex-col justify-between">
                 <div>
                   <div className="flex items-center gap-2 mb-3">
