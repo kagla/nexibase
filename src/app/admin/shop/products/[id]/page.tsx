@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, use } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Sidebar } from "@/components/admin/Sidebar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -73,11 +73,26 @@ interface Category {
 export default function ProductEditPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [product, setProduct] = useState<Product | null>(null)
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [activeTab, setActiveTab] = useState<'basic' | 'options' | 'images'>('basic')
+
+  // URL에서 탭 상태 읽기
+  const tabParam = searchParams.get('tab')
+  const activeTab = (tabParam === 'options' || tabParam === 'images') ? tabParam : 'basic'
+
+  // 탭 변경 시 URL 업데이트
+  const setActiveTab = (tab: 'basic' | 'options' | 'images') => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (tab === 'basic') {
+      params.delete('tab')
+    } else {
+      params.set('tab', tab)
+    }
+    router.replace(`/admin/shop/products/${id}${params.toString() ? `?${params}` : ''}`)
+  }
 
   // 기본 정보 폼
   const [formData, setFormData] = useState({
