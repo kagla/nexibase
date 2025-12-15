@@ -81,6 +81,7 @@ export default function OrderPage() {
   const [inicisScriptUrl, setInicisScriptUrl] = useState<string | null>(null)
   const [inicisReady, setInicisReady] = useState(false)
   const paymentFormRef = useRef<HTMLFormElement>(null)
+  const [pendingOrderNo, setPendingOrderNo] = useState<string | null>(null)
 
   // 배송비
   const [deliveryFee, setDeliveryFee] = useState(0)
@@ -177,8 +178,24 @@ export default function OrderPage() {
 
   const formatPrice = (price: number) => price.toLocaleString() + "원"
 
+  // 결제 취소 시 pending 주문 취소 처리
+  const cancelPendingOrder = async (orderNo: string) => {
+    try {
+      await fetch(`/api/shop/orders/${orderNo}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "cancel",
+          cancelReason: "사용자가 결제를 취소했습니다."
+        })
+      })
+    } catch (err) {
+      console.error("주문 취소 실패:", err)
+    }
+  }
+
   // 이니시스 결제창 호출
-  const openInicisPayment = (paymentData: InicisPaymentData) => {
+  const openInicisPayment = (paymentData: InicisPaymentData, orderNo: string) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const win = window as any
 
@@ -195,6 +212,9 @@ export default function OrderPage() {
       setSubmitting(false)
       return
     }
+
+    // pending 주문번호 저장
+    setPendingOrderNo(orderNo)
 
     // 폼 필드 설정
     form.innerHTML = ""
@@ -225,6 +245,23 @@ export default function OrderPage() {
       input.value = value
       form.appendChild(input)
     })
+
+    // 결제창 닫힘 감지를 위한 focus 이벤트 리스너
+    const handleFocus = () => {
+      // 결제창이 닫히고 페이지에 포커스가 돌아왔을 때
+      setTimeout(async () => {
+        // 아직 페이지에 있고 결제가 완료되지 않았으면 취소로 간주
+        // (결제 완료 시 페이지가 리다이렉트되므로 이 코드가 실행되지 않음)
+        setSubmitting(false)
+        setError("결제가 취소되었습니다. 다시 시도해주세요.")
+        await cancelPendingOrder(orderNo)
+        setPendingOrderNo(null)
+        // 장바구니에서 orderItems 복원
+        loadOrderItems()
+      }, 1000)
+      window.removeEventListener("focus", handleFocus)
+    }
+    window.addEventListener("focus", handleFocus)
 
     // 이니시스 결제창 호출
     win.INIStdPay.pay("inicisPayForm")
@@ -295,11 +332,12 @@ export default function OrderPage() {
         setInicisScriptUrl(data.payment.payUrl)
 
         // 스크립트 로드 후 결제창 호출
+        const orderNo = data.order.orderNo
         const checkAndPay = () => {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const win = window as any
           if (win.INIStdPay) {
-            openInicisPayment(data.payment)
+            openInicisPayment(data.payment, orderNo)
           } else {
             setTimeout(checkAndPay, 100)
           }
@@ -309,7 +347,7 @@ export default function OrderPage() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const win = window as any
         if (win.INIStdPay) {
-          openInicisPayment(data.payment)
+          openInicisPayment(data.payment, orderNo)
         } else {
           // 스크립트 로드 대기
           setTimeout(checkAndPay, 500)
