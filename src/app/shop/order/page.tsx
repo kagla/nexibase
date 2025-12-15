@@ -147,26 +147,40 @@ export default function OrderPage() {
 
   // 이니시스 iframe 스타일 강제 수정 (흰색 배경 문제 해결)
   useEffect(() => {
-    // MutationObserver로 감지
+    // 이니시스 요소인지 확인
+    const isInicisElement = (el: HTMLElement) =>
+      el.id?.includes('INI') || el.className?.includes('INI') || el.className?.includes('inipay')
+
+    const isInicisIframe = (iframe: HTMLIFrameElement) =>
+      iframe.src?.includes('inicis') || iframe.name?.includes('INI') || isInicisElement(iframe)
+
+    // iframe 투명화
+    const makeIframeTransparent = (iframe: HTMLIFrameElement) => {
+      iframe.style.backgroundColor = 'transparent'
+      iframe.setAttribute('allowTransparency', 'true')
+      iframe.setAttribute('frameBorder', '0')
+    }
+
+    // 모든 이니시스 요소 투명화
+    const applyTransparency = () => {
+      document.querySelectorAll('iframe').forEach(iframe => {
+        if (isInicisIframe(iframe)) makeIframeTransparent(iframe)
+      })
+      document.querySelectorAll<HTMLElement>('#inicisModalDiv, .inipay_modal, .inipay_modal-body, .inipay_modal-content').forEach(el => {
+        el.style.cssText = 'background-color: transparent !important; border: none !important; box-shadow: none !important;'
+      })
+    }
+
+    // MutationObserver로 새로 추가되는 요소 감지
     const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        mutation.addedNodes.forEach((node) => {
-          if (node instanceof HTMLElement) {
-            // iframe 감지
-            if (node.tagName === 'IFRAME' && (
-              (node as HTMLIFrameElement).src.includes('inicis') ||
-              node.id.includes('INI') ||
-              (node as HTMLIFrameElement).name.includes('INI')
-            )) {
-              node.style.backgroundColor = 'transparent'
-              // @ts-expect-error allowTransparency is not in standard types
-              node.allowTransparency = "true"
-              node.setAttribute('frameBorder', '0')
-            }
-            // div 컨테이너 감지
-            if (node.tagName === 'DIV' && (node.id.includes('INI') || node.className.includes('INI'))) {
-              node.style.backgroundColor = 'transparent'
-            }
+      mutations.forEach(({ addedNodes }) => {
+        addedNodes.forEach((node) => {
+          if (!(node instanceof HTMLElement)) return
+          if (node.tagName === 'IFRAME' && isInicisIframe(node as HTMLIFrameElement)) {
+            makeIframeTransparent(node as HTMLIFrameElement)
+          }
+          if (node.tagName === 'DIV' && isInicisElement(node)) {
+            node.style.backgroundColor = 'transparent'
           }
         })
       })
@@ -174,47 +188,8 @@ export default function OrderPage() {
 
     observer.observe(document.body, { childList: true, subtree: true })
 
-    // 주기적으로 체크 (Observer가 놓칠 경우 대비)
-    const intervalId = setInterval(() => {
-      // 1. iframe 투명화
-      const iframes = document.querySelectorAll('iframe')
-      iframes.forEach(iframe => {
-        if (iframe.src.includes('inicis') || iframe.id.includes('INI') || iframe.name.includes('INI') || iframe.className.includes('inipay')) {
-          if (iframe.style.backgroundColor !== 'transparent') {
-            iframe.style.backgroundColor = 'transparent'
-            // @ts-expect-error allowTransparency
-            iframe.allowTransparency = "true"
-            iframe.setAttribute('frameBorder', '0')
-          }
-        }
-      })
-
-      // 2. 모달 컨테이너 투명화
-      const modalDiv = document.getElementById('inicisModalDiv')
-      if (modalDiv) {
-        modalDiv.style.backgroundColor = 'transparent'
-        modalDiv.style.border = 'none'
-        modalDiv.style.boxShadow = 'none'
-      }
-
-      const modalDialogs = document.querySelectorAll('.inipay_modal, .inipay_modal-body, .inipay_modal-content')
-      modalDialogs.forEach(el => {
-        if (el instanceof HTMLElement) {
-          el.style.backgroundColor = 'transparent'
-          el.style.border = 'none'
-          el.style.boxShadow = 'none'
-        }
-      })
-
-      // 3. 백드롭 (마스크) 반투명화
-      const backdrops = document.querySelectorAll('.modal-backdrop, .inipay_modal-backdrop')
-      backdrops.forEach(el => {
-        if (el instanceof HTMLElement) {
-          el.style.backgroundColor = 'rgba(0, 0, 0, 0.5)'
-          el.style.opacity = '0.5'
-        }
-      })
-    }, 500)
+    // 폴백: 주기적으로 체크 (Observer가 놓칠 경우 대비)
+    const intervalId = setInterval(applyTransparency, 1000)
 
     return () => {
       observer.disconnect()
@@ -308,7 +283,7 @@ export default function OrderPage() {
       const script = document.createElement("script")
       script.src = "https://stgstdpay.inicis.com/stdjs/INIStdPay.js"
       script.type = "text/javascript"
-      script.charset = "UTF-8"
+      script.setAttribute("charset", "UTF-8")
       script.onload = () => {
         console.log("이니시스 스크립트 로드 완료")
         resolve()
@@ -378,22 +353,6 @@ export default function OrderPage() {
       console.error("결제 시작 에러:", err)
       setError("결제 모듈을 로딩하지 못했습니다. 페이지를 새로고침 후 다시 시도해주세요.")
       setSubmitting(false)
-    }
-  }
-
-  // 결제 취소 시 pending 주문 취소 처리
-  const cancelPendingOrder = async (orderNo: string) => {
-    try {
-      await fetch(`/api/shop/orders/${orderNo}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "cancel",
-          cancelReason: "사용자가 결제를 취소했습니다."
-        })
-      })
-    } catch (err) {
-      console.error("주문 취소 실패:", err)
     }
   }
 
