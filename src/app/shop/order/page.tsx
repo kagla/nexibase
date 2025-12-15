@@ -102,8 +102,8 @@ export default function OrderPage() {
   const [addressDetail, setAddressDetail] = useState("")
   const [deliveryMemo, setDeliveryMemo] = useState("")
 
-  // 결제 방법
-  const [paymentMethod, setPaymentMethod] = useState<"bank" | "card">("bank")
+  // 결제 방법 (기본값: 카드결제)
+  const [paymentMethod, setPaymentMethod] = useState<"bank" | "card">("card")
 
   useEffect(() => {
     loadOrderItems()
