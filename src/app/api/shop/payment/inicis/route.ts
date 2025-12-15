@@ -239,14 +239,15 @@ export async function POST(request: NextRequest) {
       mKey,
       use_chkfake: 'Y',
 
-      // URL 설정 (예제와 동일)
+      // URL 설정 (데모와 동일하게 popupUrl 추가)
       returnUrl: `${baseUrl}/api/shop/payment/inicis/return`,
       closeUrl: `${baseUrl}/api/shop/payment/inicis/close`,
+      popupUrl: `${baseUrl}/api/shop/payment/inicis/popup`,
 
-      // 결제 방식 (예제와 동일 - payViewType 제거하면 기본값이 overlay/모달)
+      // 결제 방식 (카드만)
       gopaymethod: 'Card',
 
-      // 추가 옵션 (예제 참고: HPP(1):va_receipt:below1000:centerCd(Y))
+      // 추가 옵션 (데모 참고: HPP(1):below1000:va_receipt:centerCd(Y))
       acceptmethod: 'below1000:centerCd(Y)',
 
       // 결제 스크립트 URL

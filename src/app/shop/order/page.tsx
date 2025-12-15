@@ -25,7 +25,7 @@ import {
   Check,
 } from "lucide-react"
 
-// 이니시스 결제 데이터 타입 (예제와 동일하게 필수 필드만)
+// 이니시스 결제 데이터 타입 (데모와 동일하게)
 interface InicisPaymentData {
   version: string
   mid: string
@@ -43,6 +43,7 @@ interface InicisPaymentData {
   use_chkfake: string
   returnUrl: string
   closeUrl: string
+  popupUrl: string
   gopaymethod: string
   acceptmethod: string
   payUrl: string
@@ -276,6 +277,7 @@ export default function OrderPage() {
         use_chkfake: payment.use_chkfake,
         returnUrl: payment.returnUrl,
         closeUrl: payment.closeUrl,
+        popupUrl: payment.popupUrl,
         gopaymethod: payment.gopaymethod,
         acceptmethod: payment.acceptmethod,
       }
