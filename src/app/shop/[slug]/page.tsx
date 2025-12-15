@@ -257,6 +257,12 @@ export default function ProductDetailPage() {
     }
   }
 
+  // 원본 URL에서 썸네일 URL 생성 (xxx.webp -> xxx-thumb.webp)
+  const getThumbnailUrl = (url: string) => {
+    // .webp 또는 .gif 확장자 앞에 -thumb 삽입
+    return url.replace(/(\.(webp|gif))$/i, '-thumb.webp')
+  }
+
   // 리뷰 이미지 업로드
   const handleReviewImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
@@ -1386,7 +1392,7 @@ export default function ProductDetailPage() {
                                             onClick={() => openImageViewer(images, idx)}
                                             className="block w-20 h-20 rounded-lg overflow-hidden hover:opacity-80 transition-opacity"
                                           >
-                                            <img src={img} alt="" className="w-full h-full object-cover" />
+                                            <img src={getThumbnailUrl(img)} alt="" className="w-full h-full object-cover" />
                                           </button>
                                         ))}
                                       </div>
@@ -1697,7 +1703,7 @@ export default function ProductDetailPage() {
                     idx === viewerIndex ? 'border-white' : 'border-transparent opacity-60 hover:opacity-100'
                   }`}
                 >
-                  <img src={img} alt="" className="w-full h-full object-cover" />
+                  <img src={getThumbnailUrl(img)} alt="" className="w-full h-full object-cover" />
                 </button>
               ))}
             </div>

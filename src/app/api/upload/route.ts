@@ -9,7 +9,9 @@ import sharp from 'sharp'
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
 const MAX_SIZE = 2 * 1024 * 1024 // 2MB (리사이징 전)
 const MAX_WIDTH = 1200 // 최대 너비
+const THUMB_WIDTH = 200 // 썸네일 너비
 const QUALITY = 80 // 압축 품질
+const THUMB_QUALITY = 70 // 썸네일 압축 품질
 
 // 사용자 확인
 async function getUser(request: NextRequest): Promise<{ userId: number | null }> {
@@ -88,7 +90,9 @@ export async function POST(request: NextRequest) {
 
     // GIF는 애니메이션 유지를 위해 그대로 저장
     let outputBuffer: Buffer
+    let thumbBuffer: Buffer
     let outputFilename = filename
+    let thumbFilename = `${timestamp}-${random}-thumb.webp`
 
     if (file.type === 'image/gif') {
       // GIF는 리사이징만 (애니메이션 유지)
@@ -97,27 +101,43 @@ export async function POST(request: NextRequest) {
         .gif()
         .toBuffer()
       outputFilename = `${timestamp}-${random}.gif`
+      // GIF 썸네일은 첫 프레임만 추출해서 WebP로 변환
+      thumbBuffer = await sharp(inputBuffer, { animated: false })
+        .resize({ width: THUMB_WIDTH, height: THUMB_WIDTH, fit: 'cover' })
+        .webp({ quality: THUMB_QUALITY })
+        .toBuffer()
     } else {
       // 나머지는 WebP로 변환 + 리사이징
       outputBuffer = await sharp(inputBuffer)
         .resize({ width: MAX_WIDTH, withoutEnlargement: true })
         .webp({ quality: QUALITY })
         .toBuffer()
+      // 썸네일 생성 (정사각형, 중앙 크롭)
+      thumbBuffer = await sharp(inputBuffer)
+        .resize({ width: THUMB_WIDTH, height: THUMB_WIDTH, fit: 'cover' })
+        .webp({ quality: THUMB_QUALITY })
+        .toBuffer()
     }
 
-    // 파일 저장
+    // 원본 파일 저장
     const filePath = path.join(uploadDir, outputFilename)
     await sharp(outputBuffer).toFile(filePath)
 
+    // 썸네일 파일 저장
+    const thumbPath = path.join(uploadDir, thumbFilename)
+    await sharp(thumbBuffer).toFile(thumbPath)
+
     // URL 반환
     const url = `/uploads/${year}/${month}/${outputFilename}`
+    const thumbnailUrl = `/uploads/${year}/${month}/${thumbFilename}`
 
     // 원본 크기와 변환 후 크기 로깅
-    console.log(`이미지 업로드: ${file.name} (${(file.size / 1024).toFixed(1)}KB) → ${outputFilename} (${(outputBuffer.length / 1024).toFixed(1)}KB)`)
+    console.log(`이미지 업로드: ${file.name} (${(file.size / 1024).toFixed(1)}KB) → ${outputFilename} (${(outputBuffer.length / 1024).toFixed(1)}KB), 썸네일: ${thumbFilename} (${(thumbBuffer.length / 1024).toFixed(1)}KB)`)
 
     return NextResponse.json({
       success: true,
       url,
+      thumbnailUrl,
       originalSize: file.size,
       compressedSize: outputBuffer.length
     })
