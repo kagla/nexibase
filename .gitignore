@@ -43,8 +43,6 @@ next-env.d.ts
 
 /src/generated/prisma
 
-# 사용자 커스터마이징 디렉토리 (git pull 영향 없음)
-/custom
-
-# 실행용 app 폴더 (prebuild 스크립트가 src/app + custom/app 병합하여 생성)
+# 사용자 커스터마이징용 app 폴더
+# src/app을 복사해서 사용 (app/이 있으면 src/app보다 우선)
 /app
