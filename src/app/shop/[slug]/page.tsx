@@ -263,8 +263,13 @@ export default function ProductDetailPage() {
     }
 
     setUploadingImage(true)
-    try {
-      const uploadPromises = Array.from(files).map(async (file) => {
+
+    const successUrls: string[] = []
+    const failedFiles: { name: string; reason: string }[] = []
+
+    // 개별적으로 업로드 처리
+    for (const file of Array.from(files)) {
+      try {
         const formData = new FormData()
         formData.append('file', file)
         formData.append('folder', 'reviews')
@@ -274,20 +279,34 @@ export default function ProductDetailPage() {
           body: formData
         })
 
-        if (!res.ok) throw new Error('업로드 실패')
         const data = await res.json()
-        return data.url
-      })
 
-      const uploadedUrls = await Promise.all(uploadPromises)
-      setReviewImages(prev => [...prev, ...uploadedUrls])
-    } catch (err) {
-      alert('이미지 업로드에 실패했습니다.')
-    } finally {
-      setUploadingImage(false)
-      // input 초기화
-      e.target.value = ''
+        if (!res.ok) {
+          failedFiles.push({ name: file.name, reason: data.error || '업로드 실패' })
+        } else {
+          successUrls.push(data.url)
+        }
+      } catch {
+        failedFiles.push({ name: file.name, reason: '네트워크 오류' })
+      }
     }
+
+    // 성공한 이미지 추가
+    if (successUrls.length > 0) {
+      setReviewImages(prev => [...prev, ...successUrls])
+    }
+
+    // 실패한 이미지가 있으면 알림
+    if (failedFiles.length > 0) {
+      const failedMessage = failedFiles
+        .map(f => `• ${f.name}: ${f.reason}`)
+        .join('\n')
+      alert(`일부 이미지 업로드 실패:\n${failedMessage}`)
+    }
+
+    setUploadingImage(false)
+    // input 초기화
+    e.target.value = ''
   }
 
   // 리뷰 이미지 삭제
