@@ -108,7 +108,25 @@ export default function OrderPage() {
   useEffect(() => {
     loadOrderItems()
     loadShopSettings()
+    loadUserInfo()
   }, [])
+
+  // 로그인한 사용자 정보 불러오기
+  const loadUserInfo = async () => {
+    try {
+      const res = await fetch("/api/me")
+      if (res.ok) {
+        const data = await res.json()
+        if (data.user) {
+          setOrdererName(data.user.name || "")
+          setOrdererPhone(data.user.phone || "")
+          setOrdererEmail(data.user.email || "")
+        }
+      }
+    } catch (err) {
+      console.error("사용자 정보 로드 에러:", err)
+    }
+  }
 
   // 주문자 정보와 배송지 동기화
   useEffect(() => {
