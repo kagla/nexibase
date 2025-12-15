@@ -1,11 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Search, LogOut, Sun, Moon } from "lucide-react"
+import { LogOut, Sun, Moon, ChevronDown } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
@@ -100,6 +99,20 @@ export default function Header() {
     return theme === 'dark' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />
   }
 
+  const [infoMenuOpen, setInfoMenuOpen] = useState(false)
+  const infoMenuRef = useRef<HTMLDivElement>(null)
+
+  // 드롭다운 외부 클릭 시 닫기
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (infoMenuRef.current && !infoMenuRef.current.contains(event.target as Node)) {
+        setInfoMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
   return (
     <header className="border-b bg-background/50 backdrop-blur-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -117,12 +130,36 @@ export default function Header() {
               ) : null}
               <h1 className="text-2xl font-bold text-primary">{settings.site_name}</h1>
             </Link>
-            <nav className="hidden md:flex items-center space-x-6">
-              <Link href="/">
-                <Button variant="ghost">홈</Button>
-              </Link>
-              <Button variant="ghost">프로젝트</Button>
-              <Button variant="ghost">스터디</Button>
+            <nav className="hidden md:flex items-center space-x-2">
+              {/* 소개 드롭다운 */}
+              <div className="relative" ref={infoMenuRef}>
+                <Button
+                  variant="ghost"
+                  onClick={() => setInfoMenuOpen(!infoMenuOpen)}
+                  className="flex items-center gap-1"
+                >
+                  소개
+                  <ChevronDown className={`h-4 w-4 transition-transform ${infoMenuOpen ? 'rotate-180' : ''}`} />
+                </Button>
+                {infoMenuOpen && (
+                  <div className="absolute top-full left-0 mt-1 w-40 bg-background border rounded-md shadow-lg py-1 z-50">
+                    <Link
+                      href="/content/about"
+                      className="block px-4 py-2 text-sm hover:bg-muted transition-colors"
+                      onClick={() => setInfoMenuOpen(false)}
+                    >
+                      회사소개
+                    </Link>
+                    <Link
+                      href="/content/faq"
+                      className="block px-4 py-2 text-sm hover:bg-muted transition-colors"
+                      onClick={() => setInfoMenuOpen(false)}
+                    >
+                      자주 묻는 질문
+                    </Link>
+                  </div>
+                )}
+              </div>
               {user?.role === 'admin' && (
                 <Link href="/admin">
                   <Button variant="ghost">관리자</Button>
@@ -132,14 +169,6 @@ export default function Header() {
           </div>
 
           <div className="flex items-center space-x-4">
-            <div className="relative hidden sm:block">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                placeholder="검색..."
-                className="pl-10 w-64"
-              />
-            </div>
-
             {/* 테마 토글 버튼 */}
             <Button
               variant="ghost"
