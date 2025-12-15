@@ -31,6 +31,7 @@ import {
   Send,
   Pencil,
   ImagePlus,
+  Settings,
 } from "lucide-react"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
@@ -185,9 +186,26 @@ export default function ProductDetailPage() {
   const [qnaIsSecret, setQnaIsSecret] = useState(false)
   const [submittingQna, setSubmittingQna] = useState(false)
 
+  // 관리자 여부
+  const [isAdmin, setIsAdmin] = useState(false)
+
   useEffect(() => {
     fetchProduct()
+    checkAdmin()
   }, [slug])
+
+  // 관리자 여부 확인
+  const checkAdmin = async () => {
+    try {
+      const res = await fetch('/api/auth/me')
+      if (res.ok) {
+        const data = await res.json()
+        setIsAdmin(data.user?.role === 'admin')
+      }
+    } catch {
+      // 무시
+    }
+  }
 
   // 탭 변경 시 데이터 로드
   useEffect(() => {
@@ -813,7 +831,18 @@ export default function ProductDetailPage() {
               )}
 
               {/* 상품명 */}
-              <h1 className="text-2xl font-bold mb-2">{product.name}</h1>
+              <div className="flex items-center gap-2 mb-2">
+                <h1 className="text-2xl font-bold">{product.name}</h1>
+                {isAdmin && (
+                  <Link
+                    href={`/admin/shop/products/${product.id}`}
+                    className="text-muted-foreground hover:text-primary transition-colors"
+                    title="상품 수정"
+                  >
+                    <Settings className="h-5 w-5" />
+                  </Link>
+                )}
+              </div>
 
               {/* 설명 */}
               {product.description && (
