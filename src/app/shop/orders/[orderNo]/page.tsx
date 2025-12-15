@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Label } from "@/components/ui/label"
 import {
   Dialog,
   DialogContent,
@@ -93,8 +95,26 @@ export default function OrderDetailPage() {
   // 취소/환불 다이얼로그
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dialogAction, setDialogAction] = useState<"cancel" | "refund" | "confirm">("cancel")
-  const [cancelReason, setCancelReason] = useState("")
+  const [selectedReason, setSelectedReason] = useState("")
+  const [customReason, setCustomReason] = useState("")
   const [actionLoading, setActionLoading] = useState(false)
+
+  // 취소 사유 옵션
+  const cancelReasons = [
+    "단순 변심",
+    "다른 상품으로 재주문",
+    "배송이 너무 느림",
+    "기타"
+  ]
+
+  // 환불 사유 옵션
+  const refundReasons = [
+    "상품이 설명과 다름",
+    "상품 불량/파손",
+    "오배송",
+    "단순 변심",
+    "기타"
+  ]
 
   useEffect(() => {
     fetchOrder()
@@ -124,9 +144,18 @@ export default function OrderDetailPage() {
   const handleAction = async () => {
     if (!order) return
 
-    if (dialogAction !== "confirm" && !cancelReason.trim()) {
-      alert("사유를 입력해주세요.")
-      return
+    // 사유 조합
+    let finalReason = ""
+    if (dialogAction !== "confirm") {
+      if (!selectedReason) {
+        alert("사유를 선택해주세요.")
+        return
+      }
+      if (selectedReason === "기타" && !customReason.trim()) {
+        alert("기타 사유를 입력해주세요.")
+        return
+      }
+      finalReason = selectedReason === "기타" ? customReason.trim() : selectedReason
     }
 
     setActionLoading(true)
@@ -136,7 +165,7 @@ export default function OrderDetailPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: dialogAction === "refund" ? "refund_request" : dialogAction,
-          cancelReason: cancelReason.trim() || undefined,
+          cancelReason: finalReason || undefined,
         }),
       })
 
@@ -148,7 +177,8 @@ export default function OrderDetailPage() {
       }
 
       setDialogOpen(false)
-      setCancelReason("")
+      setSelectedReason("")
+      setCustomReason("")
       fetchOrder()
     } catch (err) {
       alert("처리 중 오류가 발생했습니다.")
@@ -159,7 +189,8 @@ export default function OrderDetailPage() {
 
   const openDialog = (action: "cancel" | "refund" | "confirm") => {
     setDialogAction(action)
-    setCancelReason("")
+    setSelectedReason("")
+    setCustomReason("")
     setDialogOpen(true)
   }
 
@@ -499,12 +530,25 @@ export default function OrderDetailPage() {
           </DialogHeader>
 
           {dialogAction !== "confirm" && (
-            <Textarea
-              placeholder="사유를 입력해주세요"
-              value={cancelReason}
-              onChange={(e) => setCancelReason(e.target.value)}
-              rows={4}
-            />
+            <div className="space-y-4">
+              <RadioGroup value={selectedReason} onValueChange={setSelectedReason}>
+                {(dialogAction === "cancel" ? cancelReasons : refundReasons).map((reason) => (
+                  <div key={reason} className="flex items-center space-x-2">
+                    <RadioGroupItem value={reason} id={reason} />
+                    <Label htmlFor={reason} className="cursor-pointer">{reason}</Label>
+                  </div>
+                ))}
+              </RadioGroup>
+
+              {selectedReason === "기타" && (
+                <Textarea
+                  placeholder="기타 사유를 입력해주세요"
+                  value={customReason}
+                  onChange={(e) => setCustomReason(e.target.value)}
+                  rows={3}
+                />
+              )}
+            </div>
           )}
 
           <DialogFooter>
