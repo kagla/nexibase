@@ -197,7 +197,7 @@ export default function ProductDetailPage() {
   // 관리자 여부 확인
   const checkAdmin = async () => {
     try {
-      const res = await fetch('/api/auth/me')
+      const res = await fetch('/api/me')
       if (res.ok) {
         const data = await res.json()
         setIsAdmin(data.user?.role === 'admin')
