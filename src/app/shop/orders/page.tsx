@@ -119,12 +119,12 @@ export default function MyOrdersPage() {
                 주문 내역
               </h1>
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <Select value={statusFilter || 'all'} onValueChange={(v) => setStatusFilter(v === 'all' ? '' : v)}>
               <SelectTrigger className="w-[140px]">
                 <SelectValue placeholder="전체 상태" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">전체</SelectItem>
+                <SelectItem value="all">전체</SelectItem>
                 {Object.entries(STATUS_LABELS).map(([value, { label }]) => (
                   <SelectItem key={value} value={value}>
                     {label}

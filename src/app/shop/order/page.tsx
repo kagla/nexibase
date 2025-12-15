@@ -447,12 +447,12 @@ export default function OrderPage() {
 
                     <div>
                       <Label htmlFor="deliveryMemo">배송 메모</Label>
-                      <Select value={deliveryMemo} onValueChange={setDeliveryMemo}>
+                      <Select value={deliveryMemo || 'none'} onValueChange={(v) => setDeliveryMemo(v === 'none' ? '' : v)}>
                         <SelectTrigger>
                           <SelectValue placeholder="배송 메모 선택" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">선택 안함</SelectItem>
+                          <SelectItem value="none">선택 안함</SelectItem>
                           <SelectItem value="부재시 문앞에 놓아주세요">
                             부재시 문앞에 놓아주세요
                           </SelectItem>
