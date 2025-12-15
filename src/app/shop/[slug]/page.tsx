@@ -265,7 +265,14 @@ export default function ProductDetailPage() {
     setUploadingImage(true)
 
     const successUrls: string[] = []
-    const failedFiles: { name: string; reason: string }[] = []
+    const failedFiles: { name: string; size: string; reason: string }[] = []
+
+    // 파일 크기 포맷팅 함수
+    const formatFileSize = (bytes: number) => {
+      if (bytes < 1024) return `${bytes}B`
+      if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`
+      return `${(bytes / (1024 * 1024)).toFixed(1)}MB`
+    }
 
     // 개별적으로 업로드 처리
     for (const file of Array.from(files)) {
@@ -282,12 +289,12 @@ export default function ProductDetailPage() {
         const data = await res.json()
 
         if (!res.ok) {
-          failedFiles.push({ name: file.name, reason: data.error || '업로드 실패' })
+          failedFiles.push({ name: file.name, size: formatFileSize(file.size), reason: data.error || '업로드 실패' })
         } else {
           successUrls.push(data.url)
         }
       } catch {
-        failedFiles.push({ name: file.name, reason: '네트워크 오류' })
+        failedFiles.push({ name: file.name, size: formatFileSize(file.size), reason: '네트워크 오류' })
       }
     }
 
@@ -299,7 +306,7 @@ export default function ProductDetailPage() {
     // 실패한 이미지가 있으면 알림
     if (failedFiles.length > 0) {
       const failedMessage = failedFiles
-        .map(f => `• ${f.name}: ${f.reason}`)
+        .map(f => `• ${f.name} (${f.size}): ${f.reason}`)
         .join('\n')
       alert(`일부 이미지 업로드 실패:\n${failedMessage}`)
     }
