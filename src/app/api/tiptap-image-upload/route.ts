@@ -40,7 +40,10 @@ export async function POST(request: NextRequest) {
     }
 
     const formData = await request.formData()
-    const file = formData.get('image') as File | null
+    // 'file' 또는 'image' 필드명 지원
+    const file = (formData.get('file') || formData.get('image')) as File | null
+    // 폴더 지정 (기본값: 년/월 기반)
+    const folder = formData.get('folder') as string | null
 
     if (!file) {
       return NextResponse.json(
@@ -70,11 +73,22 @@ export async function POST(request: NextRequest) {
     const random = Math.random().toString(36).substring(2, 8)
     const filename = `${timestamp}-${random}.webp`
 
-    // 년/월 폴더 구조
-    const now = new Date()
-    const year = now.getFullYear()
-    const month = String(now.getMonth() + 1).padStart(2, '0')
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads', String(year), month)
+    // 폴더 구조 결정
+    let uploadDir: string
+    let urlPath: string
+
+    if (folder === 'products') {
+      // 상품 이미지: /uploads/products/
+      uploadDir = path.join(process.cwd(), 'public', 'uploads', 'products')
+      urlPath = '/uploads/products'
+    } else {
+      // 기본: 년/월 폴더 구조
+      const now = new Date()
+      const year = now.getFullYear()
+      const month = String(now.getMonth() + 1).padStart(2, '0')
+      uploadDir = path.join(process.cwd(), 'public', 'uploads', String(year), month)
+      urlPath = `/uploads/${year}/${month}`
+    }
 
     // 디렉토리 생성
     if (!existsSync(uploadDir)) {
@@ -109,7 +123,7 @@ export async function POST(request: NextRequest) {
     await sharp(outputBuffer).toFile(filePath)
 
     // URL 반환
-    const url = `/uploads/${year}/${month}/${outputFilename}`
+    const url = `${urlPath}/${outputFilename}`
 
     // 원본 크기와 변환 후 크기 로깅
     console.log(`이미지 업로드: ${file.name} (${(file.size / 1024).toFixed(1)}KB) → ${outputFilename} (${(outputBuffer.length / 1024).toFixed(1)}KB)`)

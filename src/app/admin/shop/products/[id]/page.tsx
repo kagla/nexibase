@@ -304,6 +304,7 @@ export default function ProductEditPage({ params }: { params: Promise<{ id: stri
     for (const file of Array.from(files)) {
       const formData = new FormData()
       formData.append('file', file)
+      formData.append('folder', 'products')  // 상품 이미지 전용 폴더
 
       try {
         const res = await fetch('/api/tiptap-image-upload', {
@@ -314,6 +315,9 @@ export default function ProductEditPage({ params }: { params: Promise<{ id: stri
         if (res.ok) {
           const data = await res.json()
           newImages.push(data.url)
+        } else {
+          const error = await res.json()
+          alert(error.error || '이미지 업로드 실패')
         }
       } catch (error) {
         console.error('이미지 업로드 에러:', error)
