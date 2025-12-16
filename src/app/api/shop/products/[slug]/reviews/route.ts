@@ -233,13 +233,39 @@ export async function PUT(
       return NextResponse.json({ error: '해당 상품의 리뷰가 아닙니다.' }, { status: 400 })
     }
 
+    // 기존 이미지와 새 이미지 비교하여 삭제된 이미지 처리
+    const newImages: string[] = images || []
+    if (existingReview.images) {
+      try {
+        const oldImages: string[] = JSON.parse(existingReview.images)
+        // 기존 이미지 중 새 이미지에 없는 것들 삭제
+        const deletedImages = oldImages.filter(img => !newImages.includes(img))
+        for (const imageUrl of deletedImages) {
+          const filePath = path.join(process.cwd(), 'public', imageUrl)
+          const thumbPath = filePath.replace(/(\.(webp|gif))$/i, '-thumb.webp')
+          try {
+            await unlink(filePath)
+          } catch {
+            // 파일이 없어도 무시
+          }
+          try {
+            await unlink(thumbPath)
+          } catch {
+            // 파일이 없어도 무시
+          }
+        }
+      } catch {
+        // JSON 파싱 에러 무시
+      }
+    }
+
     // 리뷰 수정
     const review = await prisma.productReview.update({
       where: { id: reviewId },
       data: {
         rating: Math.min(5, Math.max(1, rating)),
         content,
-        images: images ? JSON.stringify(images) : null
+        images: images && images.length > 0 ? JSON.stringify(images) : null
       },
       include: {
         user: {

@@ -53,3 +53,5 @@ next-env.d.ts
 
 # 테마 index.ts (prebuild 스크립트로 자동 생성)
 /src/themes/index.ts
+
+/public
