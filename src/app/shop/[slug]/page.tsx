@@ -843,21 +843,21 @@ export default function ProductDetailPage() {
                                 const stockInfo = isFinal ? getFinalOptionStock(val, 1) : null
                                 const isSoldOut = stockInfo && stockInfo.stock <= 0
                                 return (
-                                  <SelectItem key={val} value={val} disabled={isSoldOut || false}>
-                                    <span className={isSoldOut ? "text-muted-foreground" : ""}>
+                                  <SelectItem key={val} value={val}>
+                                    <span className={isSoldOut ? "text-muted-foreground line-through" : ""}>
                                       {val}
-                                      {isFinal && stockInfo && (
-                                        <span className={`ml-2 text-xs ${
-                                          isSoldOut
-                                            ? "text-red-500"
-                                            : stockInfo.stock <= 5
-                                              ? "text-orange-500"
-                                              : "text-muted-foreground"
-                                        }`}>
-                                          {isSoldOut ? "(품절)" : `(재고 ${stockInfo.stock})`}
-                                        </span>
-                                      )}
                                     </span>
+                                    {isFinal && stockInfo && (
+                                      <span className={`ml-2 text-xs ${
+                                        isSoldOut
+                                          ? "text-red-500"
+                                          : stockInfo.stock <= 5
+                                            ? "text-orange-500"
+                                            : "text-muted-foreground"
+                                      }`}>
+                                        {isSoldOut ? "(품절)" : `(재고 ${stockInfo.stock})`}
+                                      </span>
+                                    )}
                                   </SelectItem>
                                 )
                               })}
@@ -886,21 +886,21 @@ export default function ProductDetailPage() {
                                 const stockInfo = isFinal ? getFinalOptionStock(val, 2) : null
                                 const isSoldOut = stockInfo && stockInfo.stock <= 0
                                 return (
-                                  <SelectItem key={val} value={val} disabled={isSoldOut || false}>
-                                    <span className={isSoldOut ? "text-muted-foreground" : ""}>
+                                  <SelectItem key={val} value={val}>
+                                    <span className={isSoldOut ? "text-muted-foreground line-through" : ""}>
                                       {val}
-                                      {isFinal && stockInfo && (
-                                        <span className={`ml-2 text-xs ${
-                                          isSoldOut
-                                            ? "text-red-500"
-                                            : stockInfo.stock <= 5
-                                              ? "text-orange-500"
-                                              : "text-muted-foreground"
-                                        }`}>
-                                          {isSoldOut ? "(품절)" : `(재고 ${stockInfo.stock})`}
-                                        </span>
-                                      )}
                                     </span>
+                                    {isFinal && stockInfo && (
+                                      <span className={`ml-2 text-xs ${
+                                        isSoldOut
+                                          ? "text-red-500"
+                                          : stockInfo.stock <= 5
+                                            ? "text-orange-500"
+                                            : "text-muted-foreground"
+                                      }`}>
+                                        {isSoldOut ? "(품절)" : `(재고 ${stockInfo.stock})`}
+                                      </span>
+                                    )}
                                   </SelectItem>
                                 )
                               })}
@@ -929,21 +929,21 @@ export default function ProductDetailPage() {
                                 const stockInfo = isFinal ? getFinalOptionStock(val, 3) : null
                                 const isSoldOut = stockInfo && stockInfo.stock <= 0
                                 return (
-                                  <SelectItem key={val} value={val} disabled={isSoldOut || false}>
-                                    <span className={isSoldOut ? "text-muted-foreground" : ""}>
+                                  <SelectItem key={val} value={val}>
+                                    <span className={isSoldOut ? "text-muted-foreground line-through" : ""}>
                                       {val}
-                                      {isFinal && stockInfo && (
-                                        <span className={`ml-2 text-xs ${
-                                          isSoldOut
-                                            ? "text-red-500"
-                                            : stockInfo.stock <= 5
-                                              ? "text-orange-500"
-                                              : "text-muted-foreground"
-                                        }`}>
-                                          {isSoldOut ? "(품절)" : `(재고 ${stockInfo.stock})`}
-                                        </span>
-                                      )}
                                     </span>
+                                    {isFinal && stockInfo && (
+                                      <span className={`ml-2 text-xs ${
+                                        isSoldOut
+                                          ? "text-red-500"
+                                          : stockInfo.stock <= 5
+                                            ? "text-orange-500"
+                                            : "text-muted-foreground"
+                                      }`}>
+                                        {isSoldOut ? "(품절)" : `(재고 ${stockInfo.stock})`}
+                                      </span>
+                                    )}
                                   </SelectItem>
                                 )
                               })}
