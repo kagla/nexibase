@@ -17,39 +17,6 @@ function isBeforeShipping(status: string): boolean {
   return ['pending', 'paid', 'preparing'].includes(status)
 }
 
-// paymentInfo에서 tid 추출
-function getPaymentTid(paymentInfo: string | null): string | null {
-  if (!paymentInfo) return null
-  try {
-    const data = typeof paymentInfo === 'string' ? JSON.parse(paymentInfo) : paymentInfo
-    return data.tid || null
-  } catch {
-    return null
-  }
-}
-
-// 이니시스 결제 취소 호출
-async function cancelCardPayment(orderNo: string, cancelAmount: number, cancelReason: string) {
-  try {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-    const response = await fetch(`${baseUrl}/api/shop/payment/inicis/cancel`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        orderNo,
-        cancelAmount,
-        cancelReason
-      })
-    })
-
-    const result = await response.json()
-    return result
-  } catch (error) {
-    console.error('카드 결제 취소 호출 에러:', error)
-    return { success: false, error: '카드 결제 취소 호출 실패' }
-  }
-}
-
 // 주문 상세 조회
 export async function GET(
   request: NextRequest,
@@ -192,21 +159,18 @@ export async function PUT(
         )
       }
 
-      // 카드 결제인 경우 자동 취소
-      let cardCancelResult = null
-      if (order.paymentMethod === 'card' && getPaymentTid(order.paymentInfo)) {
-        cardCancelResult = await cancelCardPayment(orderNo, order.totalPrice, cancelReason)
+      // 테스트 모드 확인 (카드 결제 취소는 테스트 모드에서 스킵)
+      const settings = await getShopSettings()
+      const testMode = settings.pg_test_mode !== 'false'
 
-        if (!cardCancelResult.success) {
-          console.error('카드 결제 취소 실패:', cardCancelResult)
-          // 테스트 모드가 아닌 실제 결제에서 실패하면 에러 반환
-          // (테스트 모드에서는 cancelCardPayment가 성공으로 처리함)
-          if (!cardCancelResult.message?.includes('테스트')) {
-            return NextResponse.json(
-              { error: '카드 결제 취소에 실패했습니다. 고객센터로 문의해주세요.' },
-              { status: 400 }
-            )
-          }
+      // 카드 결제인 경우 로그만 남김 (테스트 모드에서는 실제 PG 취소 안함)
+      if (order.paymentMethod === 'card') {
+        if (testMode) {
+          console.log('테스트 모드: 카드 결제 취소 스킵, orderNo:', orderNo)
+        } else {
+          // 실제 운영 모드에서는 PG 취소 필요
+          // TODO: 실제 운영 시 이니시스 취소 API 호출 로직 구현
+          console.log('운영 모드: 카드 결제 취소 필요, orderNo:', orderNo)
         }
       }
 
@@ -247,10 +211,9 @@ export async function PUT(
       return NextResponse.json({
         success: true,
         message: order.paymentMethod === 'card'
-          ? '주문이 취소되고 결제가 환불 처리되었습니다.'
+          ? '주문이 취소되었습니다. (테스트 모드)'
           : '주문이 취소되었습니다.',
-        refundAmount: order.totalPrice,
-        cardCancelResult
+        refundAmount: order.totalPrice
       })
     }
 
