@@ -225,6 +225,11 @@ export default function ProductDetailPage() {
       if (res.ok) {
         const data = await res.json()
         setIsWished(data.isWished)
+      } else if (res.status === 401) {
+        // 로그인 필요
+        if (confirm('로그인이 필요합니다. 로그인 페이지로 이동하시겠습니까?')) {
+          router.push(`/login?redirect=/shop/${slug}`)
+        }
       } else {
         const data = await res.json()
         alert(data.error || '찜하기에 실패했습니다.')
