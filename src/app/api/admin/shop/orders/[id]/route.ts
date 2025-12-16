@@ -2,6 +2,37 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
 
+// 쇼핑몰 설정 가져오기
+async function getShopSettings() {
+  const settings = await prisma.shopSetting.findMany()
+  const settingsMap: Record<string, string> = {}
+  settings.forEach(s => {
+    settingsMap[s.key] = s.value
+  })
+  return settingsMap
+}
+
+// 배송 전 상태인지 확인
+function isBeforeShipping(status: string): boolean {
+  return ['pending', 'paid', 'preparing'].includes(status)
+}
+
+// 이니시스 결제 취소 호출
+async function cancelCardPayment(orderNo: string, cancelAmount: number, cancelReason: string) {
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const response = await fetch(`${baseUrl}/api/shop/payment/inicis/cancel`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderNo, cancelAmount, cancelReason })
+    })
+    return await response.json()
+  } catch (error) {
+    console.error('카드 결제 취소 호출 에러:', error)
+    return { success: false, error: '카드 결제 취소 호출 실패' }
+  }
+}
+
 // 주문 상세 조회
 export async function GET(
   request: NextRequest,
@@ -128,12 +159,55 @@ export async function PUT(
           break
         case 'cancelled':
           updateData.cancelledAt = new Date()
+
+          // 배송 전 취소: 전액 환불
+          if (isBeforeShipping(order.status)) {
+            updateData.refundAmount = order.totalAmount
+            updateData.refundedAt = new Date()
+
+            // 카드 결제인 경우 자동 취소
+            if (order.paymentMethod === 'card' && order.pgTid) {
+              const cancelResult = await cancelCardPayment(
+                order.orderNo,
+                order.totalAmount,
+                body.cancelReason || '관리자에 의한 취소'
+              )
+              console.log('관리자 카드 취소 결과:', cancelResult)
+            }
+          } else {
+            // 배송 후 취소: 반품 배송비 차감
+            const settings = await getShopSettings()
+            const returnShippingFee = parseInt(settings.return_shipping_fee || '5000')
+            const calculatedRefund = Math.max(0, order.totalAmount - returnShippingFee)
+            updateData.refundAmount = refundAmount || calculatedRefund
+          }
+
           // 재고 복구
           await restoreStock(order.items)
           break
         case 'refunded':
           updateData.refundedAt = new Date()
-          if (refundAmount) updateData.refundAmount = refundAmount
+
+          // 환불 금액 계산
+          if (refundAmount) {
+            updateData.refundAmount = refundAmount
+          } else if (!order.refundAmount) {
+            // 환불 금액이 없으면 반품 배송비 차감 후 계산
+            const settings = await getShopSettings()
+            const returnShippingFee = parseInt(settings.return_shipping_fee || '5000')
+            updateData.refundAmount = Math.max(0, order.totalAmount - returnShippingFee)
+          }
+
+          // 카드 결제인 경우 환불 처리
+          if (order.paymentMethod === 'card' && order.pgTid) {
+            const cancelResult = await cancelCardPayment(
+              order.orderNo,
+              updateData.refundAmount || order.refundAmount || order.totalAmount,
+              body.cancelReason || '관리자에 의한 환불'
+            )
+            console.log('관리자 카드 환불 결과:', cancelResult)
+          }
+
           // 재고 복구 (아직 복구 안된 경우)
           if (!['cancelled', 'refunded'].includes(order.status)) {
             await restoreStock(order.items)

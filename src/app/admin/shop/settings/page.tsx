@@ -26,6 +26,7 @@ interface ShopSettings {
   bank_info: string
   delivery_notice: string
   refund_policy: string
+  return_shipping_fee: string  // 반품 배송비
   option1_name: string
   option2_name: string
   option3_name: string
@@ -43,6 +44,7 @@ const DEFAULT_SETTINGS: ShopSettings = {
   bank_info: "",
   delivery_notice: "",
   refund_policy: "",
+  return_shipping_fee: "5000",  // 기본 반품 배송비 5,000원
   option1_name: "색상",
   option2_name: "사이즈",
   option3_name: "모델",
@@ -273,9 +275,26 @@ export default function ShopSettingsPage() {
               교환/환불 관련 정책을 입력합니다.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="refund_policy">환불 정책</Label>
+              <Label htmlFor="return_shipping_fee">반품 배송비</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="return_shipping_fee"
+                  type="number"
+                  value={settings.return_shipping_fee}
+                  onChange={(e) => handleChange("return_shipping_fee", e.target.value)}
+                  placeholder="5000"
+                  className="max-w-[150px]"
+                />
+                <span className="text-sm text-muted-foreground">원</span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                배송 후 취소/반품 시 고객에게 차감되는 금액 (배송 전 취소는 전액 환불)
+              </p>
+            </div>
+            <div>
+              <Label htmlFor="refund_policy">환불 정책 안내</Label>
               <Textarea
                 id="refund_policy"
                 value={settings.refund_policy}

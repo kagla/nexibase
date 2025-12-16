@@ -5,7 +5,7 @@ import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { LogOut, Sun, Moon, ChevronDown, Search, Menu, X, Bell, ShoppingCart, User, Settings } from "lucide-react"
+import { LogOut, Sun, Moon, ChevronDown, Search, Menu, X, ShoppingCart, User, Settings } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter, usePathname } from "next/navigation"
@@ -229,10 +229,6 @@ export default function Header() {
                             <User className="h-5 w-5" />
                           </Button>
                         </Link>
-                        {/* 알림 */}
-                        <Button variant="ghost" size="icon" className="relative">
-                          <Bell className="h-5 w-5" />
-                        </Button>
                         {/* 관리자 바로가기 */}
                         {user.role === 'admin' && (
                           <Link href="/admin">

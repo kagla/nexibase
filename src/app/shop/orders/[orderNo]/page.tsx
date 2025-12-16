@@ -411,10 +411,26 @@ export default function OrderDetailPage() {
                   <span>{formatDate(order.paidAt)}</span>
                 </div>
               )}
-              {order.refundAmount && (
-                <div className="flex justify-between text-red-500 pt-2 border-t">
-                  <span>환불금액</span>
-                  <span>{formatPrice(order.refundAmount)}</span>
+
+              {/* 환불 정보 */}
+              {(order.refundAmount !== null || ["cancelled", "refunded", "refund_requested"].includes(order.status)) && (
+                <div className="pt-3 mt-3 border-t border-dashed space-y-2">
+                  <h4 className="font-medium text-red-600">환불 정보</h4>
+                  {order.refundAmount !== null && order.refundAmount < order.finalPrice && (
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>반품 배송비 차감</span>
+                      <span>-{formatPrice(order.finalPrice - order.refundAmount)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-red-600 font-medium">
+                    <span>{order.status === "refund_requested" ? "예상 환불금액" : "환불금액"}</span>
+                    <span>{formatPrice(order.refundAmount || order.finalPrice)}</span>
+                  </div>
+                  {order.status === "refund_requested" && (
+                    <p className="text-xs text-muted-foreground">
+                      * 환불 요청이 승인되면 환불이 진행됩니다.
+                    </p>
+                  )}
                 </div>
               )}
             </CardContent>
