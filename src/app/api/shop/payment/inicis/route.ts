@@ -89,9 +89,9 @@ export async function POST(request: NextRequest) {
     // 쇼핑몰 설정 가져오기
     const settings = await getShopSettings()
     const testMode = settings.pg_test_mode !== 'false'
-    // 테스트 모드면 무조건 INIpayTest 사용
+    // 테스트 모드면 무조건 테스트용 MID, SignKey 사용
     const mid = testMode ? 'INIpayTest' : (settings.pg_mid || 'INIpayTest')
-    const signKey = settings.pg_signkey || 'SU5JTElURV9UUklQTEVERVNfS0VZU1RS' // 테스트 SignKey
+    const signKey = testMode ? 'SU5JTElURV9UUklQTEVERVNfS0VZU1RS' : (settings.pg_signkey || 'SU5JTElURV9UUklQTEVERVNfS0VZU1RS')
 
     // 상품 정보 조회 및 가격 계산
     let totalPrice = 0
