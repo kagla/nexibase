@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
+import crypto from 'crypto'
 
 // 쇼핑몰 설정 가져오기
 async function getShopSettings() {
@@ -15,6 +16,104 @@ async function getShopSettings() {
 // 배송 전 상태인지 확인 (취소 시 전액 환불 대상)
 function isBeforeShipping(status: string): boolean {
   return ['pending', 'paid', 'preparing'].includes(status)
+}
+
+// paymentInfo에서 tid 추출
+function getPaymentTid(paymentInfo: string | null): string | null {
+  if (!paymentInfo) return null
+  try {
+    const data = typeof paymentInfo === 'string' ? JSON.parse(paymentInfo) : paymentInfo
+    return data.tid || null
+  } catch {
+    return null
+  }
+}
+
+// 타임스탬프 생성 (YYYYMMDDhhmmss 형식)
+function getTimestamp(): string {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  const hours = String(now.getHours()).padStart(2, '0')
+  const minutes = String(now.getMinutes()).padStart(2, '0')
+  const seconds = String(now.getSeconds()).padStart(2, '0')
+  return `${year}${month}${day}${hours}${minutes}${seconds}`
+}
+
+// 이니시스 결제 취소 함수 (v2 API)
+async function cancelInicisPayment(tid: string, cancelReason: string, settings: Record<string, string>) {
+  const testMode = settings.pg_test_mode !== 'false'
+  const mid = testMode ? 'INIpayTest' : (settings.pg_mid || 'INIpayTest')
+  const iniApiKey = testMode ? 'ItEQKi3rY7uvDS8l' : (settings.pg_apikey || '')
+
+  if (!testMode && !iniApiKey) {
+    return { success: false, message: 'PG API Key가 설정되지 않았습니다.' }
+  }
+
+  // AbortController로 타임아웃 설정 (10초)
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 10000)
+
+  try {
+    const apiUrl = 'https://iniapi.inicis.com/v2/pg/refund'
+    const timestamp = getTimestamp()
+    const type = 'refund'
+    const clientIp = '127.0.0.1'
+
+    // data 객체 생성
+    const data = {
+      tid: tid,
+      msg: cancelReason
+    }
+
+    // 해시 데이터 생성 (공식 샘플: key + mid + type + timestamp + JSON.stringify(data))
+    const dataStr = JSON.stringify(data)
+    const plainTxt = iniApiKey + mid + type + timestamp + dataStr
+    const hashData = crypto.createHash('sha512').update(plainTxt).digest('hex')
+
+    // 요청 파라미터
+    const params = {
+      mid: mid,
+      type: type,
+      timestamp: timestamp,
+      clientIp: clientIp,
+      data: data,
+      hashData: hashData
+    }
+
+    console.log('이니시스 취소 요청:', { mid, tid, type, timestamp, testMode })
+
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(params),
+      signal: controller.signal
+    })
+
+    clearTimeout(timeoutId)
+
+    const result = await response.json()
+    console.log('이니시스 취소 응답:', result)
+
+    if (result.resultCode === '00') {
+      return { success: true, message: '결제 취소 성공', data: result }
+    } else {
+      return { success: false, message: result.resultMsg || '결제 취소 실패', data: result }
+    }
+  } catch (error) {
+    clearTimeout(timeoutId)
+
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error('이니시스 취소 API 타임아웃')
+      return { success: false, message: '결제 취소 API 응답 시간 초과' }
+    }
+
+    console.error('이니시스 취소 API 호출 에러:', error)
+    return { success: false, message: '결제 취소 API 호출 실패' }
+  }
 }
 
 // 주문 상세 조회
@@ -159,18 +258,23 @@ export async function PUT(
         )
       }
 
-      // 테스트 모드 확인 (카드 결제 취소는 테스트 모드에서 스킵)
       const settings = await getShopSettings()
-      const testMode = settings.pg_test_mode !== 'false'
+      let pgCancelResult = null
 
-      // 카드 결제인 경우 로그만 남김 (테스트 모드에서는 실제 PG 취소 안함)
-      if (order.paymentMethod === 'card') {
-        if (testMode) {
-          console.log('테스트 모드: 카드 결제 취소 스킵, orderNo:', orderNo)
-        } else {
-          // 실제 운영 모드에서는 PG 취소 필요
-          // TODO: 실제 운영 시 이니시스 취소 API 호출 로직 구현
-          console.log('운영 모드: 카드 결제 취소 필요, orderNo:', orderNo)
+      // 카드 결제인 경우 PG 승인 취소
+      const tid = getPaymentTid(order.paymentInfo)
+      if (order.paymentMethod === 'card' && tid) {
+        console.log('카드 결제 취소 시도, tid:', tid)
+        pgCancelResult = await cancelInicisPayment(tid, cancelReason, settings)
+        console.log('PG 취소 결과:', pgCancelResult)
+
+        // 실제 운영 모드에서 PG 취소 실패 시 에러 반환
+        const testMode = settings.pg_test_mode !== 'false'
+        if (!testMode && !pgCancelResult.success) {
+          return NextResponse.json(
+            { error: `카드 결제 취소 실패: ${pgCancelResult.message}` },
+            { status: 400 }
+          )
         }
       }
 
@@ -211,9 +315,10 @@ export async function PUT(
       return NextResponse.json({
         success: true,
         message: order.paymentMethod === 'card'
-          ? '주문이 취소되었습니다. (테스트 모드)'
+          ? '주문이 취소되고 결제가 환불 처리되었습니다.'
           : '주문이 취소되었습니다.',
-        refundAmount: order.totalPrice
+        refundAmount: order.totalPrice,
+        pgCancelResult
       })
     }
 
