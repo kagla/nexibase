@@ -301,6 +301,39 @@ export default function ProductDetailPage() {
     return Array.from(values)
   }, [product, selectedOption1, selectedOption2])
 
+  // 최종 옵션 단계 확인 (몇 단계까지 있는지)
+  const finalOptionLevel = useMemo(() => {
+    if (!product) return 0
+    if (product.optionValues.option3.length > 0) return 3
+    if (product.optionValues.option2.length > 0) return 2
+    if (product.optionValues.option1.length > 0) return 1
+    return 0
+  }, [product])
+
+  // 최종 단계 옵션의 재고 정보 (마지막 선택 단계에서만 표시)
+  const getFinalOptionStock = useCallback((optionValue: string, level: number) => {
+    if (!product) return null
+
+    if (level === 1) {
+      // 1단계가 최종인 경우
+      const option = product.options.find(opt => opt.option1 === optionValue)
+      return option ? { stock: option.stock, price: option.price } : null
+    } else if (level === 2 && selectedOption1) {
+      // 2단계가 최종인 경우
+      const option = product.options.find(opt =>
+        opt.option1 === selectedOption1 && opt.option2 === optionValue
+      )
+      return option ? { stock: option.stock, price: option.price } : null
+    } else if (level === 3 && selectedOption1 && selectedOption2) {
+      // 3단계가 최종인 경우
+      const option = product.options.find(opt =>
+        opt.option1 === selectedOption1 && opt.option2 === selectedOption2 && opt.option3 === optionValue
+      )
+      return option ? { stock: option.stock, price: option.price } : null
+    }
+    return null
+  }, [product, selectedOption1, selectedOption2])
+
   // 선택된 옵션 찾기
   const selectedOption = useMemo(() => {
     if (!product) return null
@@ -805,11 +838,29 @@ export default function ProductDetailPage() {
                               <SelectValue placeholder="선택" />
                             </SelectTrigger>
                             <SelectContent>
-                              {product.optionValues.option1.map(val => (
-                                <SelectItem key={val} value={val}>
-                                  {val}
-                                </SelectItem>
-                              ))}
+                              {product.optionValues.option1.map(val => {
+                                const isFinal = finalOptionLevel === 1
+                                const stockInfo = isFinal ? getFinalOptionStock(val, 1) : null
+                                const isSoldOut = stockInfo && stockInfo.stock <= 0
+                                return (
+                                  <SelectItem key={val} value={val} disabled={isSoldOut || false}>
+                                    <span className={isSoldOut ? "text-muted-foreground" : ""}>
+                                      {val}
+                                      {isFinal && stockInfo && (
+                                        <span className={`ml-2 text-xs ${
+                                          isSoldOut
+                                            ? "text-red-500"
+                                            : stockInfo.stock <= 5
+                                              ? "text-orange-500"
+                                              : "text-muted-foreground"
+                                        }`}>
+                                          {isSoldOut ? "(품절)" : `(재고 ${stockInfo.stock})`}
+                                        </span>
+                                      )}
+                                    </span>
+                                  </SelectItem>
+                                )
+                              })}
                             </SelectContent>
                           </Select>
                         </div>
@@ -830,11 +881,29 @@ export default function ProductDetailPage() {
                               <SelectValue placeholder={selectedOption1 ? "선택" : "상위 옵션 먼저 선택"} />
                             </SelectTrigger>
                             <SelectContent>
-                              {availableOption2Values.map(val => (
-                                <SelectItem key={val} value={val}>
-                                  {val}
-                                </SelectItem>
-                              ))}
+                              {availableOption2Values.map(val => {
+                                const isFinal = finalOptionLevel === 2
+                                const stockInfo = isFinal ? getFinalOptionStock(val, 2) : null
+                                const isSoldOut = stockInfo && stockInfo.stock <= 0
+                                return (
+                                  <SelectItem key={val} value={val} disabled={isSoldOut || false}>
+                                    <span className={isSoldOut ? "text-muted-foreground" : ""}>
+                                      {val}
+                                      {isFinal && stockInfo && (
+                                        <span className={`ml-2 text-xs ${
+                                          isSoldOut
+                                            ? "text-red-500"
+                                            : stockInfo.stock <= 5
+                                              ? "text-orange-500"
+                                              : "text-muted-foreground"
+                                        }`}>
+                                          {isSoldOut ? "(품절)" : `(재고 ${stockInfo.stock})`}
+                                        </span>
+                                      )}
+                                    </span>
+                                  </SelectItem>
+                                )
+                              })}
                             </SelectContent>
                           </Select>
                         </div>
@@ -855,11 +924,29 @@ export default function ProductDetailPage() {
                               <SelectValue placeholder={selectedOption2 ? "선택" : "상위 옵션 먼저 선택"} />
                             </SelectTrigger>
                             <SelectContent>
-                              {availableOption3Values.map(val => (
-                                <SelectItem key={val} value={val}>
-                                  {val}
-                                </SelectItem>
-                              ))}
+                              {availableOption3Values.map(val => {
+                                const isFinal = finalOptionLevel === 3
+                                const stockInfo = isFinal ? getFinalOptionStock(val, 3) : null
+                                const isSoldOut = stockInfo && stockInfo.stock <= 0
+                                return (
+                                  <SelectItem key={val} value={val} disabled={isSoldOut || false}>
+                                    <span className={isSoldOut ? "text-muted-foreground" : ""}>
+                                      {val}
+                                      {isFinal && stockInfo && (
+                                        <span className={`ml-2 text-xs ${
+                                          isSoldOut
+                                            ? "text-red-500"
+                                            : stockInfo.stock <= 5
+                                              ? "text-orange-500"
+                                              : "text-muted-foreground"
+                                        }`}>
+                                          {isSoldOut ? "(품절)" : `(재고 ${stockInfo.stock})`}
+                                        </span>
+                                      )}
+                                    </span>
+                                  </SelectItem>
+                                )
+                              })}
                             </SelectContent>
                           </Select>
                         </div>
