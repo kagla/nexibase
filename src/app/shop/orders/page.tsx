@@ -39,6 +39,7 @@ interface Order {
     price: number
     quantity: number
     productImage: string | null
+    productSlug: string | null
   }[]
 }
 
@@ -170,21 +171,46 @@ export default function MyOrdersPage() {
                     {/* 주문 상품 */}
                     {order.items.slice(0, 2).map((item) => (
                       <div key={item.id} className="flex gap-4">
-                        <div className="w-16 h-16 bg-muted rounded-md overflow-hidden flex-shrink-0">
-                          {item.productImage ? (
-                            <img
-                              src={item.productImage}
-                              alt={item.productName}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <Package className="h-6 w-6 text-muted-foreground" />
-                            </div>
-                          )}
-                        </div>
+                        {item.productSlug ? (
+                          <Link
+                            href={`/shop/${item.productSlug}`}
+                            className="w-16 h-16 bg-muted rounded-md overflow-hidden flex-shrink-0 hover:ring-2 ring-primary transition-all"
+                          >
+                            {item.productImage ? (
+                              <img
+                                src={item.productImage}
+                                alt={item.productName}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <Package className="h-6 w-6 text-muted-foreground" />
+                              </div>
+                            )}
+                          </Link>
+                        ) : (
+                          <div className="w-16 h-16 bg-muted rounded-md overflow-hidden flex-shrink-0">
+                            {item.productImage ? (
+                              <img
+                                src={item.productImage}
+                                alt={item.productName}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <Package className="h-6 w-6 text-muted-foreground" />
+                              </div>
+                            )}
+                          </div>
+                        )}
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-medium line-clamp-1">{item.productName}</h3>
+                          {item.productSlug ? (
+                            <Link href={`/shop/${item.productSlug}`} className="font-medium line-clamp-1 hover:underline">
+                              {item.productName}
+                            </Link>
+                          ) : (
+                            <h3 className="font-medium line-clamp-1">{item.productName}</h3>
+                          )}
                           {item.optionText && (
                             <p className="text-sm text-muted-foreground">{item.optionText}</p>
                           )}

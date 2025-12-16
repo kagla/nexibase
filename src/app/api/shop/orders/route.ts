@@ -259,7 +259,8 @@ export async function GET(request: NextRequest) {
             include: {
               product: {
                 select: {
-                  images: true
+                  images: true,
+                  slug: true
                 }
               }
             }
@@ -272,7 +273,7 @@ export async function GET(request: NextRequest) {
       prisma.order.count({ where })
     ])
 
-    // 이미지 처리
+    // 이미지 및 slug 처리
     const ordersWithImages = orders.map(order => ({
       ...order,
       items: order.items.map(item => {
@@ -289,6 +290,7 @@ export async function GET(request: NextRequest) {
         return {
           ...item,
           productImage: firstImage,
+          productSlug: item.product?.slug || null,
           product: undefined
         }
       })
