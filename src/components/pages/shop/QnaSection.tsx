@@ -12,6 +12,8 @@ import {
   MessageSquare,
   Lock,
   Send,
+  Pencil,
+  Trash2,
 } from "lucide-react"
 
 export interface Qna {
@@ -48,6 +50,15 @@ export default function QnaSection({
   const [qnaIsSecret, setQnaIsSecret] = useState(false)
   const [submittingQna, setSubmittingQna] = useState(false)
 
+  // 수정 상태
+  const [editingQna, setEditingQna] = useState<Qna | null>(null)
+  const [editContent, setEditContent] = useState('')
+  const [editIsSecret, setEditIsSecret] = useState(false)
+  const [submittingEdit, setSubmittingEdit] = useState(false)
+
+  // 삭제 상태
+  const [deletingId, setDeletingId] = useState<number | null>(null)
+
   // Q&A 작성
   const submitQna = async () => {
     if (!qnaContent.trim()) return
@@ -74,6 +85,69 @@ export default function QnaSection({
       alert('Q&A 작성에 실패했습니다.')
     } finally {
       setSubmittingQna(false)
+    }
+  }
+
+  // 수정 시작
+  const startEdit = (qna: Qna) => {
+    setEditingQna(qna)
+    setEditContent(qna.question)
+    setEditIsSecret(qna.isSecret)
+  }
+
+  // 수정 취소
+  const cancelEdit = () => {
+    setEditingQna(null)
+    setEditContent('')
+    setEditIsSecret(false)
+  }
+
+  // Q&A 수정
+  const submitEdit = async () => {
+    if (!editingQna || !editContent.trim()) return
+    setSubmittingEdit(true)
+    try {
+      const res = await fetch(`/api/shop/products/${slug}/qna`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          qnaId: editingQna.id,
+          question: editContent.trim(),
+          isSecret: editIsSecret
+        })
+      })
+      if (res.ok) {
+        cancelEdit()
+        onFetchQnas(qnaPage)
+      } else {
+        const data = await res.json()
+        alert(data.error || 'Q&A 수정에 실패했습니다.')
+      }
+    } catch {
+      alert('Q&A 수정에 실패했습니다.')
+    } finally {
+      setSubmittingEdit(false)
+    }
+  }
+
+  // Q&A 삭제
+  const deleteQna = async (qnaId: number) => {
+    if (!confirm('정말 삭제하시겠습니까?')) return
+    setDeletingId(qnaId)
+    try {
+      const res = await fetch(`/api/shop/products/${slug}/qna?id=${qnaId}`, {
+        method: 'DELETE'
+      })
+      if (res.ok) {
+        onFetchQnas(qnaPage)
+      } else {
+        const data = await res.json()
+        alert(data.error || 'Q&A 삭제에 실패했습니다.')
+      }
+    } catch {
+      alert('Q&A 삭제에 실패했습니다.')
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -159,32 +233,95 @@ export default function QnaSection({
                         답변완료
                       </Badge>
                     )}
-                  </div>
-
-                  {/* 질문 */}
-                  <div className="mb-3">
-                    <span className="inline-block px-2 py-0.5 bg-primary text-primary-foreground text-xs font-medium rounded mr-2 align-top">Q</span>
-                    <span className={`text-sm whitespace-pre-wrap ${!qna.canView ? 'text-muted-foreground italic' : ''}`}>
-                      {qna.question}
-                    </span>
-                  </div>
-
-                  {/* 답변 */}
-                  {qna.answer && (
-                    <div className="p-3 bg-muted rounded-lg">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="inline-block px-2 py-0.5 bg-green-600 text-white text-xs font-medium rounded">A</span>
-                        {qna.isSecret && (
-                          <span className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Lock className="h-3 w-3" />
-                            비밀 답변
-                          </span>
-                        )}
+                    {/* 수정/삭제 버튼: 본인 글이고 답변 전에만 표시 */}
+                    {qna.isOwner && !qna.answer && (
+                      <div className="ml-auto flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-muted-foreground hover:text-foreground"
+                          onClick={() => startEdit(qna)}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-muted-foreground hover:text-destructive"
+                          onClick={() => deleteQna(qna.id)}
+                          disabled={deletingId === qna.id}
+                        >
+                          {deletingId === qna.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-3.5 w-3.5" />
+                          )}
+                        </Button>
                       </div>
-                      <span className={`text-sm whitespace-pre-wrap ${!qna.canView ? 'text-muted-foreground italic' : ''}`}>
-                        {qna.answer}
-                      </span>
+                    )}
+                  </div>
+
+                  {/* 수정 폼 */}
+                  {editingQna?.id === qna.id ? (
+                    <div className="space-y-3">
+                      <Textarea
+                        value={editContent}
+                        onChange={(e) => setEditContent(e.target.value)}
+                        rows={4}
+                      />
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          id={`edit-secret-${qna.id}`}
+                          checked={editIsSecret}
+                          onCheckedChange={setEditIsSecret}
+                        />
+                        <Label htmlFor={`edit-secret-${qna.id}`} className="flex items-center gap-1 cursor-pointer text-sm">
+                          <Lock className="h-3.5 w-3.5" />
+                          비밀글
+                        </Label>
+                      </div>
+                      <div className="flex gap-2 justify-end">
+                        <Button variant="outline" size="sm" onClick={cancelEdit}>
+                          취소
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={submitEdit}
+                          disabled={submittingEdit || !editContent.trim()}
+                        >
+                          {submittingEdit && <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />}
+                          수정
+                        </Button>
+                      </div>
                     </div>
+                  ) : (
+                    <>
+                      {/* 질문 */}
+                      <div className="mb-3">
+                        <span className="inline-block px-2 py-0.5 bg-primary text-primary-foreground text-xs font-medium rounded mr-2 align-top">Q</span>
+                        <span className={`text-sm whitespace-pre-wrap ${!qna.canView ? 'text-muted-foreground italic' : ''}`}>
+                          {qna.question}
+                        </span>
+                      </div>
+
+                      {/* 답변 */}
+                      {qna.answer && (
+                        <div className="p-3 bg-muted rounded-lg">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="inline-block px-2 py-0.5 bg-green-600 text-white text-xs font-medium rounded">A</span>
+                            {qna.isSecret && (
+                              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Lock className="h-3 w-3" />
+                                비밀 답변
+                              </span>
+                            )}
+                          </div>
+                          <span className={`text-sm whitespace-pre-wrap ${!qna.canView ? 'text-muted-foreground italic' : ''}`}>
+                            {qna.answer}
+                          </span>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
