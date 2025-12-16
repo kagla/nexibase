@@ -39,9 +39,7 @@ interface InicisPaymentData {
   buyeremail: string
   timestamp: string
   signature: string
-  verification: string
   mKey: string
-  use_chkfake: string
   returnUrl: string
   closeUrl: string
   popupUrl: string
@@ -325,9 +323,7 @@ export default function OrderPage() {
         buyeremail: payment.buyeremail,
         timestamp: payment.timestamp,
         signature: payment.signature,
-        verification: payment.verification,
         mKey: payment.mKey,
-        use_chkfake: payment.use_chkfake,
         returnUrl: payment.returnUrl,
         closeUrl: payment.closeUrl,
         popupUrl: payment.popupUrl,
@@ -401,6 +397,8 @@ export default function OrderPage() {
             baseUrl: currentBaseUrl,  // 현재 접속 URL 전달
           }),
         })
+
+        console.log('결제 요청 - 상품금액:', getTotalPrice(), '배송비:', deliveryFee, '총액:', getFinalPrice())
 
         const data = await res.json()
 

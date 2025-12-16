@@ -301,13 +301,23 @@ export async function POST(request: NextRequest) {
       // 재고 차감 및 판매 수량 증가
       for (const item of orderData.items) {
         if (item.optionId) {
+          // 옵션이 있는 경우: 옵션 재고 차감
           await prisma.productOption.update({
             where: { id: item.optionId },
             data: {
               stock: { decrement: item.quantity }
             }
           })
+        } else {
+          // 옵션이 없는 경우: 상품 재고 차감
+          await prisma.product.update({
+            where: { id: item.productId },
+            data: {
+              stock: { decrement: item.quantity }
+            }
+          })
         }
+        // 판매 수량 증가
         await prisma.product.update({
           where: { id: item.productId },
           data: {

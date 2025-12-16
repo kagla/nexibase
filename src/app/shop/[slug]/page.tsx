@@ -816,10 +816,8 @@ export default function ProductDetailPage() {
                       {currentStock !== null
                         ? currentStock <= 0
                           ? "품절"
-                          : currentStock <= 5
-                            ? `재고 ${currentStock}개 남음`
-                            : "재고 있음"
-                        : "재고 있음"
+                          : `재고 ${currentStock}개`
+                        : "재고 정보 없음"
                       }
                     </p>
                   )}
