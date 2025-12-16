@@ -823,7 +823,7 @@ export default function ProductDetailPage() {
                                   : "border-muted hover:border-primary/50"
                               }`}
                             >
-                              <img src={img} alt="" className="w-full h-full object-cover" />
+                              <img src={getThumbnailUrl(img)} alt="" className="w-full h-full object-cover" />
                             </button>
                           )
                         })}
