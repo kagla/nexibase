@@ -643,13 +643,6 @@ export default function ProductDetailPage() {
     }
   }
 
-  // 장바구니에서 주문하기
-  const goToOrderFromCart = () => {
-    const existingCart: CartItem[] = JSON.parse(localStorage.getItem("cart") || "[]")
-    localStorage.setItem("orderItems", JSON.stringify(existingCart))
-    router.push("/shop/order")
-  }
-
   // 바로 구매
   const buyNow = () => {
     if (!product) return
@@ -1255,7 +1248,7 @@ export default function ProductDetailPage() {
               </div>
               <h3 className="text-lg font-bold mb-1">장바구니에 담았습니다</h3>
               <p className="text-sm text-muted-foreground">
-                주문서로 이동하시겠습니까?
+                장바구니로 이동하시겠습니까?
               </p>
             </div>
 
@@ -1269,19 +1262,10 @@ export default function ProductDetailPage() {
               </Button>
               <Button
                 className="flex-1"
-                onClick={goToOrderFromCart}
-              >
-                주문서로 이동
-              </Button>
-            </div>
-
-            <div className="mt-4 text-center">
-              <button
                 onClick={() => router.push("/shop/cart")}
-                className="text-sm text-muted-foreground hover:text-foreground underline"
               >
-                장바구니 보기
-              </button>
+                장바구니로 이동
+              </Button>
             </div>
           </div>
         </div>
