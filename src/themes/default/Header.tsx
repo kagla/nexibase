@@ -41,7 +41,6 @@ export default function Header() {
   const [boards, setBoards] = useState<Board[]>([])
   const [moreMenuOpen, setMoreMenuOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [cartCount, setCartCount] = useState(0)
   const moreMenuRef = useRef<HTMLDivElement>(null)
@@ -193,16 +192,6 @@ export default function Header() {
 
             {/* 우측 액션 */}
             <div className="flex items-center gap-2">
-              {/* 모바일 검색 버튼 */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="md:hidden"
-                onClick={() => setSearchOpen(!searchOpen)}
-              >
-                <Search className="h-5 w-5" />
-              </Button>
-
               {/* 테마 토글 */}
               <Button
                 variant="ghost"
@@ -217,106 +206,103 @@ export default function Header() {
                 )}
               </Button>
 
-              {/* 로그인/유저 영역 */}
-              {!isLoading && (
-                <>
-                  {user ? (
-                    <div className="flex items-center gap-2">
-                      {/* 장바구니 */}
-                      <Link href="/shop/cart">
-                        <Button variant="ghost" size="icon" className="relative">
-                          <ShoppingCart className="h-5 w-5" />
-                          {cartCount > 0 && (
-                            <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                              {cartCount > 99 ? "99+" : cartCount}
-                            </span>
-                          )}
-                        </Button>
-                      </Link>
-                      {/* 주문내역 */}
-                      <Link href="/shop/orders">
-                        <Button variant="ghost" size="icon" className="relative">
-                          <Package className="h-5 w-5" />
-                        </Button>
-                      </Link>
-                      {/* 알림 */}
-                      <Button variant="ghost" size="icon" className="relative">
-                        <Bell className="h-5 w-5" />
-                      </Button>
-                      {/* 관리자 바로가기 */}
-                      {user.role === 'admin' && (
-                        <Link href="/admin">
-                          <Button variant="ghost" size="icon" title="관리자">
-                            <Settings className="h-5 w-5" />
+              {/* 장바구니 (항상 표시) */}
+              <Link href="/shop/cart">
+                <Button variant="ghost" size="icon" className="relative">
+                  <ShoppingCart className="h-5 w-5" />
+                  {cartCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                      {cartCount > 99 ? "99+" : cartCount}
+                    </span>
+                  )}
+                </Button>
+              </Link>
+
+              {/* 데스크톱: 모든 액션 표시 */}
+              <div className="hidden md:flex items-center gap-2">
+                {!isLoading && (
+                  <>
+                    {user ? (
+                      <>
+                        {/* 주문내역 */}
+                        <Link href="/shop/orders">
+                          <Button variant="ghost" size="icon" className="relative">
+                            <Package className="h-5 w-5" />
                           </Button>
                         </Link>
-                      )}
-                      <div className="flex items-center gap-2 pl-2 border-l">
+                        {/* 알림 */}
+                        <Button variant="ghost" size="icon" className="relative">
+                          <Bell className="h-5 w-5" />
+                        </Button>
+                        {/* 관리자 바로가기 */}
+                        {user.role === 'admin' && (
+                          <Link href="/admin">
+                            <Button variant="ghost" size="icon" title="관리자">
+                              <Settings className="h-5 w-5" />
+                            </Button>
+                          </Link>
+                        )}
+                        <div className="flex items-center gap-2 pl-2 border-l">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={user.image || undefined} />
+                            <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
+                              {(user.nickname || user.name || user.email || '?')[0]?.toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="text-sm font-medium max-w-[100px] truncate">
+                            {user.nickname || user.name || '사용자'}
+                          </span>
+                          <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground">
+                            <LogOut className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <Link href="/login">
+                          <Button variant="ghost" size="sm">로그인</Button>
+                        </Link>
+                        <Link href="/signup">
+                          <Button size="sm">회원가입</Button>
+                        </Link>
+                      </>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {/* 모바일: 프로필/로그인 + 햄버거 메뉴 */}
+              <div className="flex md:hidden items-center gap-1">
+                {!isLoading && (
+                  <>
+                    {user ? (
+                      <Link href="/mypage">
                         <Avatar className="h-8 w-8">
                           <AvatarImage src={user.image || undefined} />
                           <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
                             {(user.nickname || user.name || user.email || '?')[0]?.toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="text-sm font-medium hidden sm:block max-w-[100px] truncate">
-                          {user.nickname || user.name || '사용자'}
-                        </span>
-                        <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground">
-                          <LogOut className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      {/* 장바구니 (비로그인) */}
-                      <Link href="/shop/cart">
-                        <Button variant="ghost" size="icon" className="relative">
-                          <ShoppingCart className="h-5 w-5" />
-                          {cartCount > 0 && (
-                            <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                              {cartCount > 99 ? "99+" : cartCount}
-                            </span>
-                          )}
-                        </Button>
                       </Link>
+                    ) : (
                       <Link href="/login">
-                        <Button variant="ghost" size="sm">로그인</Button>
+                        <Button variant="ghost" size="sm" className="text-xs px-2">로그인</Button>
                       </Link>
-                      <Link href="/signup">
-                        <Button size="sm">회원가입</Button>
-                      </Link>
-                    </div>
-                  )}
-                </>
-              )}
-
-              {/* 모바일 메뉴 버튼 */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="md:hidden"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              >
-                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-              </Button>
+                    )}
+                  </>
+                )}
+                {/* 햄버거 메뉴 버튼 */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                >
+                  {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                </Button>
+              </div>
             </div>
           </div>
 
-          {/* 모바일 검색 */}
-          {searchOpen && (
-            <div className="md:hidden pb-3">
-              <form onSubmit={handleSearch} className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="검색어를 입력하세요..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                  autoFocus
-                />
-              </form>
-            </div>
-          )}
         </div>
       </div>
 
@@ -445,6 +431,38 @@ export default function Header() {
           {/* 모바일 네비게이션 */}
           {mobileMenuOpen && (
             <nav className="md:hidden py-3 border-t space-y-1">
+              {/* 검색 */}
+              <div className="px-3 pb-3">
+                <form onSubmit={handleSearch} className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="검색어를 입력하세요..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </form>
+              </div>
+
+              {/* 사용자 정보 */}
+              {user && (
+                <>
+                  <div className="px-3 py-2 flex items-center gap-3 bg-muted/50 rounded-md mx-3">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={user.image || undefined} />
+                      <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
+                        {(user.nickname || user.name || user.email || '?')[0]?.toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{user.nickname || user.name || '사용자'}</p>
+                      <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                    </div>
+                  </div>
+                  <div className="border-t my-2" />
+                </>
+              )}
+
               <Link
                 href="/"
                 className="block px-3 py-2 text-sm font-medium rounded-md hover:bg-muted"
@@ -542,6 +560,20 @@ export default function Header() {
                   >
                     관리자
                   </Link>
+                </>
+              )}
+              {user && (
+                <>
+                  <div className="border-t my-2" />
+                  <button
+                    onClick={() => {
+                      handleLogout()
+                      setMobileMenuOpen(false)
+                    }}
+                    className="w-full text-left px-3 py-2 text-sm text-red-500 rounded-md hover:bg-muted"
+                  >
+                    로그아웃
+                  </button>
                 </>
               )}
             </nav>
