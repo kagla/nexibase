@@ -12,9 +12,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '우편번호가 필요합니다.' }, { status: 400 })
     }
 
-    // 모든 활성화된 배송비 정책 조회
+    // 모든 배송비 정책 조회 (활성화된 것 + 기본 정책은 비활성화여도 폴백용으로 조회)
     const deliveryFees = await prisma.deliveryFee.findMany({
-      where: { isActive: true },
+      where: {
+        OR: [
+          { isActive: true },
+          { isDefault: true }  // 기본 정책은 비활성화여도 폴백용으로 사용
+        ]
+      },
       orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }]
     })
 
@@ -32,6 +37,9 @@ export async function POST(request: NextRequest) {
     let matchedPolicy = null
 
     for (const policy of deliveryFees) {
+      // 비활성화된 정책은 지역 매칭에서 제외 (폴백용으로만 사용)
+      if (!policy.isActive) continue
+
       const regions: string[] = policy.regions ? JSON.parse(policy.regions) : []
 
       // 기본 배송비는 건너뜀 (나중에 폴백으로 사용)
