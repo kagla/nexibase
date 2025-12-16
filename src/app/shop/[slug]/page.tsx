@@ -738,10 +738,10 @@ export default function ProductDetailPage() {
                 )}
               </div>
 
-              {/* 판매/조회 정보 */}
+              {/* 판매 정보 (조회수는 관리자만) */}
               <div className="flex gap-3 text-sm text-muted-foreground mb-4 pb-4 border-b">
                 <span>판매 {product.soldCount}개</span>
-                <span>조회 {product.viewCount}</span>
+                {isAdmin && <span>조회 {product.viewCount}</span>}
               </div>
 
               {/* 가격 (모바일에서만 표시) */}

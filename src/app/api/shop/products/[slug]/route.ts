@@ -24,11 +24,23 @@ export async function GET(
       return NextResponse.json({ error: '상품을 찾을 수 없습니다.' }, { status: 404 })
     }
 
-    // 조회수 증가
-    await prisma.product.update({
-      where: { id: product.id },
-      data: { viewCount: { increment: 1 } }
-    })
+    // 조회수 증가 (IP 기반 중복 방지)
+    const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+      || request.headers.get('x-real-ip')
+      || 'unknown'
+    const viewKey = `product_view_${product.id}_${clientIp}`
+    const viewedCookie = request.cookies.get(viewKey)?.value
+
+    let shouldIncrement = !viewedCookie
+    let viewCount = product.viewCount
+
+    if (shouldIncrement) {
+      const updated = await prisma.product.update({
+        where: { id: product.id },
+        data: { viewCount: { increment: 1 } }
+      })
+      viewCount = updated.viewCount
+    }
 
     const images = product.images ? JSON.parse(product.images) : []
 
@@ -55,7 +67,7 @@ export async function GET(
       totalStock = product.options.reduce((sum, o) => sum + o.stock, 0)
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       product: {
         id: product.id,
@@ -86,10 +98,21 @@ export async function GET(
         stock: product.stock,
         totalStock,
         isSoldOut: product.isSoldOut || totalStock <= 0,
-        viewCount: product.viewCount + 1,
+        viewCount,
         soldCount: product.soldCount
       }
     })
+
+    // 조회 기록 쿠키 설정 (24시간)
+    if (shouldIncrement) {
+      response.cookies.set(viewKey, '1', {
+        maxAge: 60 * 60 * 24, // 24시간
+        httpOnly: true,
+        sameSite: 'lax'
+      })
+    }
+
+    return response
   } catch (error) {
     console.error('상품 상세 조회 에러:', error)
     return NextResponse.json({ error: '상품 조회 중 오류가 발생했습니다.' }, { status: 500 })
