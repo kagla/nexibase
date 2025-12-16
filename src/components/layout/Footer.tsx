@@ -163,6 +163,11 @@ export default function Footer() {
                   </li>
                 </>
               )}
+              <li>
+                <Link href="/shop/policy" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  취소/반품/교환 정책
+                </Link>
+              </li>
             </ul>
           </div>
         </div>
