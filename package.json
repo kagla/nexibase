@@ -11,7 +11,7 @@
     "db:setup": "prisma migrate deploy && prisma generate",
     "db:migrate": "prisma migrate deploy",
     "db:push": "prisma db push",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate && node scripts/setup-custom-css.js"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
