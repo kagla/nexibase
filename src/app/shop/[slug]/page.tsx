@@ -277,24 +277,7 @@ export default function ProductDetailPage() {
     }
   }
 
-  // 1단계 옵션별 재고/가격 정보
-  const option1StockInfo = useMemo(() => {
-    if (!product) return new Map<string, { totalStock: number; minPrice: number; maxPrice: number }>()
-    const info = new Map<string, { totalStock: number; minPrice: number; maxPrice: number }>()
-    product.optionValues.option1.forEach(val => {
-      const matchingOptions = product.options.filter(opt => opt.option1 === val)
-      const totalStock = matchingOptions.reduce((sum, opt) => sum + opt.stock, 0)
-      const prices = matchingOptions.map(opt => opt.price)
-      info.set(val, {
-        totalStock,
-        minPrice: Math.min(...prices),
-        maxPrice: Math.max(...prices)
-      })
-    })
-    return info
-  }, [product])
-
-  // 2단계 옵션 목록 (1단계 선택에 따라 필터링) + 재고/가격 정보
+  // 2단계 옵션 목록 (1단계 선택에 따라 필터링)
   const availableOption2Values = useMemo(() => {
     if (!product || !selectedOption1) return []
     const values = new Set<string>()
@@ -306,23 +289,7 @@ export default function ProductDetailPage() {
     return Array.from(values)
   }, [product, selectedOption1])
 
-  const option2StockInfo = useMemo(() => {
-    if (!product || !selectedOption1) return new Map<string, { totalStock: number; minPrice: number; maxPrice: number }>()
-    const info = new Map<string, { totalStock: number; minPrice: number; maxPrice: number }>()
-    availableOption2Values.forEach(val => {
-      const matchingOptions = product.options.filter(opt => opt.option1 === selectedOption1 && opt.option2 === val)
-      const totalStock = matchingOptions.reduce((sum, opt) => sum + opt.stock, 0)
-      const prices = matchingOptions.map(opt => opt.price)
-      info.set(val, {
-        totalStock,
-        minPrice: Math.min(...prices),
-        maxPrice: Math.max(...prices)
-      })
-    })
-    return info
-  }, [product, selectedOption1, availableOption2Values])
-
-  // 3단계 옵션 목록 (1,2단계 선택에 따라 필터링) + 재고/가격 정보
+  // 3단계 옵션 목록 (1,2단계 선택에 따라 필터링)
   const availableOption3Values = useMemo(() => {
     if (!product || !selectedOption1 || !selectedOption2) return []
     const values = new Set<string>()
@@ -333,20 +300,6 @@ export default function ProductDetailPage() {
     })
     return Array.from(values)
   }, [product, selectedOption1, selectedOption2])
-
-  const option3StockInfo = useMemo(() => {
-    if (!product || !selectedOption1 || !selectedOption2) return new Map<string, { stock: number; price: number }>()
-    const info = new Map<string, { stock: number; price: number }>()
-    availableOption3Values.forEach(val => {
-      const option = product.options.find(opt =>
-        opt.option1 === selectedOption1 && opt.option2 === selectedOption2 && opt.option3 === val
-      )
-      if (option) {
-        info.set(val, { stock: option.stock, price: option.price })
-      }
-    })
-    return info
-  }, [product, selectedOption1, selectedOption2, availableOption3Values])
 
   // 선택된 옵션 찾기
   const selectedOption = useMemo(() => {
@@ -852,25 +805,11 @@ export default function ProductDetailPage() {
                               <SelectValue placeholder="선택" />
                             </SelectTrigger>
                             <SelectContent>
-                              {product.optionValues.option1.map(val => {
-                                const info = option1StockInfo.get(val)
-                                const isSoldOut = info?.totalStock === 0
-                                return (
-                                  <SelectItem
-                                    key={val}
-                                    value={val}
-                                    disabled={isSoldOut}
-                                    className={isSoldOut ? "text-muted-foreground" : ""}
-                                  >
-                                    <span className="flex justify-between items-center w-full gap-3">
-                                      <span>{val}</span>
-                                      <span className={`text-xs ${isSoldOut ? "text-red-500" : "text-muted-foreground"}`}>
-                                        {isSoldOut ? "품절" : `재고 ${info?.totalStock}개`}
-                                      </span>
-                                    </span>
-                                  </SelectItem>
-                                )
-                              })}
+                              {product.optionValues.option1.map(val => (
+                                <SelectItem key={val} value={val}>
+                                  {val}
+                                </SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                         </div>
@@ -891,25 +830,11 @@ export default function ProductDetailPage() {
                               <SelectValue placeholder={selectedOption1 ? "선택" : "상위 옵션 먼저 선택"} />
                             </SelectTrigger>
                             <SelectContent>
-                              {availableOption2Values.map(val => {
-                                const info = option2StockInfo.get(val)
-                                const isSoldOut = info?.totalStock === 0
-                                return (
-                                  <SelectItem
-                                    key={val}
-                                    value={val}
-                                    disabled={isSoldOut}
-                                    className={isSoldOut ? "text-muted-foreground" : ""}
-                                  >
-                                    <span className="flex justify-between items-center w-full gap-3">
-                                      <span>{val}</span>
-                                      <span className={`text-xs ${isSoldOut ? "text-red-500" : "text-muted-foreground"}`}>
-                                        {isSoldOut ? "품절" : `재고 ${info?.totalStock}개`}
-                                      </span>
-                                    </span>
-                                  </SelectItem>
-                                )
-                              })}
+                              {availableOption2Values.map(val => (
+                                <SelectItem key={val} value={val}>
+                                  {val}
+                                </SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                         </div>
@@ -930,25 +855,11 @@ export default function ProductDetailPage() {
                               <SelectValue placeholder={selectedOption2 ? "선택" : "상위 옵션 먼저 선택"} />
                             </SelectTrigger>
                             <SelectContent>
-                              {availableOption3Values.map(val => {
-                                const info = option3StockInfo.get(val)
-                                const isSoldOut = info?.stock === 0
-                                return (
-                                  <SelectItem
-                                    key={val}
-                                    value={val}
-                                    disabled={isSoldOut}
-                                    className={isSoldOut ? "text-muted-foreground" : ""}
-                                  >
-                                    <span className="flex justify-between items-center w-full gap-3">
-                                      <span>{val}</span>
-                                      <span className={`text-xs ${isSoldOut ? "text-red-500" : "text-muted-foreground"}`}>
-                                        {isSoldOut ? "품절" : `재고 ${info?.stock}개`}
-                                      </span>
-                                    </span>
-                                  </SelectItem>
-                                )
-                              })}
+                              {availableOption3Values.map(val => (
+                                <SelectItem key={val} value={val}>
+                                  {val}
+                                </SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                         </div>
@@ -964,7 +875,12 @@ export default function ProductDetailPage() {
                       {selectedItems.map((item) => (
                         <div key={item.optionId} className="bg-muted/50 rounded-md p-3 space-y-2">
                           <div className="flex justify-between items-start">
-                            <span className="text-sm flex-1">{item.optionText}</span>
+                            <div className="flex-1">
+                              <span className="text-sm">{item.optionText}</span>
+                              <span className={`text-xs ml-2 ${item.stock <= 5 ? "text-orange-600" : "text-muted-foreground"}`}>
+                                (재고 {item.stock}개)
+                              </span>
+                            </div>
                             <button
                               onClick={() => removeSelectedItem(item.optionId)}
                               className="text-muted-foreground hover:text-foreground ml-2"
