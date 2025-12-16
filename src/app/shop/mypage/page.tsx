@@ -195,37 +195,6 @@ export default function MyPage() {
     }
   }
 
-  // 장바구니에 추가
-  const addToCart = async (item: WishlistItem) => {
-    try {
-      // 로컬 장바구니에 추가
-      const cart = JSON.parse(localStorage.getItem('cart') || '[]')
-      const existingIndex = cart.findIndex((c: { productId: number; optionId?: number }) =>
-        c.productId === item.productId && !c.optionId
-      )
-
-      if (existingIndex >= 0) {
-        cart[existingIndex].quantity += 1
-      } else {
-        cart.push({
-          productId: item.productId,
-          productName: item.productName,
-          productSlug: item.productSlug,
-          price: item.price,
-          originPrice: item.originPrice,
-          image: item.image,
-          quantity: 1
-        })
-      }
-
-      localStorage.setItem('cart', JSON.stringify(cart))
-      window.dispatchEvent(new Event('cartUpdated'))
-      alert('장바구니에 추가되었습니다.')
-    } catch {
-      alert('장바구니 추가에 실패했습니다.')
-    }
-  }
-
   // 썸네일 URL 생성
   const getThumbnailUrl = (url: string | null) => {
     if (!url) return '/placeholder.png'
@@ -487,17 +456,18 @@ export default function MyPage() {
                             </span>
                           </div>
 
-                          {/* 장바구니 버튼 */}
+                          {/* 구매하기 버튼 */}
                           {item.isActive && !item.isSoldOut && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="w-full"
-                              onClick={() => addToCart(item)}
-                            >
-                              <ShoppingCart className="h-4 w-4 mr-1" />
-                              장바구니
-                            </Button>
+                            <Link href={`/shop/${item.productSlug}`} className="block">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-full"
+                              >
+                                <ShoppingCart className="h-4 w-4 mr-1" />
+                                구매하기
+                              </Button>
+                            </Link>
                           )}
                         </div>
                       </div>
