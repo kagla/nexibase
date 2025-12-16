@@ -844,9 +844,7 @@ export default function ProductDetailPage() {
                                 const isSoldOut = stockInfo && stockInfo.stock <= 0
                                 return (
                                   <SelectItem key={val} value={val}>
-                                    <span className={isSoldOut ? "text-muted-foreground line-through" : ""}>
-                                      {val}
-                                    </span>
+                                    {val}
                                     {isFinal && stockInfo && (
                                       <span className={`ml-2 text-xs ${
                                         isSoldOut
@@ -887,9 +885,7 @@ export default function ProductDetailPage() {
                                 const isSoldOut = stockInfo && stockInfo.stock <= 0
                                 return (
                                   <SelectItem key={val} value={val}>
-                                    <span className={isSoldOut ? "text-muted-foreground line-through" : ""}>
-                                      {val}
-                                    </span>
+                                    {val}
                                     {isFinal && stockInfo && (
                                       <span className={`ml-2 text-xs ${
                                         isSoldOut
@@ -930,9 +926,7 @@ export default function ProductDetailPage() {
                                 const isSoldOut = stockInfo && stockInfo.stock <= 0
                                 return (
                                   <SelectItem key={val} value={val}>
-                                    <span className={isSoldOut ? "text-muted-foreground line-through" : ""}>
-                                      {val}
-                                    </span>
+                                    {val}
                                     {isFinal && stockInfo && (
                                       <span className={`ml-2 text-xs ${
                                         isSoldOut
