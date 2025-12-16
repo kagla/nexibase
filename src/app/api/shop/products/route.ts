@@ -82,6 +82,9 @@ export async function GET(request: NextRequest) {
         minPrice = Math.min(...prices)
         maxPrice = Math.max(...prices)
         totalStock = product.options.reduce((sum, o) => sum + o.stock, 0)
+      } else {
+        // 옵션 없는 상품은 상품 재고 사용
+        totalStock = product.stock
       }
 
       return {
@@ -95,7 +98,7 @@ export async function GET(request: NextRequest) {
         maxPrice,
         image: images[0] || null,
         category: product.category,
-        isSoldOut: product.isSoldOut || (product.options.length > 0 && totalStock <= 0),
+        isSoldOut: product.isSoldOut || totalStock <= 0,
         soldCount: product.soldCount,
         hasOptions: product.options.length > 0
       }
