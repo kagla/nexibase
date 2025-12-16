@@ -26,6 +26,7 @@ import {
   MessageSquare,
   Settings,
   ChevronLeft,
+  Heart,
 } from "lucide-react"
 import { ShopProductImages, ShopReviewSection, ShopQnaSection } from "@/components/pages"
 
@@ -176,6 +177,10 @@ export default function ProductDetailPage() {
   // 관리자 여부
   const [isAdmin, setIsAdmin] = useState(false)
 
+  // 찜하기 상태
+  const [isWished, setIsWished] = useState(false)
+  const [wishLoading, setWishLoading] = useState(false)
+
   useEffect(() => {
     fetchProduct()
     checkAdmin()
@@ -191,6 +196,43 @@ export default function ProductDetailPage() {
       }
     } catch {
       // 무시
+    }
+  }
+
+  // 찜 여부 확인
+  const checkWishlist = async (productId: number) => {
+    try {
+      const res = await fetch(`/api/shop/wishlist/check?productId=${productId}`)
+      if (res.ok) {
+        const data = await res.json()
+        setIsWished(data.isWished)
+      }
+    } catch {
+      // 무시
+    }
+  }
+
+  // 찜하기 토글
+  const toggleWishlist = async () => {
+    if (!product) return
+    setWishLoading(true)
+    try {
+      const res = await fetch('/api/shop/wishlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId: product.id })
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setIsWished(data.isWished)
+      } else {
+        const data = await res.json()
+        alert(data.error || '찜하기에 실패했습니다.')
+      }
+    } catch {
+      alert('찜하기에 실패했습니다.')
+    } finally {
+      setWishLoading(false)
     }
   }
 
@@ -270,7 +312,9 @@ export default function ProductDetailPage() {
       }
       const data = await res.json()
       setProduct(data.product)
-    } catch (err) {
+      // 찜 여부 확인
+      checkWishlist(data.product.id)
+    } catch {
       setError("상품을 불러오는데 실패했습니다.")
     } finally {
       setLoading(false)
@@ -726,16 +770,32 @@ export default function ProductDetailPage() {
 
               {/* 상품명 */}
               <div className="flex items-start gap-2 mb-3">
-                <h1 className="text-xl font-semibold leading-tight">{product.name}</h1>
-                {isAdmin && (
-                  <Link
-                    href={`/admin/shop/products/${product.id}`}
-                    className="text-muted-foreground hover:text-primary transition-colors flex-shrink-0"
-                    title="상품 수정"
+                <h1 className="text-xl font-semibold leading-tight flex-1">{product.name}</h1>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <button
+                    onClick={toggleWishlist}
+                    disabled={wishLoading}
+                    className="p-1.5 rounded-full hover:bg-muted transition-colors"
+                    title={isWished ? "찜 해제" : "찜하기"}
                   >
-                    <Settings className="h-4 w-4" />
-                  </Link>
-                )}
+                    <Heart
+                      className={`h-5 w-5 transition-colors ${
+                        isWished
+                          ? "fill-red-500 text-red-500"
+                          : "text-muted-foreground hover:text-red-500"
+                      } ${wishLoading ? "animate-pulse" : ""}`}
+                    />
+                  </button>
+                  {isAdmin && (
+                    <Link
+                      href={`/admin/shop/products/${product.id}`}
+                      className="p-1.5 rounded-full hover:bg-muted text-muted-foreground hover:text-primary transition-colors"
+                      title="상품 수정"
+                    >
+                      <Settings className="h-4 w-4" />
+                    </Link>
+                  )}
+                </div>
               </div>
 
               {/* 판매 정보 (조회수는 관리자만) */}

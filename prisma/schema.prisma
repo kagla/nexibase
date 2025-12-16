@@ -41,6 +41,7 @@ model User {
   orders        Order[]
   reviews       ProductReview[]
   qnas          ProductQna[]
+  wishlists     Wishlist[]
 
   @@index([email])
   @@index([status])
@@ -337,6 +338,7 @@ model Product {
   orderItems  OrderItem[]
   reviews     ProductReview[]
   qnas        ProductQna[]
+  wishlists   Wishlist[]
 
   @@index([categoryId])
   @@index([isActive])
@@ -550,4 +552,21 @@ model ProductQna {
   @@index([userId])
   @@index([createdAt])
   @@map("product_qnas")
+}
+
+// 찜하기 (위시리스트)
+model Wishlist {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  productId   Int
+  createdAt   DateTime  @default(now())
+
+  // 관계
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])  // 사용자당 상품 1개만 찜 가능
+  @@index([userId])
+  @@index([productId])
+  @@map("wishlists")
 }
