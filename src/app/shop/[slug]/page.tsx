@@ -875,7 +875,9 @@ export default function ProductDetailPage() {
                         ? currentStock <= 0
                           ? "품절"
                           : `재고 ${currentStock}개`
-                        : "재고 정보 없음"
+                        : product.hasOptions
+                          ? "옵션을 선택해주세요"
+                          : "재고 있음"
                       }
                     </p>
                   )}
