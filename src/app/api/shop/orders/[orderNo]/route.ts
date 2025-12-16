@@ -17,6 +17,17 @@ function isBeforeShipping(status: string): boolean {
   return ['pending', 'paid', 'preparing'].includes(status)
 }
 
+// paymentInfo에서 tid 추출
+function getPaymentTid(paymentInfo: string | null): string | null {
+  if (!paymentInfo) return null
+  try {
+    const data = typeof paymentInfo === 'string' ? JSON.parse(paymentInfo) : paymentInfo
+    return data.tid || null
+  } catch {
+    return null
+  }
+}
+
 // 이니시스 결제 취소 호출
 async function cancelCardPayment(orderNo: string, cancelAmount: number, cancelReason: string) {
   try {
@@ -183,8 +194,8 @@ export async function PUT(
 
       // 카드 결제인 경우 자동 취소
       let cardCancelResult = null
-      if (order.paymentMethod === 'card' && order.pgTid) {
-        cardCancelResult = await cancelCardPayment(orderNo, order.totalAmount, cancelReason)
+      if (order.paymentMethod === 'card' && getPaymentTid(order.paymentInfo)) {
+        cardCancelResult = await cancelCardPayment(orderNo, order.totalPrice, cancelReason)
 
         if (!cardCancelResult.success) {
           console.error('카드 결제 취소 실패:', cardCancelResult)
@@ -227,7 +238,7 @@ export async function PUT(
             status: 'cancelled',
             cancelReason,
             cancelledAt: new Date(),
-            refundAmount: order.totalAmount,  // 전액 환불
+            refundAmount: order.totalPrice,  // 전액 환불
             refundedAt: new Date()
           }
         })
@@ -238,7 +249,7 @@ export async function PUT(
         message: order.paymentMethod === 'card'
           ? '주문이 취소되고 결제가 환불 처리되었습니다.'
           : '주문이 취소되었습니다.',
-        refundAmount: order.totalAmount,
+        refundAmount: order.totalPrice,
         cardCancelResult
       })
     }
@@ -265,7 +276,7 @@ export async function PUT(
       const returnShippingFee = parseInt(settings.return_shipping_fee || '5000')
 
       // 환불 예정 금액 계산
-      const refundAmount = Math.max(0, order.totalAmount - returnShippingFee)
+      const refundAmount = Math.max(0, order.totalPrice - returnShippingFee)
 
       await prisma.order.update({
         where: { orderNo },

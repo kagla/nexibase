@@ -49,8 +49,21 @@ export async function POST(request: NextRequest) {
       })
     }
 
+    // paymentInfo에서 tid 추출
+    let tid: string | null = null
+    if (order.paymentInfo) {
+      try {
+        const paymentData = typeof order.paymentInfo === 'string'
+          ? JSON.parse(order.paymentInfo)
+          : order.paymentInfo
+        tid = paymentData.tid || null
+      } catch {
+        tid = null
+      }
+    }
+
     // 결제 정보가 없으면 취소 불필요
-    if (!order.pgTid) {
+    if (!tid) {
       return NextResponse.json({
         success: true,
         message: '결제 정보가 없습니다.',
@@ -65,16 +78,16 @@ export async function POST(request: NextRequest) {
     const signKey = testMode ? 'SU5JTElURV9UUklQTEVERVNfS0VZU1RS' : (settings.pg_signkey || 'SU5JTElURV9UUklQTEVERVNfS0VZU1RS')
 
     // 취소 금액 (미지정시 전액)
-    const amount = cancelAmount || order.totalAmount
+    const amount = cancelAmount || order.totalPrice
 
     // 이니시스 취소 API 호출
     const cancelResult = await cancelInicisPayment({
       mid,
       signKey,
-      tid: order.pgTid,
+      tid,
       cancelAmount: amount,
       cancelReason: cancelReason || '고객 요청에 의한 취소',
-      partialCancel: amount < order.totalAmount,
+      partialCancel: amount < order.totalPrice,
       testMode
     })
 

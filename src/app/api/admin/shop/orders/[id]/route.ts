@@ -17,6 +17,17 @@ function isBeforeShipping(status: string): boolean {
   return ['pending', 'paid', 'preparing'].includes(status)
 }
 
+// paymentInfo에서 tid 추출
+function getPaymentTid(paymentInfo: string | null): string | null {
+  if (!paymentInfo) return null
+  try {
+    const data = typeof paymentInfo === 'string' ? JSON.parse(paymentInfo) : paymentInfo
+    return data.tid || null
+  } catch {
+    return null
+  }
+}
+
 // 이니시스 결제 취소 호출
 async function cancelCardPayment(orderNo: string, cancelAmount: number, cancelReason: string) {
   try {
@@ -162,14 +173,14 @@ export async function PUT(
 
           // 배송 전 취소: 전액 환불
           if (isBeforeShipping(order.status)) {
-            updateData.refundAmount = order.totalAmount
+            updateData.refundAmount = order.totalPrice
             updateData.refundedAt = new Date()
 
             // 카드 결제인 경우 자동 취소
-            if (order.paymentMethod === 'card' && order.pgTid) {
+            if (order.paymentMethod === 'card' && getPaymentTid(order.paymentInfo)) {
               const cancelResult = await cancelCardPayment(
                 order.orderNo,
-                order.totalAmount,
+                order.totalPrice,
                 body.cancelReason || '관리자에 의한 취소'
               )
               console.log('관리자 카드 취소 결과:', cancelResult)
@@ -178,7 +189,7 @@ export async function PUT(
             // 배송 후 취소: 반품 배송비 차감
             const settings = await getShopSettings()
             const returnShippingFee = parseInt(settings.return_shipping_fee || '5000')
-            const calculatedRefund = Math.max(0, order.totalAmount - returnShippingFee)
+            const calculatedRefund = Math.max(0, order.totalPrice - returnShippingFee)
             updateData.refundAmount = refundAmount || calculatedRefund
           }
 
@@ -195,14 +206,14 @@ export async function PUT(
             // 환불 금액이 없으면 반품 배송비 차감 후 계산
             const settings = await getShopSettings()
             const returnShippingFee = parseInt(settings.return_shipping_fee || '5000')
-            updateData.refundAmount = Math.max(0, order.totalAmount - returnShippingFee)
+            updateData.refundAmount = Math.max(0, order.totalPrice - returnShippingFee)
           }
 
           // 카드 결제인 경우 환불 처리
           if (order.paymentMethod === 'card' && order.pgTid) {
             const cancelResult = await cancelCardPayment(
               order.orderNo,
-              updateData.refundAmount || order.refundAmount || order.totalAmount,
+              updateData.refundAmount || order.refundAmount || order.totalPrice,
               body.cancelReason || '관리자에 의한 환불'
             )
             console.log('관리자 카드 환불 결과:', cancelResult)
