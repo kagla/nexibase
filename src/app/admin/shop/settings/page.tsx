@@ -17,6 +17,8 @@ import {
   Check,
   CreditCard,
   RotateCcw,
+  Eye,
+  EyeOff,
 } from "lucide-react"
 import { Sidebar } from "@/components/admin/Sidebar"
 
@@ -70,6 +72,8 @@ export default function ShopSettingsPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [showSignKey, setShowSignKey] = useState(false)
+  const [showApiKey, setShowApiKey] = useState(false)
 
   useEffect(() => {
     fetchSettings()
@@ -435,26 +439,46 @@ export default function ShopSettingsPage() {
               </div>
               <div>
                 <Label htmlFor="pg_signkey">SignKey</Label>
-                <Input
-                  id="pg_signkey"
-                  type="password"
-                  value={settings.pg_signkey}
-                  onChange={(e) => handleChange("pg_signkey", e.target.value)}
-                  placeholder="SignKey를 입력하세요"
-                />
+                <div className="relative">
+                  <Input
+                    id="pg_signkey"
+                    type={showSignKey ? "text" : "password"}
+                    value={settings.pg_signkey}
+                    onChange={(e) => handleChange("pg_signkey", e.target.value)}
+                    placeholder="SignKey를 입력하세요"
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowSignKey(!showSignKey)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {showSignKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   이니시스에서 발급받은 서명키 (결제 승인용)
                 </p>
               </div>
               <div>
                 <Label htmlFor="pg_apikey">API Key (취소용)</Label>
-                <Input
-                  id="pg_apikey"
-                  type="password"
-                  value={settings.pg_apikey}
-                  onChange={(e) => handleChange("pg_apikey", e.target.value)}
-                  placeholder="API Key를 입력하세요"
-                />
+                <div className="relative">
+                  <Input
+                    id="pg_apikey"
+                    type={showApiKey ? "text" : "password"}
+                    value={settings.pg_apikey}
+                    onChange={(e) => handleChange("pg_apikey", e.target.value)}
+                    placeholder="API Key를 입력하세요"
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowApiKey(!showApiKey)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   이니시스에서 발급받은 INIAPIKey (결제 취소용)
                 </p>
