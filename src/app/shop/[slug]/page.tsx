@@ -149,6 +149,8 @@ export default function ProductDetailPage() {
 
   // 이미지 갤러리
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
+  const [thumbStartIndex, setThumbStartIndex] = useState(0)
+  const VISIBLE_THUMBS = 5 // 한 번에 보이는 썸네일 개수
 
   // 장바구니 추가 상태
   const [addingToCart, setAddingToCart] = useState(false)
@@ -782,23 +784,61 @@ export default function ProductDetailPage() {
             {/* 왼쪽: 이미지 갤러리 (썸네일 + 메인 이미지) */}
             <div className="lg:col-span-5">
               <div className="flex gap-3">
-                {/* 썸네일 세로 배열 */}
+                {/* 썸네일 세로 배열 (최대 5개 표시 + 화살표) */}
                 {product.images.length > 1 && (
-                  <div className="flex flex-col gap-2 w-16 flex-shrink-0">
-                    {product.images.map((img, idx) => (
+                  <div className="flex flex-col items-center gap-1 w-16 flex-shrink-0">
+                    {/* 위 화살표 */}
+                    {product.images.length > VISIBLE_THUMBS && (
                       <button
-                        key={idx}
-                        onMouseEnter={() => setSelectedImageIndex(idx)}
-                        onClick={() => setSelectedImageIndex(idx)}
-                        className={`w-14 h-14 rounded border-2 overflow-hidden transition-all ${
-                          idx === selectedImageIndex
-                            ? "border-primary ring-1 ring-primary"
-                            : "border-muted hover:border-primary/50"
+                        onClick={() => setThumbStartIndex(Math.max(0, thumbStartIndex - 1))}
+                        disabled={thumbStartIndex === 0}
+                        className={`w-14 h-6 flex items-center justify-center rounded border transition-all ${
+                          thumbStartIndex === 0
+                            ? "border-muted text-muted-foreground/30 cursor-not-allowed"
+                            : "border-muted hover:border-primary hover:text-primary"
                         }`}
                       >
-                        <img src={img} alt="" className="w-full h-full object-cover" />
+                        <ChevronLeft className="h-4 w-4 rotate-90" />
                       </button>
-                    ))}
+                    )}
+
+                    {/* 썸네일 목록 */}
+                    <div className="flex flex-col gap-2">
+                      {product.images
+                        .slice(thumbStartIndex, thumbStartIndex + VISIBLE_THUMBS)
+                        .map((img, idx) => {
+                          const actualIdx = thumbStartIndex + idx
+                          return (
+                            <button
+                              key={actualIdx}
+                              onMouseEnter={() => setSelectedImageIndex(actualIdx)}
+                              onClick={() => setSelectedImageIndex(actualIdx)}
+                              className={`w-14 h-14 rounded border-2 overflow-hidden transition-all ${
+                                actualIdx === selectedImageIndex
+                                  ? "border-primary ring-1 ring-primary"
+                                  : "border-muted hover:border-primary/50"
+                              }`}
+                            >
+                              <img src={img} alt="" className="w-full h-full object-cover" />
+                            </button>
+                          )
+                        })}
+                    </div>
+
+                    {/* 아래 화살표 */}
+                    {product.images.length > VISIBLE_THUMBS && (
+                      <button
+                        onClick={() => setThumbStartIndex(Math.min(product.images.length - VISIBLE_THUMBS, thumbStartIndex + 1))}
+                        disabled={thumbStartIndex >= product.images.length - VISIBLE_THUMBS}
+                        className={`w-14 h-6 flex items-center justify-center rounded border transition-all ${
+                          thumbStartIndex >= product.images.length - VISIBLE_THUMBS
+                            ? "border-muted text-muted-foreground/30 cursor-not-allowed"
+                            : "border-muted hover:border-primary hover:text-primary"
+                        }`}
+                      >
+                        <ChevronRight className="h-4 w-4 rotate-90" />
+                      </button>
+                    )}
                   </div>
                 )}
 
