@@ -172,7 +172,15 @@ export default function QnaSection({
                   {/* 답변 */}
                   {qna.answer && (
                     <div className="p-3 bg-muted rounded-lg">
-                      <span className="inline-block px-2 py-0.5 bg-green-600 text-white text-xs font-medium rounded mr-2">A</span>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="inline-block px-2 py-0.5 bg-green-600 text-white text-xs font-medium rounded">A</span>
+                        {qna.isSecret && (
+                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                            <Lock className="h-3 w-3" />
+                            비밀 답변
+                          </span>
+                        )}
+                      </div>
                       <span className={`text-sm ${!qna.canView ? 'text-muted-foreground italic' : ''}`}>
                         {qna.answer}
                       </span>
