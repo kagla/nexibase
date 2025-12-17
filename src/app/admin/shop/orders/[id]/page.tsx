@@ -230,7 +230,13 @@ export default function AdminOrderDetailPage() {
     const actionLabel = action === "approve" ? "승인" : "거절"
     const typeLabel = requestType === "cancel" ? "취소" : "환불"
 
-    if (!confirm(`${typeLabel} 요청을 ${actionLabel}하시겠습니까?`)) {
+    // 승인 시 카드 결제 안내 메시지 추가
+    let confirmMessage = `${typeLabel} 요청을 ${actionLabel}하시겠습니까?`
+    if (action === "approve" && order.paymentMethod === "card") {
+      confirmMessage += `\n\n[카드 결제]\nPG사(이니시스)로 결제 승인 취소 요청이 함께 진행됩니다.`
+    }
+
+    if (!confirm(confirmMessage)) {
       return
     }
 
