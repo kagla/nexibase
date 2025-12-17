@@ -95,6 +95,7 @@ const STATUS_OPTIONS = [
   { value: "shipping", label: "배송중" },
   { value: "delivered", label: "배송완료" },
   { value: "confirmed", label: "구매확정" },
+  { value: "cancel_requested", label: "취소요청" },
   { value: "cancelled", label: "주문취소" },
   { value: "refund_requested", label: "환불요청" },
   { value: "refunded", label: "환불완료" },
@@ -107,6 +108,7 @@ const STATUS_COLORS: Record<string, string> = {
   shipping: "bg-purple-500",
   delivered: "bg-green-500",
   confirmed: "bg-green-700",
+  cancel_requested: "bg-orange-500",
   cancelled: "bg-gray-500",
   refund_requested: "bg-orange-500",
   refunded: "bg-red-500",
@@ -134,6 +136,9 @@ export default function AdminOrderDetailPage() {
   // 삭제 다이얼로그 상태
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
+
+  // 취소/환불 요청 처리 상태
+  const [processingAction, setProcessingAction] = useState<string | null>(null)
 
   useEffect(() => {
     fetchOrder()
@@ -215,6 +220,46 @@ export default function AdminOrderDetailPage() {
       setDeleteDialogOpen(false)
     } finally {
       setDeleting(false)
+    }
+  }
+
+  // 취소/환불 요청 처리 (승인/거절)
+  const handleRequestAction = async (action: "approve" | "reject", requestType: "cancel" | "refund") => {
+    if (!order) return
+
+    const actionLabel = action === "approve" ? "승인" : "거절"
+    const typeLabel = requestType === "cancel" ? "취소" : "환불"
+
+    if (!confirm(`${typeLabel} 요청을 ${actionLabel}하시겠습니까?`)) {
+      return
+    }
+
+    setProcessingAction(`${requestType}_${action}`)
+    setError(null)
+
+    try {
+      const res = await fetch(`/api/admin/shop/orders/${orderId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: `${requestType}_${action}`,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setError(data.error || `${actionLabel}에 실패했습니다.`)
+        return
+      }
+
+      setSuccessMessage(`${typeLabel} 요청이 ${actionLabel}되었습니다.`)
+      fetchOrder()
+      setTimeout(() => setSuccessMessage(null), 2000)
+    } catch (err) {
+      setError(`${actionLabel} 중 오류가 발생했습니다.`)
+    } finally {
+      setProcessingAction(null)
     }
   }
 
@@ -552,6 +597,89 @@ export default function AdminOrderDetailPage() {
                   rows={4}
                 />
               </div>
+
+              {/* 취소 요청 처리 버튼 */}
+              {order.status === "cancel_requested" && (
+                <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg space-y-3">
+                  <p className="text-sm font-medium text-orange-800">
+                    고객이 취소를 요청했습니다.
+                  </p>
+                  {order.cancelReason && (
+                    <p className="text-sm text-orange-700">사유: {order.cancelReason}</p>
+                  )}
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => handleRequestAction("approve", "cancel")}
+                      disabled={!!processingAction}
+                      className="flex-1"
+                    >
+                      {processingAction === "cancel_approve" ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        "취소 승인"
+                      )}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleRequestAction("reject", "cancel")}
+                      disabled={!!processingAction}
+                      className="flex-1"
+                    >
+                      {processingAction === "cancel_reject" ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        "거절 (배송중으로)"
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* 환불 요청 처리 버튼 */}
+              {order.status === "refund_requested" && (
+                <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg space-y-3">
+                  <p className="text-sm font-medium text-orange-800">
+                    고객이 환불을 요청했습니다.
+                  </p>
+                  {order.cancelReason && (
+                    <p className="text-sm text-orange-700">사유: {order.cancelReason}</p>
+                  )}
+                  {order.refundAmount && (
+                    <p className="text-sm text-orange-700">
+                      예상 환불금액: {formatPrice(order.refundAmount)}
+                    </p>
+                  )}
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => handleRequestAction("approve", "refund")}
+                      disabled={!!processingAction}
+                      className="flex-1"
+                    >
+                      {processingAction === "refund_approve" ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        "환불 승인"
+                      )}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleRequestAction("reject", "refund")}
+                      disabled={!!processingAction}
+                      className="flex-1"
+                    >
+                      {processingAction === "refund_reject" ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        "거절"
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
 
               {error && (
                 <div className="flex items-center gap-2 p-3 bg-red-100 text-red-800 rounded-lg text-sm">

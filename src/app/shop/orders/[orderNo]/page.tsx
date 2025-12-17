@@ -80,6 +80,7 @@ const STATUS_LABELS: Record<string, { label: string; color: string; icon: any }>
   shipping: { label: "배송중", color: "bg-purple-500", icon: Truck },
   delivered: { label: "배송완료", color: "bg-green-500", icon: CheckCircle2 },
   confirmed: { label: "구매확정", color: "bg-green-700", icon: CheckCircle2 },
+  cancel_requested: { label: "취소요청", color: "bg-orange-500", icon: XCircle },
   cancelled: { label: "주문취소", color: "bg-gray-500", icon: XCircle },
   refund_requested: { label: "환불요청", color: "bg-orange-500", icon: RotateCcw },
   refunded: { label: "환불완료", color: "bg-red-500", icon: RotateCcw },
@@ -481,7 +482,7 @@ export default function OrderDetailPage() {
 
           {/* 액션 버튼 */}
           <div className="flex gap-3">
-            {/* 주문 취소 (결제대기/결제완료 상태) */}
+            {/* 주문 취소 (결제대기/결제완료 상태) - 즉시 취소 */}
             {["pending", "paid"].includes(order.status) && (
               <Button
                 variant="outline"
@@ -493,8 +494,27 @@ export default function OrderDetailPage() {
               </Button>
             )}
 
-            {/* 환불 요청 (결제완료/상품준비/배송완료 상태) */}
-            {["paid", "preparing", "delivered"].includes(order.status) && (
+            {/* 취소 요청 (준비중 상태) - 관리자 승인 필요 */}
+            {order.status === "preparing" && (
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => openDialog("cancel")}
+              >
+                <XCircle className="h-4 w-4 mr-2" />
+                취소 요청
+              </Button>
+            )}
+
+            {/* 취소요청 중 안내 */}
+            {order.status === "cancel_requested" && (
+              <div className="flex-1 p-3 bg-orange-50 border border-orange-200 rounded-lg text-center text-sm text-orange-700">
+                취소 요청이 접수되었습니다. 관리자 확인 후 처리됩니다.
+              </div>
+            )}
+
+            {/* 환불 요청 (배송중/배송완료 상태) */}
+            {["shipping", "delivered"].includes(order.status) && (
               <Button
                 variant="outline"
                 className="flex-1"

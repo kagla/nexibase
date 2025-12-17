@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
+import crypto from 'crypto'
 
 // 쇼핑몰 설정 가져오기
 async function getShopSettings() {
@@ -28,19 +29,90 @@ function getPaymentTid(paymentInfo: string | null): string | null {
   }
 }
 
-// 이니시스 결제 취소 호출
-async function cancelCardPayment(orderNo: string, cancelAmount: number, cancelReason: string) {
+// 타임스탬프 생성 (YYYYMMDDhhmmss 형식)
+function getTimestamp(): string {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  const hours = String(now.getHours()).padStart(2, '0')
+  const minutes = String(now.getMinutes()).padStart(2, '0')
+  const seconds = String(now.getSeconds()).padStart(2, '0')
+  return `${year}${month}${day}${hours}${minutes}${seconds}`
+}
+
+// 이니시스 결제 취소 (v2 API 직접 호출)
+async function cancelInicisPayment(tid: string, cancelReason: string, settings: Record<string, string>) {
+  const testMode = settings.pg_test_mode !== 'false'
+  const mid = testMode ? 'INIpayTest' : (settings.pg_mid || 'INIpayTest')
+  const iniApiKey = testMode ? 'ItEQKi3rY7uvDS8l' : (settings.pg_apikey || '')
+
+  if (!testMode && !iniApiKey) {
+    return { success: false, message: 'PG API Key가 설정되지 않았습니다.' }
+  }
+
+  // AbortController로 타임아웃 설정 (10초)
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 10000)
+
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-    const response = await fetch(`${baseUrl}/api/shop/payment/inicis/cancel`, {
+    const apiUrl = 'https://iniapi.inicis.com/v2/pg/refund'
+    const timestamp = getTimestamp()
+    const type = 'refund'
+    const clientIp = '127.0.0.1'
+
+    // data 객체 생성
+    const data = {
+      tid: tid,
+      msg: cancelReason
+    }
+
+    // 해시 데이터 생성 (공식 샘플: key + mid + type + timestamp + JSON.stringify(data))
+    const dataStr = JSON.stringify(data)
+    const plainTxt = iniApiKey + mid + type + timestamp + dataStr
+    const hashData = crypto.createHash('sha512').update(plainTxt).digest('hex')
+
+    // 요청 파라미터
+    const params = {
+      mid: mid,
+      type: type,
+      timestamp: timestamp,
+      clientIp: clientIp,
+      data: data,
+      hashData: hashData
+    }
+
+    console.log('이니시스 취소 요청 (관리자):', { mid, tid, type, timestamp, testMode })
+
+    const response = await fetch(apiUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ orderNo, cancelAmount, cancelReason })
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(params),
+      signal: controller.signal
     })
-    return await response.json()
+
+    clearTimeout(timeoutId)
+
+    const result = await response.json()
+    console.log('이니시스 취소 응답:', result)
+
+    if (result.resultCode === '00') {
+      return { success: true, message: '결제 취소 성공', data: result }
+    } else {
+      return { success: false, message: result.resultMsg || '결제 취소 실패', data: result }
+    }
   } catch (error) {
-    console.error('카드 결제 취소 호출 에러:', error)
-    return { success: false, error: '카드 결제 취소 호출 실패' }
+    clearTimeout(timeoutId)
+
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error('이니시스 취소 API 타임아웃')
+      return { success: false, message: '결제 취소 API 응답 시간 초과' }
+    }
+
+    console.error('이니시스 취소 API 호출 에러:', error)
+    return { success: false, message: '결제 취소 API 호출 실패' }
   }
 }
 
@@ -129,6 +201,7 @@ export async function PUT(
     const orderId = parseInt(id)
     const body = await request.json()
     const {
+      action,
       status,
       trackingCompany,
       trackingNumber,
@@ -146,6 +219,190 @@ export async function PUT(
         { error: '주문을 찾을 수 없습니다.' },
         { status: 404 }
       )
+    }
+
+    // 취소 요청 승인
+    if (action === 'cancel_approve') {
+      if (order.status !== 'cancel_requested') {
+        return NextResponse.json(
+          { error: '취소 요청 상태가 아닙니다.' },
+          { status: 400 }
+        )
+      }
+
+      const settings = await getShopSettings()
+      let pgCancelResult = null
+
+      // 카드 결제인 경우 PG 승인 취소
+      const tid = getPaymentTid(order.paymentInfo)
+      if (order.paymentMethod === 'card' && tid) {
+        console.log('카드 결제 취소 시도 (관리자 승인), tid:', tid)
+        pgCancelResult = await cancelInicisPayment(tid, order.cancelReason || '주문 취소', settings)
+        console.log('PG 취소 결과:', pgCancelResult)
+
+        // 실제 운영 모드에서 PG 취소 실패 시 에러 반환
+        const testMode = settings.pg_test_mode !== 'false'
+        if (!testMode && !pgCancelResult.success) {
+          return NextResponse.json(
+            { error: `카드 결제 취소 실패: ${pgCancelResult.message}` },
+            { status: 400 }
+          )
+        }
+      }
+
+      // 재고 복구 + 주문 취소
+      await prisma.$transaction(async (tx) => {
+        // 재고 복구
+        for (const item of order.items) {
+          if (item.optionId) {
+            await tx.productOption.update({
+              where: { id: item.optionId },
+              data: {
+                stock: { increment: item.quantity }
+              }
+            })
+          }
+          // 판매 수량 감소
+          await tx.product.update({
+            where: { id: item.productId },
+            data: {
+              soldCount: { decrement: item.quantity }
+            }
+          })
+        }
+
+        // 주문 상태 변경 (전액 환불)
+        await tx.order.update({
+          where: { id: orderId },
+          data: {
+            status: 'cancelled',
+            cancelledAt: new Date(),
+            refundAmount: order.totalPrice,
+            refundedAt: new Date()
+          }
+        })
+      })
+
+      return NextResponse.json({
+        success: true,
+        message: '취소 요청이 승인되었습니다.',
+        pgCancelResult
+      })
+    }
+
+    // 취소 요청 거절 (배송중으로 변경)
+    if (action === 'cancel_reject') {
+      if (order.status !== 'cancel_requested') {
+        return NextResponse.json(
+          { error: '취소 요청 상태가 아닙니다.' },
+          { status: 400 }
+        )
+      }
+
+      await prisma.order.update({
+        where: { id: orderId },
+        data: {
+          status: 'shipping',
+          shippedAt: new Date(),
+          cancelReason: null  // 취소 사유 제거
+        }
+      })
+
+      return NextResponse.json({
+        success: true,
+        message: '취소 요청이 거절되고 배송중으로 변경되었습니다.'
+      })
+    }
+
+    // 환불 요청 승인
+    if (action === 'refund_approve') {
+      if (order.status !== 'refund_requested') {
+        return NextResponse.json(
+          { error: '환불 요청 상태가 아닙니다.' },
+          { status: 400 }
+        )
+      }
+
+      const settings = await getShopSettings()
+      let pgCancelResult = null
+
+      // 카드 결제인 경우 PG 환불 처리
+      const tid = getPaymentTid(order.paymentInfo)
+      if (order.paymentMethod === 'card' && tid) {
+        console.log('카드 환불 처리 시도 (관리자 승인), tid:', tid)
+        pgCancelResult = await cancelInicisPayment(tid, order.cancelReason || '환불 처리', settings)
+        console.log('PG 환불 결과:', pgCancelResult)
+
+        // 실제 운영 모드에서 PG 취소 실패 시 에러 반환
+        const testMode = settings.pg_test_mode !== 'false'
+        if (!testMode && !pgCancelResult.success) {
+          return NextResponse.json(
+            { error: `카드 결제 환불 실패: ${pgCancelResult.message}` },
+            { status: 400 }
+          )
+        }
+      }
+
+      // 재고 복구 + 환불 처리
+      await prisma.$transaction(async (tx) => {
+        // 재고 복구
+        for (const item of order.items) {
+          if (item.optionId) {
+            await tx.productOption.update({
+              where: { id: item.optionId },
+              data: {
+                stock: { increment: item.quantity }
+              }
+            })
+          }
+          await tx.product.update({
+            where: { id: item.productId },
+            data: {
+              soldCount: { decrement: item.quantity }
+            }
+          })
+        }
+
+        // 주문 상태 변경 (환불 완료)
+        await tx.order.update({
+          where: { id: orderId },
+          data: {
+            status: 'refunded',
+            refundedAt: new Date()
+          }
+        })
+      })
+
+      return NextResponse.json({
+        success: true,
+        message: '환불 요청이 승인되었습니다.',
+        refundAmount: order.refundAmount,
+        pgCancelResult
+      })
+    }
+
+    // 환불 요청 거절
+    if (action === 'refund_reject') {
+      if (order.status !== 'refund_requested') {
+        return NextResponse.json(
+          { error: '환불 요청 상태가 아닙니다.' },
+          { status: 400 }
+        )
+      }
+
+      await prisma.order.update({
+        where: { id: orderId },
+        data: {
+          status: 'delivered',  // 배송완료로 복원
+          cancelReason: null,
+          refundAmount: null
+        }
+      })
+
+      return NextResponse.json({
+        success: true,
+        message: '환불 요청이 거절되었습니다.'
+      })
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -177,11 +434,13 @@ export async function PUT(
             updateData.refundedAt = new Date()
 
             // 카드 결제인 경우 자동 취소
-            if (order.paymentMethod === 'card' && getPaymentTid(order.paymentInfo)) {
-              const cancelResult = await cancelCardPayment(
-                order.orderNo,
-                order.totalPrice,
-                body.cancelReason || '관리자에 의한 취소'
+            const tid = getPaymentTid(order.paymentInfo)
+            if (order.paymentMethod === 'card' && tid) {
+              const settings = await getShopSettings()
+              const cancelResult = await cancelInicisPayment(
+                tid,
+                body.cancelReason || '관리자에 의한 취소',
+                settings
               )
               console.log('관리자 카드 취소 결과:', cancelResult)
             }
@@ -210,11 +469,13 @@ export async function PUT(
           }
 
           // 카드 결제인 경우 환불 처리
-          if (order.paymentMethod === 'card' && order.pgTid) {
-            const cancelResult = await cancelCardPayment(
-              order.orderNo,
-              updateData.refundAmount || order.refundAmount || order.totalPrice,
-              body.cancelReason || '관리자에 의한 환불'
+          const refundTid = getPaymentTid(order.paymentInfo)
+          if (order.paymentMethod === 'card' && refundTid) {
+            const settings = await getShopSettings()
+            const cancelResult = await cancelInicisPayment(
+              refundTid,
+              body.cancelReason || '관리자에 의한 환불',
+              settings
             )
             console.log('관리자 카드 환불 결과:', cancelResult)
           }

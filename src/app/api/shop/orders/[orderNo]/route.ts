@@ -258,6 +258,24 @@ export async function PUT(
         )
       }
 
+      // "준비중" 상태에서는 취소요청 상태로 변경 (관리자 승인 필요)
+      if (order.status === 'preparing') {
+        await prisma.order.update({
+          where: { orderNo },
+          data: {
+            status: 'cancel_requested',
+            cancelReason
+          }
+        })
+
+        return NextResponse.json({
+          success: true,
+          message: '취소 요청이 접수되었습니다. 관리자 확인 후 처리됩니다.',
+          needsApproval: true
+        })
+      }
+
+      // 결제대기/결제완료 상태에서는 즉시 취소
       const settings = await getShopSettings()
       let pgCancelResult = null
 
