@@ -60,6 +60,7 @@ interface Order {
   refundAmount: number | null
   refundedAt: string | null
   createdAt: string
+  updatedAt: string
   items: {
     id: number
     productName: string
@@ -508,8 +509,15 @@ export default function OrderDetailPage() {
 
             {/* 취소요청 중 안내 */}
             {order.status === "cancel_requested" && (
-              <div className="flex-1 p-3 bg-orange-50 border border-orange-200 rounded-lg text-center text-sm text-orange-700">
-                취소 요청이 접수되었습니다. 관리자 확인 후 처리됩니다.
+              <div className="flex-1 p-4 bg-orange-50 border border-orange-200 rounded-lg text-sm text-orange-800 space-y-2">
+                <p className="font-medium">취소 요청이 접수되었습니다</p>
+                <div className="text-orange-700 space-y-1">
+                  <p>요청일시: {formatDate(order.updatedAt)}</p>
+                  {order.cancelReason && <p>취소사유: {order.cancelReason}</p>}
+                </div>
+                <p className="text-xs text-orange-600 pt-1 border-t border-orange-200">
+                  관리자 확인 후 취소 또는 반품 처리가 진행됩니다.
+                </p>
               </div>
             )}
 
@@ -523,6 +531,23 @@ export default function OrderDetailPage() {
                 <RotateCcw className="h-4 w-4 mr-2" />
                 환불 요청
               </Button>
+            )}
+
+            {/* 환불요청 중 안내 */}
+            {order.status === "refund_requested" && (
+              <div className="flex-1 p-4 bg-orange-50 border border-orange-200 rounded-lg text-sm text-orange-800 space-y-2">
+                <p className="font-medium">환불 요청이 접수되었습니다</p>
+                <div className="text-orange-700 space-y-1">
+                  <p>요청일시: {formatDate(order.updatedAt)}</p>
+                  {order.cancelReason && <p>환불사유: {order.cancelReason}</p>}
+                  {order.refundAmount !== null && (
+                    <p>예상 환불금액: {formatPrice(order.refundAmount)}</p>
+                  )}
+                </div>
+                <p className="text-xs text-orange-600 pt-1 border-t border-orange-200">
+                  관리자 확인 후 환불 처리가 진행됩니다.
+                </p>
+              </div>
             )}
 
             {/* 구매 확정 (배송완료 상태) */}
