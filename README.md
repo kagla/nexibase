@@ -178,39 +178,6 @@ src/
 
 ---
 
-## 테마 커스터마이징
-
-라우트(URL)는 그대로 유지하면서 **UI 컴포넌트만 교체**할 수 있습니다.
-
-### 테마 구조
-
-```
-src/themes/
-├── default/           # 기본 테마 (git 추적)
-│   └── HomePage.tsx
-└── custom/            # 커스텀 테마 (git 무시)
-    └── HomePage.tsx
-```
-
-### 커스터마이징 방법
-
-```bash
-# 1. custom 테마 폴더 생성
-mkdir -p src/themes/custom
-
-# 2. 수정할 컴포넌트만 복사
-cp src/themes/default/HomePage.tsx src/themes/custom/
-
-# 3. src/themes/custom/HomePage.tsx 수정
-```
-
-### 주의사항
-
-- `src/themes/custom/` 폴더는 git에서 무시되어 업데이트 영향 없음
-- 되돌리기: 해당 파일 삭제하면 default 테마 사용
-
----
-
 ## 검색 기능
 
 MySQL FULLTEXT 인덱스를 활용한 고성능 검색을 지원합니다.
