@@ -170,6 +170,15 @@ export async function GET(
       )
     }
 
+    // 무통장입금인 경우 계좌정보 조회
+    let bankInfo = null
+    if (order.paymentMethod === 'bank' && order.status === 'pending') {
+      const bankSetting = await prisma.shopSetting.findUnique({
+        where: { key: 'bank_info' }
+      })
+      bankInfo = bankSetting?.value || null
+    }
+
     // 이미지 처리
     const orderWithImages = {
       ...order,
@@ -193,7 +202,7 @@ export async function GET(
       })
     }
 
-    return NextResponse.json({ order: orderWithImages })
+    return NextResponse.json({ order: orderWithImages, bankInfo })
   } catch (error) {
     console.error('주문 상세 조회 에러:', error)
     return NextResponse.json(
