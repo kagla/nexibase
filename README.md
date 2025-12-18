@@ -58,7 +58,7 @@
 
 - Node.js 18+
 - MySQL 8.0+
-- npm 또는 yarn
+- npm, yarn 또는 bun
 
 ---
 
