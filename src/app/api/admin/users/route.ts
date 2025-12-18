@@ -11,13 +11,14 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || ''
     const status = searchParams.get('status') || ''
     const role = searchParams.get('role') || ''
+    const deleted = searchParams.get('deleted') === 'true'
 
     const skip = (page - 1) * limit
 
-    // 검색 조건 - 삭제되지 않은 사용자만 조회
-    const where: Record<string, unknown> = {
-      deletedAt: null
-    }
+    // 검색 조건 - 삭제된 사용자 필터 여부에 따라 조회
+    const where: Record<string, unknown> = deleted
+      ? { deletedAt: { not: null } }  // 삭제된 사용자만
+      : { deletedAt: null }           // 삭제되지 않은 사용자만
 
     if (search) {
       where.OR = [

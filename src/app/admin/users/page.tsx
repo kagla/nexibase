@@ -36,6 +36,7 @@ interface User {
   emailVerified: string | null
   lastLoginAt: string | null
   createdAt: string
+  deletedAt: string | null
   providers: string[]
   selected?: boolean
 }
@@ -336,6 +337,7 @@ export default function UsersPage() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [roleFilter, setRoleFilter] = useState('')
+  const [deletedFilter, setDeletedFilter] = useState(false) // 삭제된 사용자 필터
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)
 
@@ -348,6 +350,7 @@ export default function UsersPage() {
         search,
         status: statusFilter,
         role: roleFilter,
+        deleted: deletedFilter ? 'true' : '',
       })
 
       const response = await fetch(`/api/admin/users?${params}`)
@@ -363,7 +366,7 @@ export default function UsersPage() {
     } finally {
       setLoading(false)
     }
-  }, [currentPage, search, statusFilter, roleFilter])
+  }, [currentPage, search, statusFilter, roleFilter, deletedFilter])
 
   useEffect(() => {
     fetchUsers()
@@ -489,27 +492,29 @@ export default function UsersPage() {
               title="전체 사용자"
               value={stats.totalUsers}
               icon={Users}
-              active={statusFilter === ''}
-              onClick={() => { setStatusFilter(''); setCurrentPage(1) }}
+              active={statusFilter === '' && !deletedFilter}
+              onClick={() => { setStatusFilter(''); setDeletedFilter(false); setCurrentPage(1) }}
             />
             <StatCard
               title="활성 사용자"
               value={stats.activeUsers}
               icon={UserCheck}
-              active={statusFilter === 'active'}
-              onClick={() => { setStatusFilter('active'); setCurrentPage(1) }}
+              active={statusFilter === 'active' && !deletedFilter}
+              onClick={() => { setStatusFilter('active'); setDeletedFilter(false); setCurrentPage(1) }}
             />
             <StatCard
               title="차단된 사용자"
               value={stats.bannedUsers}
               icon={UserX}
-              active={statusFilter === 'banned'}
-              onClick={() => { setStatusFilter('banned'); setCurrentPage(1) }}
+              active={statusFilter === 'banned' && !deletedFilter}
+              onClick={() => { setStatusFilter('banned'); setDeletedFilter(false); setCurrentPage(1) }}
             />
             <StatCard
               title="삭제된 사용자"
               value={stats.deletedUsers}
               icon={UserMinus}
+              active={deletedFilter}
+              onClick={() => { setStatusFilter(''); setDeletedFilter(true); setCurrentPage(1) }}
             />
           </div>
 
@@ -582,7 +587,7 @@ export default function UsersPage() {
                         가입일
                       </th>
                       <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
-                        최근 로그인
+                        {deletedFilter ? '삭제일' : '최근 로그인'}
                       </th>
                       <th className="h-12 px-4 text-right align-middle font-medium text-muted-foreground">
                         <span className="sr-only">Actions</span>
@@ -653,27 +658,29 @@ export default function UsersPage() {
                             {formatDate(user.createdAt)}
                           </td>
                           <td className="p-4 align-middle text-sm text-muted-foreground">
-                            {formatDate(user.lastLoginAt)}
+                            {deletedFilter ? formatDate(user.deletedAt) : formatDate(user.lastLoginAt)}
                           </td>
                           <td className="p-4 align-middle text-right">
-                            <div className="flex justify-end gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() => { setEditingUser(user); setIsModalOpen(true) }}
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-destructive hover:text-destructive"
-                                onClick={() => handleDeleteUser(user.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
+                            {!deletedFilter && (
+                              <div className="flex justify-end gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  onClick={() => { setEditingUser(user); setIsModalOpen(true) }}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive hover:text-destructive"
+                                  onClick={() => handleDeleteUser(user.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            )}
                           </td>
                         </tr>
                       ))
