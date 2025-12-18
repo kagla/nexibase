@@ -285,6 +285,18 @@ export default function AdminOrderDetailPage() {
     return new Date(date).toLocaleString("ko-KR")
   }
 
+  // paymentInfo에서 취소/환불 정보 파싱
+  const getPaymentCancelInfo = () => {
+    if (!order?.paymentInfo) return null
+    try {
+      const data = JSON.parse(order.paymentInfo)
+      return data.cancelInfo || data.refundInfo || null
+    } catch {
+      return null
+    }
+  }
+  const cancelInfo = order ? getPaymentCancelInfo() : null
+
   if (loading) {
     return (
       <div className="flex">
@@ -517,18 +529,64 @@ export default function AdminOrderDetailPage() {
             </CardContent>
           </Card>
 
-          {/* 취소/환불 사유 */}
-          {order.cancelReason && (
+          {/* 취소/환불 사유 및 PG 처리 이력 */}
+          {(order.cancelReason || cancelInfo) && (
             <Card>
               <CardHeader>
-                <CardTitle>취소/환불 사유</CardTitle>
+                <CardTitle>취소/환불 정보</CardTitle>
               </CardHeader>
-              <CardContent>
-                <p className="text-sm">{order.cancelReason}</p>
+              <CardContent className="space-y-3">
+                {order.cancelReason && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">사유</p>
+                    <p className="text-sm">{order.cancelReason}</p>
+                  </div>
+                )}
                 {order.cancelledAt && (
-                  <p className="text-xs text-muted-foreground mt-2">
-                    취소일시: {formatDate(order.cancelledAt)}
-                  </p>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">취소일시</p>
+                    <p className="text-sm">{formatDate(order.cancelledAt)}</p>
+                  </div>
+                )}
+                {order.refundedAt && order.status === 'refunded' && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">환불일시</p>
+                    <p className="text-sm">{formatDate(order.refundedAt)}</p>
+                  </div>
+                )}
+                {cancelInfo && (
+                  <div className="pt-3 border-t">
+                    <p className="text-sm font-medium text-muted-foreground mb-2">PG 처리 이력</p>
+                    <div className="text-xs space-y-1 bg-muted/50 p-3 rounded-lg">
+                      <p>
+                        <span className="text-muted-foreground">처리자:</span>{" "}
+                        {cancelInfo.cancelledBy === 'admin' ? '관리자' : '고객'}
+                      </p>
+                      <p>
+                        <span className="text-muted-foreground">처리일시:</span>{" "}
+                        {cancelInfo.cancelledAt || cancelInfo.refundedAt
+                          ? formatDate(cancelInfo.cancelledAt || cancelInfo.refundedAt)
+                          : '-'}
+                      </p>
+                      {cancelInfo.pgResult && (
+                        <>
+                          <p>
+                            <span className="text-muted-foreground">PG 결과:</span>{" "}
+                            <span className={cancelInfo.pgResult.success ? 'text-green-600' : 'text-red-600'}>
+                              {cancelInfo.pgResult.success ? '성공' : '실패'}
+                            </span>
+                            {cancelInfo.pgResult.message && ` (${cancelInfo.pgResult.message})`}
+                          </p>
+                          {cancelInfo.pgResult.data?.tid && (
+                            <p>
+                              <span className="text-muted-foreground">TID:</span>{" "}
+                              {cancelInfo.pgResult.data.tid}
+                            </p>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
                 )}
               </CardContent>
             </Card>

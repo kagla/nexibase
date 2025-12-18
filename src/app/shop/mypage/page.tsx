@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Header, Footer } from "@/components/layout"
@@ -74,7 +74,7 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   refunded: { label: "환불완료", color: "bg-red-500" },
 }
 
-export default function MyPage() {
+function MyPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -509,5 +509,21 @@ export default function MyPage() {
 
       <Footer />
     </div>
+  )
+}
+
+export default function MyPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background flex flex-col">
+        <Header />
+        <main className="flex-1 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </main>
+        <Footer />
+      </div>
+    }>
+      <MyPageContent />
+    </Suspense>
   )
 }

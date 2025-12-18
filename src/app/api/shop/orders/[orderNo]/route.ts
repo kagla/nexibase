@@ -296,6 +296,30 @@ export async function PUT(
         }
       }
 
+      // paymentInfo에 취소 정보 추가
+      let updatedPaymentInfo = order.paymentInfo
+      if (pgCancelResult) {
+        try {
+          const paymentData = order.paymentInfo ? JSON.parse(order.paymentInfo) : {}
+          paymentData.cancelInfo = {
+            cancelledAt: new Date().toISOString(),
+            cancelReason: cancelReason,
+            pgResult: pgCancelResult,
+            cancelledBy: 'customer'
+          }
+          updatedPaymentInfo = JSON.stringify(paymentData)
+        } catch {
+          updatedPaymentInfo = JSON.stringify({
+            cancelInfo: {
+              cancelledAt: new Date().toISOString(),
+              cancelReason: cancelReason,
+              pgResult: pgCancelResult,
+              cancelledBy: 'customer'
+            }
+          })
+        }
+      }
+
       // 재고 복구 + 주문 취소
       await prisma.$transaction(async (tx) => {
         // 재고 복구
@@ -325,7 +349,8 @@ export async function PUT(
             cancelReason,
             cancelledAt: new Date(),
             refundAmount: order.totalPrice,  // 전액 환불
-            refundedAt: new Date()
+            refundedAt: new Date(),
+            paymentInfo: updatedPaymentInfo
           }
         })
       })

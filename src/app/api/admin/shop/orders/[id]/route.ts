@@ -250,6 +250,31 @@ export async function PUT(
         }
       }
 
+      // paymentInfo에 취소 정보 추가
+      let updatedPaymentInfo = order.paymentInfo
+      if (pgCancelResult) {
+        try {
+          const paymentData = order.paymentInfo ? JSON.parse(order.paymentInfo) : {}
+          paymentData.cancelInfo = {
+            cancelledAt: new Date().toISOString(),
+            cancelReason: order.cancelReason || '주문 취소',
+            pgResult: pgCancelResult,
+            cancelledBy: 'admin'
+          }
+          updatedPaymentInfo = JSON.stringify(paymentData)
+        } catch {
+          // 파싱 실패 시 새로운 객체 생성
+          updatedPaymentInfo = JSON.stringify({
+            cancelInfo: {
+              cancelledAt: new Date().toISOString(),
+              cancelReason: order.cancelReason || '주문 취소',
+              pgResult: pgCancelResult,
+              cancelledBy: 'admin'
+            }
+          })
+        }
+      }
+
       // 재고 복구 + 주문 취소
       await prisma.$transaction(async (tx) => {
         // 재고 복구
@@ -278,7 +303,8 @@ export async function PUT(
             status: 'cancelled',
             cancelledAt: new Date(),
             refundAmount: order.totalPrice,
-            refundedAt: new Date()
+            refundedAt: new Date(),
+            paymentInfo: updatedPaymentInfo
           }
         })
       })
@@ -343,6 +369,32 @@ export async function PUT(
         }
       }
 
+      // paymentInfo에 환불 정보 추가
+      let updatedPaymentInfo = order.paymentInfo
+      if (pgCancelResult) {
+        try {
+          const paymentData = order.paymentInfo ? JSON.parse(order.paymentInfo) : {}
+          paymentData.refundInfo = {
+            refundedAt: new Date().toISOString(),
+            refundReason: order.cancelReason || '환불 처리',
+            refundAmount: order.refundAmount,
+            pgResult: pgCancelResult,
+            refundedBy: 'admin'
+          }
+          updatedPaymentInfo = JSON.stringify(paymentData)
+        } catch {
+          updatedPaymentInfo = JSON.stringify({
+            refundInfo: {
+              refundedAt: new Date().toISOString(),
+              refundReason: order.cancelReason || '환불 처리',
+              refundAmount: order.refundAmount,
+              pgResult: pgCancelResult,
+              refundedBy: 'admin'
+            }
+          })
+        }
+      }
+
       // 재고 복구 + 환불 처리
       await prisma.$transaction(async (tx) => {
         // 재고 복구
@@ -368,7 +420,8 @@ export async function PUT(
           where: { id: orderId },
           data: {
             status: 'refunded',
-            refundedAt: new Date()
+            refundedAt: new Date(),
+            paymentInfo: updatedPaymentInfo
           }
         })
       })

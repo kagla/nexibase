@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   // 보호된 경로들 (로그인이 필요한 페이지들)
   const protectedPaths = ['/dashboard', '/profile', '/settings'];
   const isProtectedPath = protectedPaths.some(path => 
