@@ -47,17 +47,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 계정 상태 확인
-    if (user.status === 'banned') {
+    // 계정 상태 확인 (삭제, 차단, 비활성 - 구체적인 이유는 노출하지 않음)
+    if (user.deletedAt || user.status === 'banned' || user.status === 'inactive') {
       return NextResponse.json(
-        { error: '차단된 계정입니다. 관리자에게 문의하세요.' },
-        { status: 403 }
-      )
-    }
-
-    if (user.status === 'inactive') {
-      return NextResponse.json(
-        { error: '비활성화된 계정입니다. 관리자에게 문의하세요.' },
+        { error: '로그인할 수 없는 계정입니다. 관리자에게 문의해주세요.' },
         { status: 403 }
       )
     }
