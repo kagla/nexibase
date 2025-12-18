@@ -122,6 +122,7 @@ export default function AdminOrderDetailPage() {
   const orderId = params.id as string
 
   const [order, setOrder] = useState<Order | null>(null)
+  const [bankInfo, setBankInfo] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -154,6 +155,7 @@ export default function AdminOrderDetailPage() {
       }
       const data = await res.json()
       setOrder(data.order)
+      setBankInfo(data.bankInfo)
       setStatus(data.order.status)
       setTrackingCompany(data.order.trackingCompany || "")
       setTrackingNumber(data.order.trackingNumber || "")
@@ -715,6 +717,12 @@ export default function AdminOrderDetailPage() {
                   <p className="text-sm font-medium text-primary">
                     무통장입금 주문입니다.
                   </p>
+                  {bankInfo && (
+                    <div className="p-3 bg-background rounded border text-sm">
+                      <p className="text-xs text-muted-foreground mb-1">입금 계좌</p>
+                      <p className="whitespace-pre-line">{bankInfo}</p>
+                    </div>
+                  )}
                   <p className="text-sm text-muted-foreground">
                     입금 확인 후 버튼을 눌러주세요.
                   </p>
