@@ -416,7 +416,7 @@ function MyPageContent() {
               </TabsTrigger>
               <TabsTrigger value="addresses" className="flex items-center gap-2">
                 <MapPin className="h-4 w-4" />
-                주소록
+                배송지
               </TabsTrigger>
             </TabsList>
 

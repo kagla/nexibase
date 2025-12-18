@@ -24,6 +24,9 @@ import {
   Truck,
   AlertCircle,
   Check,
+  Pencil,
+  Trash2,
+  Star,
 } from "lucide-react"
 import {
   Dialog,
@@ -132,6 +135,19 @@ export default function OrderPage() {
   const [addressModalOpen, setAddressModalOpen] = useState(false)
   const [skipSaveAddress, setSkipSaveAddress] = useState(false) // 기본값: 저장함 (false = 저장, true = 저장안함)
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null) // 선택된 주소 ID
+  const [editingAddress, setEditingAddress] = useState<UserAddress | null>(null) // 수정 중인 주소
+  const [addressEditModalOpen, setAddressEditModalOpen] = useState(false) // 주소 수정 모달
+  const [addressForm, setAddressForm] = useState({
+    name: '',
+    recipientName: '',
+    recipientPhone: '',
+    zipCode: '',
+    address: '',
+    addressDetail: '',
+    isDefault: false,
+  })
+  const [addressSaving, setAddressSaving] = useState(false)
+  const [deletingAddressId, setDeletingAddressId] = useState<number | null>(null)
 
   useEffect(() => {
     loadOrderItems()
@@ -205,6 +221,124 @@ export default function OrderPage() {
     setAddressDetail("")
     setSelectedAddressId(null)
     setSkipSaveAddress(false) // 새 주소 입력 시 기본값: 저장함
+  }
+
+  // 주소 수정 모달 열기
+  const openAddressEditModal = (addr: UserAddress) => {
+    setEditingAddress(addr)
+    setAddressForm({
+      name: addr.name,
+      recipientName: addr.recipientName,
+      recipientPhone: addr.recipientPhone,
+      zipCode: addr.zipCode,
+      address: addr.address,
+      addressDetail: addr.addressDetail || '',
+      isDefault: addr.isDefault,
+    })
+    setAddressEditModalOpen(true)
+  }
+
+  // 주소 저장 (수정)
+  const saveAddress = async () => {
+    if (!editingAddress) return
+    if (!addressForm.name || !addressForm.recipientName || !addressForm.recipientPhone ||
+        !addressForm.zipCode || !addressForm.address) {
+      alert('필수 항목을 모두 입력해주세요.')
+      return
+    }
+
+    setAddressSaving(true)
+    try {
+      const res = await fetch(`/api/shop/addresses/${editingAddress.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(addressForm),
+      })
+
+      if (res.ok) {
+        setAddressEditModalOpen(false)
+        loadSavedAddresses()
+        // 현재 선택된 주소가 수정된 주소면 폼에도 반영
+        if (selectedAddressId === editingAddress.id) {
+          setRecipientName(addressForm.recipientName)
+          setRecipientPhone(addressForm.recipientPhone)
+          setZipCode(addressForm.zipCode)
+          setAddress(addressForm.address)
+          setAddressDetail(addressForm.addressDetail)
+        }
+      } else {
+        const data = await res.json()
+        alert(data.error || '주소 저장에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error('주소 저장 에러:', error)
+      alert('주소 저장 중 오류가 발생했습니다.')
+    } finally {
+      setAddressSaving(false)
+    }
+  }
+
+  // 주소 삭제
+  const deleteAddress = async (id: number) => {
+    if (!confirm('이 주소를 삭제하시겠습니까?')) return
+
+    setDeletingAddressId(id)
+    try {
+      const res = await fetch(`/api/shop/addresses/${id}`, { method: 'DELETE' })
+      if (res.ok) {
+        loadSavedAddresses()
+        // 현재 선택된 주소가 삭제되면 선택 해제
+        if (selectedAddressId === id) {
+          setSelectedAddressId(null)
+          clearAddressForNewInput()
+        }
+      } else {
+        const data = await res.json()
+        alert(data.error || '주소 삭제에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error('주소 삭제 에러:', error)
+    } finally {
+      setDeletingAddressId(null)
+    }
+  }
+
+  // 다음 주소 검색 API (주소 수정 모달용)
+  const searchAddressForForm = () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const win = window as any
+    if (typeof window !== "undefined" && win.daum?.Postcode) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      new win.daum.Postcode({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        oncomplete: (data: any) => {
+          setAddressForm(prev => ({
+            ...prev,
+            zipCode: data.zonecode,
+            address: data.roadAddress || data.jibunAddress,
+          }))
+        },
+      }).open()
+    } else {
+      const script = document.createElement("script")
+      script.src = "//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"
+      script.onload = () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const win2 = window as any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        new win2.daum.Postcode({
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          oncomplete: (data: any) => {
+            setAddressForm(prev => ({
+              ...prev,
+              zipCode: data.zonecode,
+              address: data.roadAddress || data.jibunAddress,
+            }))
+          },
+        }).open()
+      }
+      document.head.appendChild(script)
+    }
   }
 
   // 주문자 정보와 배송지 동기화
@@ -1112,7 +1246,7 @@ export default function OrderPage() {
         style={{ display: "none" }}
       />
 
-      {/* 주소록 선택 모달 */}
+      {/* 배송지 선택 모달 */}
       <Dialog open={addressModalOpen} onOpenChange={setAddressModalOpen}>
         <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
           <DialogHeader>
@@ -1120,34 +1254,166 @@ export default function OrderPage() {
           </DialogHeader>
           <div className="space-y-3">
             {savedAddresses.map((addr) => (
-              <button
+              <div
                 key={addr.id}
-                type="button"
-                onClick={() => applyAddress(addr)}
-                className={`w-full text-left p-4 rounded-lg border transition-colors hover:border-primary ${
+                className={`relative p-4 rounded-lg border transition-colors ${
                   selectedAddressId === addr.id ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-border'
                 }`}
               >
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-2">
+                {/* 선택 영역 */}
+                <button
+                  type="button"
+                  onClick={() => applyAddress(addr)}
+                  className="w-full text-left pr-16"
+                >
+                  <div className="flex items-center gap-2 mb-1">
                     <span className="font-medium">{addr.name}</span>
                     {addr.isDefault && (
-                      <span className="text-xs text-primary bg-primary/10 px-1.5 py-0.5 rounded">기본</span>
+                      <span className="text-xs text-primary bg-primary/10 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                        <Star className="h-2.5 w-2.5" />
+                        기본
+                      </span>
+                    )}
+                    {selectedAddressId === addr.id && (
+                      <Check className="h-4 w-4 text-primary" />
                     )}
                   </div>
-                  {selectedAddressId === addr.id && (
-                    <Check className="h-4 w-4 text-primary" />
-                  )}
+                  <p className="text-sm text-muted-foreground mb-1">
+                    {addr.recipientName} | {addr.recipientPhone}
+                  </p>
+                  <p className="text-sm">
+                    [{addr.zipCode}] {addr.address}
+                    {addr.addressDetail && `, ${addr.addressDetail}`}
+                  </p>
+                </button>
+
+                {/* 수정/삭제 버튼 */}
+                <div className="absolute top-3 right-3 flex gap-1">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      openAddressEditModal(addr)
+                    }}
+                    className="p-1.5 rounded hover:bg-muted transition-colors"
+                    title="수정"
+                  >
+                    <Pencil className="h-4 w-4 text-muted-foreground" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      deleteAddress(addr.id)
+                    }}
+                    disabled={deletingAddressId === addr.id}
+                    className="p-1.5 rounded hover:bg-muted transition-colors"
+                    title="삭제"
+                  >
+                    {deletingAddressId === addr.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    )}
+                  </button>
                 </div>
-                <p className="text-sm text-muted-foreground mb-1">
-                  {addr.recipientName} | {addr.recipientPhone}
-                </p>
-                <p className="text-sm">
-                  [{addr.zipCode}] {addr.address}
-                  {addr.addressDetail && `, ${addr.addressDetail}`}
-                </p>
-              </button>
+              </div>
             ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* 배송지 수정 모달 */}
+      <Dialog open={addressEditModalOpen} onOpenChange={setAddressEditModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>배송지 수정</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="addressName">배송지명 *</Label>
+              <Input
+                id="addressName"
+                placeholder="예: 집, 회사"
+                value={addressForm.name}
+                onChange={(e) => setAddressForm({ ...addressForm, name: e.target.value })}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="editRecipientName">받는 분 *</Label>
+                <Input
+                  id="editRecipientName"
+                  placeholder="이름"
+                  value={addressForm.recipientName}
+                  onChange={(e) => setAddressForm({ ...addressForm, recipientName: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="editRecipientPhone">연락처 *</Label>
+                <Input
+                  id="editRecipientPhone"
+                  placeholder="010-0000-0000"
+                  value={addressForm.recipientPhone}
+                  onChange={(e) => setAddressForm({ ...addressForm, recipientPhone: e.target.value })}
+                />
+              </div>
+            </div>
+            <div>
+              <Label>주소 *</Label>
+              <div className="flex gap-2">
+                <Input
+                  value={addressForm.zipCode}
+                  placeholder="우편번호"
+                  className="w-28"
+                  readOnly
+                />
+                <Button type="button" variant="outline" onClick={searchAddressForForm}>
+                  주소 검색
+                </Button>
+              </div>
+            </div>
+            <Input
+              value={addressForm.address}
+              placeholder="기본 주소"
+              readOnly
+            />
+            <Input
+              value={addressForm.addressDetail}
+              placeholder="상세 주소 (선택)"
+              onChange={(e) => setAddressForm({ ...addressForm, addressDetail: e.target.value })}
+            />
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="editIsDefault"
+                checked={addressForm.isDefault}
+                onChange={(e) => setAddressForm({ ...addressForm, isDefault: e.target.checked })}
+                className="rounded"
+              />
+              <label htmlFor="editIsDefault" className="text-sm cursor-pointer">
+                기본 배송지로 설정
+              </label>
+            </div>
+            <div className="flex gap-2 pt-4">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setAddressEditModalOpen(false)}
+              >
+                취소
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={saveAddress}
+                disabled={addressSaving}
+              >
+                {addressSaving ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : null}
+                수정
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
