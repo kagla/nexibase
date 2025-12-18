@@ -13,7 +13,6 @@ import {
   X,
   Sun,
   Moon,
-  Monitor,
   FileText,
   ScrollText,
   ShoppingBag,
@@ -25,6 +24,7 @@ import {
   BarChart3,
   Star,
   Home,
+  ExternalLink,
 } from "lucide-react"
 
 interface SidebarProps {
@@ -84,24 +84,27 @@ export function Sidebar({ activeMenu, onMenuChange }: SidebarProps) {
     }
   }
 
-  const cycleTheme = () => {
-    if (theme === 'light') setTheme('dark')
-    else if (theme === 'dark') setTheme('system')
-    else setTheme('light')
+  const toggleTheme = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark')
   }
 
   const getThemeIcon = () => {
-    if (!mounted) return <Monitor className="h-4 w-4" />
-    if (theme === 'light') return <Sun className="h-4 w-4" />
-    if (theme === 'dark') return <Moon className="h-4 w-4" />
-    return <Monitor className="h-4 w-4" />
+    if (!mounted) return <Sun className="h-4 w-4" />
+    return theme === 'dark' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />
   }
 
   const getThemeLabel = () => {
-    if (!mounted) return '시스템'
-    if (theme === 'light') return '라이트'
-    if (theme === 'dark') return '다크'
-    return '시스템'
+    if (!mounted) return '라이트'
+    return theme === 'dark' ? '다크' : '라이트'
+  }
+
+  // 홈으로 이동 (shift 클릭 시 새창)
+  const handleHomeClick = (e: React.MouseEvent) => {
+    if (e.shiftKey || e.ctrlKey || e.metaKey) {
+      window.open('/', '_blank')
+    } else {
+      router.push('/')
+    }
   }
 
   const currentActiveMenu = activeMenu || getActiveMenu()
@@ -148,7 +151,8 @@ export function Sidebar({ activeMenu, onMenuChange }: SidebarProps) {
                 variant="outline"
                 size="sm"
                 className="flex-1 justify-start"
-                onClick={() => router.push('/')}
+                onClick={handleHomeClick}
+                title="Shift+클릭으로 새창 열기"
               >
                 <Home className="mr-2 h-4 w-4" />
                 홈으로
@@ -157,7 +161,16 @@ export function Sidebar({ activeMenu, onMenuChange }: SidebarProps) {
                 variant="outline"
                 size="icon"
                 className="h-9 w-9"
-                onClick={cycleTheme}
+                onClick={() => window.open('/', '_blank')}
+                title="새창으로 열기"
+              >
+                <ExternalLink className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-9 w-9"
+                onClick={toggleTheme}
                 title={`${getThemeLabel()} 모드`}
               >
                 {getThemeIcon()}
