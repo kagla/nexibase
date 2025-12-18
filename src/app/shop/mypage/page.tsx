@@ -156,6 +156,7 @@ function MyPageContent() {
   const [notificationsLoading, setNotificationsLoading] = useState(true)
   const [notificationsPage, setNotificationsPage] = useState(1)
   const [notificationsTotalPages, setNotificationsTotalPages] = useState(1)
+  const [deletingNotificationId, setDeletingNotificationId] = useState<number | null>(null)
 
   // 탭 변경 핸들러
   const setActiveTab = (tab: string) => {
@@ -294,6 +295,35 @@ function MyPageContent() {
     }
     if (notification.link) {
       router.push(notification.link)
+    }
+  }
+
+  // 알림 삭제
+  const deleteNotification = async (e: React.MouseEvent, notificationId: number) => {
+    e.stopPropagation()
+    setDeletingNotificationId(notificationId)
+    try {
+      await fetch(`/api/notifications?id=${notificationId}`, {
+        method: 'DELETE',
+      })
+      setNotifications(notifications.filter(n => n.id !== notificationId))
+    } catch (error) {
+      console.error('알림 삭제 에러:', error)
+    } finally {
+      setDeletingNotificationId(null)
+    }
+  }
+
+  // 모든 알림 삭제
+  const deleteAllNotifications = async () => {
+    if (!confirm('모든 알림을 삭제하시겠습니까?')) return
+    try {
+      await fetch('/api/notifications?deleteAll=true', {
+        method: 'DELETE',
+      })
+      setNotifications([])
+    } catch (error) {
+      console.error('알림 삭제 에러:', error)
     }
   }
 
@@ -888,11 +918,18 @@ function MyPageContent() {
                     </span>
                   )}
                 </span>
-                {notifications.some(n => !n.isRead) && (
-                  <Button variant="ghost" size="sm" onClick={markAllAsRead}>
-                    모두 읽음
-                  </Button>
-                )}
+                <div className="flex gap-2">
+                  {notifications.some(n => !n.isRead) && (
+                    <Button variant="ghost" size="sm" onClick={markAllAsRead}>
+                      모두 읽음
+                    </Button>
+                  )}
+                  {notifications.length > 0 && (
+                    <Button variant="ghost" size="sm" onClick={deleteAllNotifications} className="text-destructive hover:text-destructive">
+                      모두 삭제
+                    </Button>
+                  )}
+                </div>
               </div>
 
               {notificationsLoading ? (
@@ -941,6 +978,19 @@ function MyPageContent() {
                               })}
                             </p>
                           </div>
+                          {/* 삭제 버튼 */}
+                          <button
+                            onClick={(e) => deleteNotification(e, notification.id)}
+                            disabled={deletingNotificationId === notification.id}
+                            className="p-1.5 rounded hover:bg-muted transition-colors flex-shrink-0"
+                            title="삭제"
+                          >
+                            {deletingNotificationId === notification.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                            )}
+                          </button>
                         </div>
                       </CardContent>
                     </Card>

@@ -605,6 +605,7 @@ model Notification {
   link      String?   @db.VarChar(500)    // 클릭 시 이동할 URL
   isRead    Boolean   @default(false)
   createdAt DateTime  @default(now())
+  deletedAt DateTime?                     // 소프트 삭제
 
   // 관계
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)

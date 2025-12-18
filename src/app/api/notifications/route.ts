@@ -16,6 +16,7 @@ export async function GET(request: Request) {
 
     const where = {
       userId: session.id,
+      deletedAt: null,  // 소프트 삭제된 알림 제외
       ...(unreadOnly && { isRead: false }),
     };
 
@@ -26,7 +27,7 @@ export async function GET(request: Request) {
         take: limit,
       }),
       prisma.notification.count({
-        where: { userId: session.id, isRead: false },
+        where: { userId: session.id, isRead: false, deletedAt: null },
       }),
     ]);
 
@@ -51,7 +52,7 @@ export async function PUT(request: Request) {
     if (markAllRead) {
       // 모든 알림 읽음 처리
       await prisma.notification.updateMany({
-        where: { userId: session.id, isRead: false },
+        where: { userId: session.id, isRead: false, deletedAt: null },
         data: { isRead: true },
       });
       return NextResponse.json({ message: '모든 알림을 읽음 처리했습니다.' });
@@ -73,7 +74,7 @@ export async function PUT(request: Request) {
   }
 }
 
-// 알림 삭제
+// 알림 삭제 (소프트 삭제)
 export async function DELETE(request: Request) {
   try {
     const session = await getSession();
@@ -86,17 +87,19 @@ export async function DELETE(request: Request) {
     const deleteAll = searchParams.get('deleteAll') === 'true';
 
     if (deleteAll) {
-      // 모든 알림 삭제
-      await prisma.notification.deleteMany({
-        where: { userId: session.id },
+      // 모든 알림 소프트 삭제
+      await prisma.notification.updateMany({
+        where: { userId: session.id, deletedAt: null },
+        data: { deletedAt: new Date() },
       });
       return NextResponse.json({ message: '모든 알림을 삭제했습니다.' });
     }
 
     if (notificationId) {
-      // 특정 알림 삭제
-      await prisma.notification.deleteMany({
-        where: { id: parseInt(notificationId), userId: session.id },
+      // 특정 알림 소프트 삭제
+      await prisma.notification.updateMany({
+        where: { id: parseInt(notificationId), userId: session.id, deletedAt: null },
+        data: { deletedAt: new Date() },
       });
       return NextResponse.json({ message: '알림을 삭제했습니다.' });
     }
