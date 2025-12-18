@@ -131,8 +131,8 @@ export default function OrderPage() {
   // 주소록 관련 상태
   const [savedAddresses, setSavedAddresses] = useState<UserAddress[]>([])
   const [addressModalOpen, setAddressModalOpen] = useState(false)
-  const [saveAddress, setSaveAddress] = useState(false)
-  const [addressName, setAddressName] = useState("")
+  const [skipSaveAddress, setSkipSaveAddress] = useState(false) // 기본값: 저장함 (false = 저장, true = 저장안함)
+  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null) // 선택된 주소 ID
 
   useEffect(() => {
     loadOrderItems()
@@ -168,7 +168,14 @@ export default function OrderPage() {
         // 기본 배송지가 있으면 자동으로 적용
         const defaultAddr = data.addresses.find((a: UserAddress) => a.isDefault)
         if (defaultAddr) {
-          applyAddress(defaultAddr)
+          setSameAsOrderer(false)
+          setRecipientName(defaultAddr.recipientName)
+          setRecipientPhone(defaultAddr.recipientPhone)
+          setZipCode(defaultAddr.zipCode)
+          setAddress(defaultAddr.address)
+          setAddressDetail(defaultAddr.addressDetail || "")
+          setSelectedAddressId(defaultAddr.id)
+          setSkipSaveAddress(true) // 이미 저장된 주소
         }
       }
     } catch (err) {
@@ -184,7 +191,21 @@ export default function OrderPage() {
     setZipCode(addr.zipCode)
     setAddress(addr.address)
     setAddressDetail(addr.addressDetail || "")
+    setSelectedAddressId(addr.id) // 선택된 주소 ID 저장
+    setSkipSaveAddress(true) // 이미 저장된 주소 선택 시 저장 안함
     setAddressModalOpen(false)
+  }
+
+  // 새 배송지 입력 모드
+  const clearAddressForNewInput = () => {
+    setSameAsOrderer(false)
+    setRecipientName("")
+    setRecipientPhone("")
+    setZipCode("")
+    setAddress("")
+    setAddressDetail("")
+    setSelectedAddressId(null)
+    setSkipSaveAddress(false) // 새 주소 입력 시 기본값: 저장함
   }
 
   // 주문자 정보와 배송지 동기화
@@ -429,24 +450,23 @@ export default function OrderPage() {
     setSubmitting(true)
 
     try {
-      // 주소 저장 체크박스가 활성화된 경우 주소 저장
-      if (saveAddress && addressName) {
+      // 자동 저장: 새 주소이고 저장 안함 체크가 안된 경우 자동 저장 (중복 체크 포함)
+      if (!skipSaveAddress && !selectedAddressId) {
         try {
           await fetch("/api/shop/addresses", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              name: addressName,
               recipientName,
               recipientPhone,
               zipCode,
               address,
               addressDetail: addressDetail || null,
-              isDefault: savedAddresses.length === 0, // 첫 번째 주소면 기본 배송지로
+              skipDuplicate: true, // 중복 시 에러 없이 무시
             }),
           })
         } catch (err) {
-          console.error("주소 저장 에러:", err)
+          console.error("주소 자동 저장 에러:", err)
           // 주소 저장 실패해도 주문은 계속 진행
         }
       }
@@ -717,7 +737,7 @@ export default function OrderPage() {
                               type="button"
                               onClick={() => applyAddress(addr)}
                               className={`w-full text-left p-3 rounded-lg border transition-colors hover:border-primary ${
-                                zipCode === addr.zipCode && address === addr.address
+                                selectedAddressId === addr.id
                                   ? 'border-primary bg-primary/5 ring-1 ring-primary'
                                   : 'border-border'
                               }`}
@@ -732,7 +752,7 @@ export default function OrderPage() {
                                     </span>
                                   )}
                                 </div>
-                                {zipCode === addr.zipCode && address === addr.address && (
+                                {selectedAddressId === addr.id && (
                                   <Check className="h-4 w-4 text-primary" />
                                 )}
                               </div>
@@ -763,14 +783,7 @@ export default function OrderPage() {
                             type="button"
                             variant="outline"
                             size="sm"
-                            onClick={() => {
-                              setSameAsOrderer(false)
-                              setRecipientName("")
-                              setRecipientPhone("")
-                              setZipCode("")
-                              setAddress("")
-                              setAddressDetail("")
-                            }}
+                            onClick={clearAddressForNewInput}
                           >
                             + 새 배송지 입력
                           </Button>
@@ -886,29 +899,21 @@ export default function OrderPage() {
                       </div>
                     )}
 
-                    {/* 주소 저장 체크박스 */}
-                    {zipCode && address && (
-                      <div className="pt-4 border-t space-y-3">
+                    {/* 주소 저장 안함 체크박스 (새 주소 입력 시만 표시) */}
+                    {zipCode && address && !selectedAddressId && (
+                      <div className="pt-4 border-t">
                         <div className="flex items-center gap-2">
                           <input
                             type="checkbox"
-                            id="saveAddress"
-                            checked={saveAddress}
-                            onChange={(e) => setSaveAddress(e.target.checked)}
+                            id="skipSaveAddress"
+                            checked={skipSaveAddress}
+                            onChange={(e) => setSkipSaveAddress(e.target.checked)}
                             className="rounded"
                           />
-                          <label htmlFor="saveAddress" className="text-sm cursor-pointer">
-                            이 주소를 주소록에 저장
+                          <label htmlFor="skipSaveAddress" className="text-sm cursor-pointer text-muted-foreground">
+                            이 주소를 주소록에 저장하지 않음
                           </label>
                         </div>
-                        {saveAddress && (
-                          <Input
-                            value={addressName}
-                            onChange={(e) => setAddressName(e.target.value)}
-                            placeholder="배송지명 (예: 집, 회사)"
-                            className="max-w-xs"
-                          />
-                        )}
                       </div>
                     )}
                   </CardContent>
@@ -1140,16 +1145,21 @@ export default function OrderPage() {
                 type="button"
                 onClick={() => applyAddress(addr)}
                 className={`w-full text-left p-4 rounded-lg border transition-colors hover:border-primary ${
-                  addr.isDefault ? 'border-primary bg-primary/5' : 'border-border'
+                  selectedAddressId === addr.id ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-border'
                 }`}
               >
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="font-medium">{addr.name}</span>
-                  {addr.isDefault && (
-                    <span className="inline-flex items-center text-xs text-primary">
-                      <Star className="h-3 w-3 mr-0.5 fill-current" />
-                      기본
-                    </span>
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">{addr.name}</span>
+                    {addr.isDefault && (
+                      <span className="inline-flex items-center text-xs text-primary">
+                        <Star className="h-3 w-3 mr-0.5 fill-current" />
+                        기본
+                      </span>
+                    )}
+                  </div>
+                  {selectedAddressId === addr.id && (
+                    <Check className="h-4 w-4 text-primary" />
                   )}
                 </div>
                 <p className="text-sm text-muted-foreground mb-1">
