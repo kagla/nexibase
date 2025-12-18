@@ -24,7 +24,15 @@ import {
   Truck,
   AlertCircle,
   Check,
+  MapPin,
+  Star,
 } from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 // 이니시스 결제 데이터 타입 (데모와 동일하게)
 interface InicisPaymentData {
@@ -72,6 +80,17 @@ interface ShopSettings {
   return_address: string
 }
 
+interface UserAddress {
+  id: number
+  name: string
+  recipientName: string
+  recipientPhone: string
+  zipCode: string
+  address: string
+  addressDetail: string | null
+  isDefault: boolean
+}
+
 
 export default function OrderPage() {
   const router = useRouter()
@@ -109,10 +128,17 @@ export default function OrderPage() {
   // 결제 방법 (기본값: 카드결제)
   const [paymentMethod, setPaymentMethod] = useState<"bank" | "card">("card")
 
+  // 주소록 관련 상태
+  const [savedAddresses, setSavedAddresses] = useState<UserAddress[]>([])
+  const [addressModalOpen, setAddressModalOpen] = useState(false)
+  const [saveAddress, setSaveAddress] = useState(false)
+  const [addressName, setAddressName] = useState("")
+
   useEffect(() => {
     loadOrderItems()
     loadShopSettings()
     loadUserInfo()
+    loadSavedAddresses()
   }, [])
 
   // 로그인한 사용자 정보 불러오기
@@ -130,6 +156,35 @@ export default function OrderPage() {
     } catch (err) {
       console.error("사용자 정보 로드 에러:", err)
     }
+  }
+
+  // 저장된 주소록 불러오기
+  const loadSavedAddresses = async () => {
+    try {
+      const res = await fetch("/api/shop/addresses")
+      if (res.ok) {
+        const data = await res.json()
+        setSavedAddresses(data.addresses)
+        // 기본 배송지가 있으면 자동으로 적용
+        const defaultAddr = data.addresses.find((a: UserAddress) => a.isDefault)
+        if (defaultAddr) {
+          applyAddress(defaultAddr)
+        }
+      }
+    } catch (err) {
+      console.error("주소록 로드 에러:", err)
+    }
+  }
+
+  // 주소 적용
+  const applyAddress = (addr: UserAddress) => {
+    setSameAsOrderer(false)
+    setRecipientName(addr.recipientName)
+    setRecipientPhone(addr.recipientPhone)
+    setZipCode(addr.zipCode)
+    setAddress(addr.address)
+    setAddressDetail(addr.addressDetail || "")
+    setAddressModalOpen(false)
   }
 
   // 주문자 정보와 배송지 동기화
@@ -374,6 +429,28 @@ export default function OrderPage() {
     setSubmitting(true)
 
     try {
+      // 주소 저장 체크박스가 활성화된 경우 주소 저장
+      if (saveAddress && addressName) {
+        try {
+          await fetch("/api/shop/addresses", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: addressName,
+              recipientName,
+              recipientPhone,
+              zipCode,
+              address,
+              addressDetail: addressDetail || null,
+              isDefault: savedAddresses.length === 0, // 첫 번째 주소면 기본 배송지로
+            }),
+          })
+        } catch (err) {
+          console.error("주소 저장 에러:", err)
+          // 주소 저장 실패해도 주문은 계속 진행
+        }
+      }
+
       // 카드결제인 경우 이니시스 결제 진행
       if (paymentMethod === "card") {
         // 현재 접속 URL을 자동으로 감지 (포트 변경에도 대응)
@@ -623,10 +700,23 @@ export default function OrderPage() {
                 {/* 배송지 정보 */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Truck className="h-5 w-5" />
-                      배송지 정보
-                    </CardTitle>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Truck className="h-5 w-5" />
+                        배송지 정보
+                      </CardTitle>
+                      {savedAddresses.length > 0 && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setAddressModalOpen(true)}
+                        >
+                          <MapPin className="h-4 w-4 mr-1" />
+                          주소록
+                        </Button>
+                      )}
+                    </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex items-center gap-2">
@@ -731,6 +821,32 @@ export default function OrderPage() {
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Check className="h-4 w-4 text-green-500" />
                         배송비: {deliveryInfo} ({formatPrice(deliveryFee)})
+                      </div>
+                    )}
+
+                    {/* 주소 저장 체크박스 */}
+                    {zipCode && address && (
+                      <div className="pt-4 border-t space-y-3">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            id="saveAddress"
+                            checked={saveAddress}
+                            onChange={(e) => setSaveAddress(e.target.checked)}
+                            className="rounded"
+                          />
+                          <label htmlFor="saveAddress" className="text-sm cursor-pointer">
+                            이 주소를 주소록에 저장
+                          </label>
+                        </div>
+                        {saveAddress && (
+                          <Input
+                            value={addressName}
+                            onChange={(e) => setAddressName(e.target.value)}
+                            placeholder="배송지명 (예: 집, 회사)"
+                            className="max-w-xs"
+                          />
+                        )}
                       </div>
                     )}
                   </CardContent>
@@ -945,6 +1061,47 @@ export default function OrderPage() {
         acceptCharset="UTF-8"
         style={{ display: "none" }}
       />
+
+      {/* 주소록 선택 모달 */}
+      <Dialog open={addressModalOpen} onOpenChange={setAddressModalOpen}>
+        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MapPin className="h-5 w-5" />
+              배송지 선택
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            {savedAddresses.map((addr) => (
+              <button
+                key={addr.id}
+                type="button"
+                onClick={() => applyAddress(addr)}
+                className={`w-full text-left p-4 rounded-lg border transition-colors hover:border-primary ${
+                  addr.isDefault ? 'border-primary bg-primary/5' : 'border-border'
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-medium">{addr.name}</span>
+                  {addr.isDefault && (
+                    <span className="inline-flex items-center text-xs text-primary">
+                      <Star className="h-3 w-3 mr-0.5 fill-current" />
+                      기본
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm text-muted-foreground mb-1">
+                  {addr.recipientName} | {addr.recipientPhone}
+                </p>
+                <p className="text-sm">
+                  [{addr.zipCode}] {addr.address}
+                  {addr.addressDetail && `, ${addr.addressDetail}`}
+                </p>
+              </button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Footer />
     </div>

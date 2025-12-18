@@ -42,6 +42,7 @@ model User {
   reviews       ProductReview[]
   qnas          ProductQna[]
   wishlists     Wishlist[]
+  addresses     UserAddress[]
 
   @@index([email])
   @@index([status])
@@ -569,4 +570,26 @@ model Wishlist {
   @@index([userId])
   @@index([productId])
   @@map("wishlists")
+}
+
+// 사용자 배송지 주소록
+model UserAddress {
+  id            Int       @id @default(autoincrement())
+  userId        Int
+  name          String    @db.VarChar(50)     // 배송지명 (예: "집", "회사")
+  recipientName String    @db.VarChar(50)     // 받는 분 이름
+  recipientPhone String   @db.VarChar(20)     // 받는 분 연락처
+  zipCode       String    @db.VarChar(10)     // 우편번호
+  address       String    @db.VarChar(200)    // 기본 주소
+  addressDetail String?   @db.VarChar(100)    // 상세 주소
+  isDefault     Boolean   @default(false)     // 기본 배송지 여부
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // 관계
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, isDefault])
+  @@map("user_addresses")
 }
