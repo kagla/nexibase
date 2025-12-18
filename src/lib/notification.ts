@@ -124,7 +124,7 @@ export async function createNewOrderNotificationForAdmins(
           type: 'order_status',
           title: '🛒 새 주문이 접수되었습니다',
           message: `[주문번호: ${orderNo}] ${customerName}님이 ${totalAmount.toLocaleString()}원 주문을 접수했습니다.`,
-          link: `/admin/shop/orders/${orderId}`,
+          link: `/admin/shop/orders/${orderNo}`,
         })
       )
     )

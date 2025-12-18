@@ -451,7 +451,7 @@ export default function AdminOrdersPage() {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
-                            <Link href={`/admin/shop/orders/${order.id}`}>
+                            <Link href={`/admin/shop/orders/${order.orderNo}`}>
                               <Button variant="ghost" size="icon">
                                 <Eye className="h-4 w-4" />
                               </Button>
