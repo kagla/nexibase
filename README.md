@@ -1,6 +1,6 @@
 # NexiBase
 
-> **Next.js-based foundation for intelligent, extensible web applications.**
+> **Next.js 기반 커뮤니티 + 쇼핑몰 통합 솔루션**
 
 **NexiBase**는 **Next.js + I + Base**의 합성어로, Next.js를 기반으로 한 차세대 웹 서비스의 기본 구조(Base)를 의미합니다.
 
