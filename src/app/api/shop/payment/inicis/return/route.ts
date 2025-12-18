@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import crypto from 'crypto'
+import { createNewOrderNotificationForAdmins, createOrderCompletedNotification } from '@/lib/notification'
 
 // SHA256 해시 생성
 function sha256(str: string) {
@@ -328,6 +329,14 @@ export async function POST(request: NextRequest) {
 
       // PendingOrder 삭제
       await prisma.pendingOrder.delete({ where: { orderNo } })
+
+      // 주문자에게 주문 완료 알림 발송 (비동기 - 응답 지연 방지)
+      createOrderCompletedNotification(pendingOrder.userId, orderNo, orderData.finalPrice)
+        .catch(err => console.error('주문자 알림 발송 실패:', err))
+
+      // 관리자/부관리자에게 새 주문 알림 발송 (비동기 - 응답 지연 방지)
+      createNewOrderNotificationForAdmins(0, orderNo, orderData.finalPrice, orderData.ordererName)
+        .catch(err => console.error('관리자 알림 발송 실패:', err))
 
       // 주문 완료 페이지로 리다이렉트
       return redirectTo(`/shop/order/complete?orderNo=${orderNo}`)
