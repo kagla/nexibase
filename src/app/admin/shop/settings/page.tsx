@@ -204,7 +204,7 @@ export default function ShopSettingsPage() {
                 id="shop_name"
                 value={settings.shop_name}
                 onChange={(e) => handleChange("shop_name", e.target.value)}
-                placeholder="예: 청춘 과수원"
+                placeholder="예: 스타일리스트"
               />
             </div>
             <div>
@@ -213,7 +213,7 @@ export default function ShopSettingsPage() {
                 id="shop_tel"
                 value={settings.shop_tel}
                 onChange={(e) => handleChange("shop_tel", e.target.value)}
-                placeholder="예: 010-1234-5678"
+                placeholder="예: 02-1234-5678"
               />
             </div>
             <div>
@@ -223,7 +223,7 @@ export default function ShopSettingsPage() {
                 type="email"
                 value={settings.shop_email}
                 onChange={(e) => handleChange("shop_email", e.target.value)}
-                placeholder="예: shop@example.com"
+                placeholder="예: cs@stylist.co.kr"
               />
             </div>
           </CardContent>
@@ -247,7 +247,7 @@ export default function ShopSettingsPage() {
                 id="bank_info"
                 value={settings.bank_info}
                 onChange={(e) => handleChange("bank_info", e.target.value)}
-                placeholder="예: 국민은행 123-456-789012 홍길동"
+                placeholder="예: 국민은행 123-456-789012 (주)스타일리스트"
                 rows={5}
               />
               <p className="text-xs text-muted-foreground mt-1">
@@ -275,7 +275,7 @@ export default function ShopSettingsPage() {
                 id="delivery_notice"
                 value={settings.delivery_notice}
                 onChange={(e) => handleChange("delivery_notice", e.target.value)}
-                placeholder="예: 주문 후 2-3일 이내 발송됩니다. 제주/도서산간 지역은 추가 배송비가 발생합니다."
+                placeholder="예: 평일 오후 2시 이전 주문 시 당일 발송&#10;제주/도서산간 지역은 추가 배송비 3,000원이 발생합니다."
                 rows={5}
               />
             </div>
@@ -317,7 +317,7 @@ export default function ShopSettingsPage() {
                 id="refund_policy"
                 value={settings.refund_policy}
                 onChange={(e) => handleChange("refund_policy", e.target.value)}
-                placeholder="예: 상품 수령 후 7일 이내 환불 가능합니다. 단, 신선식품은 환불이 불가합니다."
+                placeholder="예: 상품 수령 후 7일 이내 환불 가능합니다.&#10;단, 착용 흔적이 있거나 택이 제거된 상품은 환불이 불가합니다."
                 rows={5}
               />
             </div>
@@ -343,7 +343,7 @@ export default function ShopSettingsPage() {
                   id="exchange_info"
                   value={settings.exchange_info}
                   onChange={(e) => handleChange("exchange_info", e.target.value)}
-                  placeholder="예: 상품 수령 후 7일 이내 교환 가능합니다. 단, 상품 하자가 아닌 경우 왕복 배송비는 고객 부담입니다."
+                  placeholder="예: 상품 수령 후 7일 이내 교환 가능&#10;다른 색상/사이즈로 1회 무료 교환&#10;단순 변심 시 왕복 배송비 고객 부담"
                   rows={4}
                 />
               </div>
@@ -353,7 +353,7 @@ export default function ShopSettingsPage() {
                   id="return_info"
                   value={settings.return_info}
                   onChange={(e) => handleChange("return_info", e.target.value)}
-                  placeholder="예: 상품 수령 후 7일 이내 반품 가능합니다. 단순 변심의 경우 반품 배송비가 차감됩니다."
+                  placeholder="예: 상품 수령 후 7일 이내 반품 가능&#10;택 제거/착용 흔적 있는 경우 반품 불가&#10;단순 변심 시 반품 배송비 5,000원 차감"
                   rows={4}
                 />
               </div>
@@ -364,7 +364,7 @@ export default function ShopSettingsPage() {
                 id="return_address"
                 value={settings.return_address}
                 onChange={(e) => handleChange("return_address", e.target.value)}
-                placeholder="예: 경기도 OO시 OO구 OO로 123, 물류센터"
+                placeholder="예: 서울시 성동구 성수이로 123, 스타일리스트 물류센터"
               />
               <p className="text-xs text-muted-foreground mt-1">
                 고객이 반품/교환 시 발송할 주소입니다.
