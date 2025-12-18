@@ -1,29 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-// 사용자 레벨 확인 헬퍼
-async function getUserLevel(request: NextRequest): Promise<{ userId: number | null; level: number }> {
+// 사용자 인증 정보 확인 헬퍼
+async function getUserAuth(request: NextRequest): Promise<{ userId: number | null; isLoggedIn: boolean; isAdmin: boolean }> {
   const sessionToken = request.cookies.get('session-token')?.value
-  if (!sessionToken) return { userId: null, level: 0 }
+  if (!sessionToken) return { userId: null, isLoggedIn: false, isAdmin: false }
 
   const session = await prisma.userSession.findUnique({
     where: { sessionToken },
     include: {
       user: {
-        select: { id: true, level: true, role: true }
+        select: { id: true, role: true }
       }
     }
   })
 
   if (!session || new Date() > session.expires) {
-    return { userId: null, level: 0 }
+    return { userId: null, isLoggedIn: false, isAdmin: false }
   }
 
-  if (session.user.role === 'admin') {
-    return { userId: session.user.id, level: 99 }
+  return {
+    userId: session.user.id,
+    isLoggedIn: true,
+    isAdmin: session.user.role === 'admin'
   }
-
-  return { userId: session.user.id, level: session.user.level }
 }
 
 // 댓글 작성
@@ -38,8 +38,8 @@ export async function POST(
     const { content, parentId } = body
 
     // 로그인 확인
-    const { userId, level } = await getUserLevel(request)
-    if (!userId) {
+    const { userId, isLoggedIn } = await getUserAuth(request)
+    if (!isLoggedIn) {
       return NextResponse.json(
         { error: '로그인이 필요합니다.' },
         { status: 401 }
@@ -59,9 +59,9 @@ export async function POST(
     }
 
     // 댓글 권한 확인
-    if (level < board.commentLevel) {
+    if (board.commentMemberOnly && !isLoggedIn) {
       return NextResponse.json(
-        { error: '댓글을 쓸 권한이 없습니다.', requiredLevel: board.commentLevel },
+        { error: '댓글을 쓸 권한이 없습니다. 로그인이 필요합니다.', requireLogin: true },
         { status: 403 }
       )
     }
@@ -112,7 +112,7 @@ export async function POST(
     const comment = await prisma.comment.create({
       data: {
         content: content.trim(),
-        authorId: userId,
+        authorId: userId!,
         postId,
         parentId: parentId ? parseInt(parentId) : null
       },

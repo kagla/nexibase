@@ -54,7 +54,7 @@ export async function PUT(
     const { id } = await params
     const userId = parseInt(id)
     const body = await request.json()
-    const { email, name, nickname, password, phone, role, status, level } = body
+    const { email, name, nickname, password, phone, role, status } = body
 
     // 기존 사용자 확인
     const existingUser = await prisma.user.findUnique({
@@ -102,7 +102,6 @@ export async function PUT(
       phone,
       role,
       status,
-      level: level ?? existingUser.level,
     }
 
     // 비밀번호가 제공된 경우에만 업데이트

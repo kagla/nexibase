@@ -32,7 +32,6 @@ interface User {
   phone: string | null
   role: string
   status: string
-  level: number
   emailVerified: string | null
   lastLoginAt: string | null
   createdAt: string
@@ -109,7 +108,6 @@ function UserModal({
     password: '',
     role: 'user',
     status: 'active',
-    level: 1,
   })
   const [loading, setLoading] = useState(false)
 
@@ -123,7 +121,6 @@ function UserModal({
         password: '',
         role: user.role || 'user',
         status: user.status || 'active',
-        level: user.level ?? 1,
       })
     } else {
       setFormData({
@@ -134,7 +131,6 @@ function UserModal({
         password: '',
         role: 'user',
         status: 'active',
-        level: 1,
       })
     }
   }, [user, isOpen])
@@ -242,7 +238,7 @@ function UserModal({
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="role">권한</Label>
                   <select
@@ -268,17 +264,6 @@ function UserModal({
                     <option value="inactive">비활성</option>
                     <option value="banned">차단</option>
                   </select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="level">레벨</Label>
-                  <Input
-                    id="level"
-                    type="number"
-                    min={1}
-                    max={99}
-                    value={formData.level}
-                    onChange={(e) => setFormData({ ...formData, level: parseInt(e.target.value) || 1 })}
-                  />
                 </div>
               </div>
             </CardContent>
@@ -582,9 +567,6 @@ export default function UsersPage() {
                       <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
                         연동
                       </th>
-                      <th className="h-12 px-4 text-center align-middle font-medium text-muted-foreground">
-                        레벨
-                      </th>
                       <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">
                         상태
                       </th>
@@ -602,13 +584,13 @@ export default function UsersPage() {
                   <tbody>
                     {loading ? (
                       <tr>
-                        <td colSpan={8} className="h-32 text-center">
+                        <td colSpan={7} className="h-32 text-center">
                           <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
                         </td>
                       </tr>
                     ) : users.length === 0 ? (
                       <tr>
-                        <td colSpan={8} className="h-32 text-center text-muted-foreground">
+                        <td colSpan={7} className="h-32 text-center text-muted-foreground">
                           사용자가 없습니다.
                         </td>
                       </tr>
@@ -655,11 +637,6 @@ export default function UsersPage() {
                                 <span className="text-sm text-muted-foreground">이메일</span>
                               )}
                             </div>
-                          </td>
-                          <td className="p-4 align-middle text-center">
-                            <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary text-sm font-medium">
-                              {user.level}
-                            </span>
                           </td>
                           <td className="p-4 align-middle">
                             {getStatusBadge(user.status)}

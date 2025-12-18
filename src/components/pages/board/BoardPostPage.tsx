@@ -46,7 +46,7 @@ interface Board {
   name: string
   useComment: boolean
   useReaction: boolean
-  commentLevel: number
+  commentMemberOnly: boolean
 }
 
 interface Author {
@@ -54,7 +54,6 @@ interface Author {
   nickname: string | null
   name: string
   image: string | null
-  level?: number
 }
 
 interface Comment {
@@ -89,7 +88,6 @@ interface User {
   id: string
   nickname: string | null
   name: string
-  level: number
   role: string
 }
 
@@ -109,9 +107,11 @@ export default function BoardPostPage() {
   const [userReactions, setUserReactions] = useState<string[]>([])
   const [commentText, setCommentText] = useState("")
   const [submittingComment, setSubmittingComment] = useState(false)
-  const [userLevel, setUserLevel] = useState(0)
   const [prevPost, setPrevPost] = useState<AdjacentPost | null>(null)
   const [nextPost, setNextPost] = useState<AdjacentPost | null>(null)
+
+  const isLoggedIn = !!user
+  const isAdmin = user?.role === 'admin'
 
   // 사용자 정보 조회
   const fetchUser = useCallback(async () => {
@@ -120,7 +120,6 @@ export default function BoardPostPage() {
       const data = await response.json()
       if (data.user) {
         setUser(data.user)
-        setUserLevel(data.user.role === 'admin' ? 99 : data.user.level || 1)
       }
     } catch (error) {
       console.error('사용자 정보 조회 에러:', error)
@@ -317,8 +316,9 @@ export default function BoardPostPage() {
     return null
   }
 
-  const canComment = board.useComment && userLevel >= board.commentLevel
-  const canEdit = isAuthor || userLevel >= 9
+  // 댓글 권한: 회원전용이면 로그인 필요, 아니면 누구나 가능
+  const canComment = board.useComment && (board.commentMemberOnly ? isLoggedIn : true)
+  const canEdit = isAuthor || isAdmin
 
   return (
     <UserLayout>
@@ -605,17 +605,13 @@ export default function BoardPostPage() {
                     )}
                   </Button>
                 </form>
-              ) : user ? (
-                <div className="text-center text-sm text-muted-foreground">
-                  댓글을 쓰려면 레벨 {board.commentLevel} 이상이 필요합니다.
-                </div>
-              ) : (
+              ) : board.commentMemberOnly && !isLoggedIn ? (
                 <div className="text-center">
                   <Link href="/login" className="text-primary hover:underline text-sm">
-                    로그인하면 댓글을 쓸 수 있습니다.
+                    댓글을 쓰려면 로그인이 필요합니다.
                   </Link>
                 </div>
-              )}
+              ) : null}
             </CardContent>
           </Card>
         )}

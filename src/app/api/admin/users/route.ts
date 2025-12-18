@@ -90,7 +90,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { email, name, nickname, password, phone, role, status, level } = body
+    const { email, name, nickname, password, phone, role, status } = body
 
     // 이메일 중복 확인
     const existingUser = await prisma.user.findUnique({
@@ -117,7 +117,6 @@ export async function POST(request: NextRequest) {
         phone,
         role: role || 'user',
         status: status || 'active',
-        level: level ?? 1,
       }
     })
 

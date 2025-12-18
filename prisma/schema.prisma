@@ -23,7 +23,6 @@ model User {
   password      String?   @db.VarChar(255) // 소셜 로그인 사용자는 null
   image         String?   @db.VarChar(500) // 프로필 이미지 URL
   phone         String?   @db.VarChar(20)
-  level         Int       @default(1) // 사용자 레벨 (게시판 권한용)
   role          String    @default("user") @db.VarChar(20) // user, manager, admin
   status        String    @default("active") @db.VarChar(20) // active, inactive, banned
   emailVerified DateTime?
@@ -101,11 +100,11 @@ model Board {
   description String?  @db.VarChar(500) // 게시판 설명
   category    String?  @db.VarChar(50) // 카테고리 (community, support, etc.)
 
-  // 권한 설정 (레벨)
-  listLevel   Int      @default(0) // 목록 보기 권한
-  readLevel   Int      @default(0) // 글 읽기 권한
-  writeLevel  Int      @default(1) // 글 쓰기 권한
-  commentLevel Int     @default(1) // 댓글 쓰기 권한
+  // 권한 설정 (회원전용 여부, true=회원만, false=모두)
+  listMemberOnly    Boolean  @default(false) // 목록 보기 권한
+  readMemberOnly    Boolean  @default(false) // 글 읽기 권한
+  writeMemberOnly   Boolean  @default(true)  // 글 쓰기 권한
+  commentMemberOnly Boolean  @default(true)  // 댓글 쓰기 권한
 
   // 기능 설정
   useComment  Boolean  @default(true) // 댓글 사용

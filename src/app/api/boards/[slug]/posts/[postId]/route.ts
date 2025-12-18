@@ -1,29 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-// 사용자 레벨 확인 헬퍼
-async function getUserLevel(request: NextRequest): Promise<{ userId: number | null; level: number }> {
+// 사용자 인증 정보 확인 헬퍼
+async function getUserAuth(request: NextRequest): Promise<{ userId: number | null; isLoggedIn: boolean; isAdmin: boolean }> {
   const sessionToken = request.cookies.get('session-token')?.value
-  if (!sessionToken) return { userId: null, level: 0 }
+  if (!sessionToken) return { userId: null, isLoggedIn: false, isAdmin: false }
 
   const session = await prisma.userSession.findUnique({
     where: { sessionToken },
     include: {
       user: {
-        select: { id: true, level: true, role: true }
+        select: { id: true, role: true }
       }
     }
   })
 
   if (!session || new Date() > session.expires) {
-    return { userId: null, level: 0 }
+    return { userId: null, isLoggedIn: false, isAdmin: false }
   }
 
-  if (session.user.role === 'admin') {
-    return { userId: session.user.id, level: 99 }
+  return {
+    userId: session.user.id,
+    isLoggedIn: true,
+    isAdmin: session.user.role === 'admin'
   }
-
-  return { userId: session.user.id, level: session.user.level }
 }
 
 // 게시글 상세 조회
@@ -48,10 +48,10 @@ export async function GET(
     }
 
     // 권한 확인
-    const { userId, level } = await getUserLevel(request)
-    if (level < board.readLevel) {
+    const { userId, isLoggedIn, isAdmin } = await getUserAuth(request)
+    if (board.readMemberOnly && !isLoggedIn) {
       return NextResponse.json(
-        { error: '글을 읽을 권한이 없습니다.', requiredLevel: board.readLevel },
+        { error: '글을 읽을 권한이 없습니다. 로그인이 필요합니다.', requireLogin: true },
         { status: 403 }
       )
     }
@@ -65,8 +65,7 @@ export async function GET(
             id: true,
             nickname: true,
             name: true,
-            image: true,
-            level: true
+            image: true
           }
         },
         comments: board.useComment ? {
@@ -122,7 +121,7 @@ export async function GET(
     }
 
     // 비밀글 확인
-    if (post.isSecret && post.authorId !== userId && level < 9) {
+    if (post.isSecret && post.authorId !== userId && !isAdmin) {
       return NextResponse.json(
         { error: '비밀글입니다.' },
         { status: 403 }
@@ -180,7 +179,7 @@ export async function GET(
         name: board.name,
         useComment: board.useComment,
         useReaction: board.useReaction,
-        commentLevel: board.commentLevel
+        commentMemberOnly: board.commentMemberOnly
       },
       post: {
         ...post,
@@ -212,8 +211,8 @@ export async function PUT(
     const { title, content, isNotice, isSecret } = body
 
     // 로그인 확인
-    const { userId, level } = await getUserLevel(request)
-    if (!userId) {
+    const { userId, isLoggedIn, isAdmin } = await getUserAuth(request)
+    if (!isLoggedIn) {
       return NextResponse.json(
         { error: '로그인이 필요합니다.' },
         { status: 401 }
@@ -245,7 +244,7 @@ export async function PUT(
     }
 
     // 권한 확인 (작성자 또는 관리자)
-    if (post.authorId !== userId && level < 9) {
+    if (post.authorId !== userId && !isAdmin) {
       return NextResponse.json(
         { error: '수정 권한이 없습니다.' },
         { status: 403 }
@@ -258,7 +257,7 @@ export async function PUT(
       data: {
         title: title?.trim() || post.title,
         content: content?.trim() || post.content,
-        isNotice: isNotice !== undefined ? (isNotice && level >= 9) : post.isNotice,
+        isNotice: isNotice !== undefined ? (isNotice && isAdmin) : post.isNotice,
         isSecret: isSecret !== undefined ? (isSecret && board.useSecret) : post.isSecret
       }
     })
@@ -288,8 +287,8 @@ export async function DELETE(
     const postId = parseInt(postIdParam)
 
     // 로그인 확인
-    const { userId, level } = await getUserLevel(request)
-    if (!userId) {
+    const { userId, isLoggedIn, isAdmin } = await getUserAuth(request)
+    if (!isLoggedIn) {
       return NextResponse.json(
         { error: '로그인이 필요합니다.' },
         { status: 401 }
@@ -321,7 +320,7 @@ export async function DELETE(
     }
 
     // 권한 확인 (작성자 또는 관리자)
-    if (post.authorId !== userId && level < 9) {
+    if (post.authorId !== userId && !isAdmin) {
       return NextResponse.json(
         { error: '삭제 권한이 없습니다.' },
         { status: 403 }

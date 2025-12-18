@@ -72,8 +72,7 @@ export async function POST(request: NextRequest) {
         nickname,
         name: nickname,
         role: isFirstUser ? 'admin' : 'user',
-        status: 'active',
-        level: isFirstUser ? 99 : 1
+        status: 'active'
       }
     })
 

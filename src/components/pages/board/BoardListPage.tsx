@@ -24,10 +24,10 @@ interface Board {
   slug: string
   name: string
   description: string | null
-  listLevel: number
-  readLevel: number
-  writeLevel: number
-  commentLevel: number
+  listMemberOnly: boolean
+  readMemberOnly: boolean
+  writeMemberOnly: boolean
+  commentMemberOnly: boolean
   useComment: boolean
   useReaction: boolean
   postsPerPage: number
@@ -48,7 +48,6 @@ interface Post {
     nickname: string | null
     name: string
     image: string | null
-    level: number
   }
 }
 
@@ -56,7 +55,6 @@ interface User {
   id: string
   nickname: string | null
   name: string
-  level: number
   role?: string
 }
 
@@ -73,7 +71,8 @@ export default function BoardListPage() {
   const [error, setError] = useState<string | null>(null)
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
-  const [userLevel, setUserLevel] = useState(0)
+  const isLoggedIn = !!user
+  const isAdmin = user?.role === 'admin'
 
   // 사용자 정보 조회
   const fetchUser = useCallback(async () => {
@@ -82,7 +81,6 @@ export default function BoardListPage() {
       const data = await response.json()
       if (data.user) {
         setUser(data.user)
-        setUserLevel(data.user.role === 'admin' ? 99 : data.user.level || 1)
       }
     } catch (error) {
       console.error('사용자 정보 조회 에러:', error)
@@ -103,7 +101,7 @@ export default function BoardListPage() {
 
       if (!response.ok) {
         if (response.status === 403) {
-          setError(`이 게시판을 보려면 레벨 ${data.requiredLevel} 이상이 필요합니다.`)
+          setError(data.requireLogin ? '이 게시판을 보려면 로그인이 필요합니다.' : (data.error || '권한이 없습니다.'))
         } else if (response.status === 404) {
           setError('게시판을 찾을 수 없습니다.')
         } else {
@@ -152,7 +150,7 @@ export default function BoardListPage() {
 
   // 게시글 클릭
   const handlePostClick = (post: Post) => {
-    if (post.isSecret && post.author.id !== user?.id && userLevel < 9) {
+    if (post.isSecret && post.author.id !== user?.id && !isAdmin) {
       alert('비밀글입니다.')
       return
     }
@@ -198,7 +196,8 @@ export default function BoardListPage() {
     return null
   }
 
-  const canWrite = userLevel >= board.writeLevel
+  // 글쓰기 권한: 회원전용이면 로그인 필요, 아니면 누구나 가능
+  const canWrite = board.writeMemberOnly ? isLoggedIn : true
 
   return (
     <UserLayout>
@@ -331,16 +330,10 @@ export default function BoardListPage() {
           </div>
         )}
 
-        {!canWrite && user && (
-          <div className="mt-4 text-center text-sm text-muted-foreground">
-            글을 쓰려면 레벨 {board.writeLevel} 이상이 필요합니다. (현재 레벨: {userLevel})
-          </div>
-        )}
-
-        {!user && (
+        {!canWrite && board.writeMemberOnly && (
           <div className="mt-4 text-center">
             <Link href="/login" className="text-primary hover:underline text-sm">
-              로그인하면 글을 쓸 수 있습니다.
+              글을 쓰려면 로그인이 필요합니다.
             </Link>
           </div>
         )}

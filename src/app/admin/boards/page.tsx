@@ -33,10 +33,10 @@ interface Board {
   name: string
   description: string | null
   category: string | null
-  listLevel: number
-  readLevel: number
-  writeLevel: number
-  commentLevel: number
+  listMemberOnly: boolean
+  readMemberOnly: boolean
+  writeMemberOnly: boolean
+  commentMemberOnly: boolean
   useComment: boolean
   useReaction: boolean
   useFile: boolean
@@ -91,10 +91,10 @@ function BoardModal({
     name: '',
     description: '',
     category: '',
-    listLevel: 0,
-    readLevel: 0,
-    writeLevel: 1,
-    commentLevel: 1,
+    listMemberOnly: false,
+    readMemberOnly: false,
+    writeMemberOnly: true,
+    commentMemberOnly: true,
     useComment: true,
     useReaction: true,
     useFile: true,
@@ -112,10 +112,10 @@ function BoardModal({
         name: board.name || '',
         description: board.description || '',
         category: board.category || '',
-        listLevel: board.listLevel ?? 0,
-        readLevel: board.readLevel ?? 0,
-        writeLevel: board.writeLevel ?? 1,
-        commentLevel: board.commentLevel ?? 1,
+        listMemberOnly: board.listMemberOnly ?? false,
+        readMemberOnly: board.readMemberOnly ?? false,
+        writeMemberOnly: board.writeMemberOnly ?? true,
+        commentMemberOnly: board.commentMemberOnly ?? true,
         useComment: board.useComment ?? true,
         useReaction: board.useReaction ?? true,
         useFile: board.useFile ?? true,
@@ -130,10 +130,10 @@ function BoardModal({
         name: '',
         description: '',
         category: '',
-        listLevel: 0,
-        readLevel: 0,
-        writeLevel: 1,
-        commentLevel: 1,
+        listMemberOnly: false,
+        readMemberOnly: false,
+        writeMemberOnly: true,
+        commentMemberOnly: true,
         useComment: true,
         useReaction: true,
         useFile: true,
@@ -250,52 +250,45 @@ function BoardModal({
 
           {/* 권한 설정 */}
           <div>
-            <h3 className="text-sm font-medium text-muted-foreground mb-4">권한 설정 (레벨)</h3>
+            <h3 className="text-sm font-medium text-muted-foreground mb-4">권한 설정</h3>
+            <p className="text-xs text-muted-foreground mb-4">체크하면 회원만 이용 가능, 체크 해제하면 비회원도 이용 가능</p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="listLevel">목록 보기</Label>
-                <Input
-                  id="listLevel"
-                  type="number"
-                  min={0}
-                  max={10}
-                  value={formData.listLevel}
-                  onChange={(e) => setFormData({ ...formData, listLevel: parseInt(e.target.value) || 0 })}
+              <label className="flex items-center space-x-2 cursor-pointer p-3 border rounded-lg hover:bg-muted/50">
+                <input
+                  type="checkbox"
+                  checked={formData.listMemberOnly}
+                  onChange={(e) => setFormData({ ...formData, listMemberOnly: e.target.checked })}
+                  className="rounded border-gray-300"
                 />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="readLevel">글 읽기</Label>
-                <Input
-                  id="readLevel"
-                  type="number"
-                  min={0}
-                  max={10}
-                  value={formData.readLevel}
-                  onChange={(e) => setFormData({ ...formData, readLevel: parseInt(e.target.value) || 0 })}
+                <span className="text-sm">목록 보기</span>
+              </label>
+              <label className="flex items-center space-x-2 cursor-pointer p-3 border rounded-lg hover:bg-muted/50">
+                <input
+                  type="checkbox"
+                  checked={formData.readMemberOnly}
+                  onChange={(e) => setFormData({ ...formData, readMemberOnly: e.target.checked })}
+                  className="rounded border-gray-300"
                 />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="writeLevel">글 쓰기</Label>
-                <Input
-                  id="writeLevel"
-                  type="number"
-                  min={0}
-                  max={10}
-                  value={formData.writeLevel}
-                  onChange={(e) => setFormData({ ...formData, writeLevel: parseInt(e.target.value) || 0 })}
+                <span className="text-sm">글 읽기</span>
+              </label>
+              <label className="flex items-center space-x-2 cursor-pointer p-3 border rounded-lg hover:bg-muted/50">
+                <input
+                  type="checkbox"
+                  checked={formData.writeMemberOnly}
+                  onChange={(e) => setFormData({ ...formData, writeMemberOnly: e.target.checked })}
+                  className="rounded border-gray-300"
                 />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="commentLevel">댓글 쓰기</Label>
-                <Input
-                  id="commentLevel"
-                  type="number"
-                  min={0}
-                  max={10}
-                  value={formData.commentLevel}
-                  onChange={(e) => setFormData({ ...formData, commentLevel: parseInt(e.target.value) || 0 })}
+                <span className="text-sm">글 쓰기</span>
+              </label>
+              <label className="flex items-center space-x-2 cursor-pointer p-3 border rounded-lg hover:bg-muted/50">
+                <input
+                  type="checkbox"
+                  checked={formData.commentMemberOnly}
+                  onChange={(e) => setFormData({ ...formData, commentMemberOnly: e.target.checked })}
+                  className="rounded border-gray-300"
                 />
-              </div>
+                <span className="text-sm">댓글 쓰기</span>
+              </label>
             </div>
           </div>
 

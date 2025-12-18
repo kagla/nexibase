@@ -1,30 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-// 사용자 레벨 확인 헬퍼
-async function getUserLevel(request: NextRequest): Promise<{ userId: number | null; level: number }> {
+// 사용자 인증 정보 확인 헬퍼
+async function getUserAuth(request: NextRequest): Promise<{ userId: number | null; isLoggedIn: boolean; isAdmin: boolean }> {
   const sessionToken = request.cookies.get('session-token')?.value
-  if (!sessionToken) return { userId: null, level: 0 }
+  if (!sessionToken) return { userId: null, isLoggedIn: false, isAdmin: false }
 
   const session = await prisma.userSession.findUnique({
     where: { sessionToken },
     include: {
       user: {
-        select: { id: true, level: true, role: true }
+        select: { id: true, role: true }
       }
     }
   })
 
   if (!session || new Date() > session.expires) {
-    return { userId: null, level: 0 }
+    return { userId: null, isLoggedIn: false, isAdmin: false }
   }
 
-  // 관리자는 최대 레벨
-  if (session.user.role === 'admin') {
-    return { userId: session.user.id, level: 99 }
+  return {
+    userId: session.user.id,
+    isLoggedIn: true,
+    isAdmin: session.user.role === 'admin'
   }
-
-  return { userId: session.user.id, level: session.user.level }
 }
 
 // 게시글 목록 조회
@@ -58,10 +57,10 @@ export async function GET(
     }
 
     // 권한 확인
-    const { level } = await getUserLevel(request)
-    if (level < board.listLevel) {
+    const { isLoggedIn } = await getUserAuth(request)
+    if (board.listMemberOnly && !isLoggedIn) {
       return NextResponse.json(
-        { error: '목록을 볼 권한이 없습니다.', requiredLevel: board.listLevel },
+        { error: '목록을 볼 권한이 없습니다. 로그인이 필요합니다.', requireLogin: true },
         { status: 403 }
       )
     }
@@ -132,7 +131,7 @@ export async function GET(
         slug: board.slug,
         name: board.name,
         description: board.description,
-        writeLevel: board.writeLevel,
+        writeMemberOnly: board.writeMemberOnly,
         useComment: board.useComment,
         useReaction: board.useReaction
       },
@@ -183,18 +182,21 @@ export async function POST(
     }
 
     // 로그인 및 권한 확인
-    const { userId, level } = await getUserLevel(request)
-    if (!userId) {
+    const { userId, isLoggedIn, isAdmin } = await getUserAuth(request)
+
+    // 회원전용 게시판에서 비로그인 시
+    if (board.writeMemberOnly && !isLoggedIn) {
       return NextResponse.json(
         { error: '로그인이 필요합니다.' },
         { status: 401 }
       )
     }
 
-    if (level < board.writeLevel) {
+    // 비회원 게시판이더라도 글 작성 시에는 로그인 필요
+    if (!userId) {
       return NextResponse.json(
-        { error: '글을 작성할 권한이 없습니다.', requiredLevel: board.writeLevel },
-        { status: 403 }
+        { error: '로그인이 필요합니다.' },
+        { status: 401 }
       )
     }
 
@@ -225,7 +227,7 @@ export async function POST(
         authorId: userId,
         title: title.trim(),
         content: content.trim(),
-        isNotice: isNotice && level >= 9, // 레벨 9 이상만 공지 가능
+        isNotice: isNotice && isAdmin, // 관리자만 공지 가능
         isSecret: isSecret && board.useSecret,
         ip
       },

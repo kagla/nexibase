@@ -20,7 +20,7 @@ interface Board {
   id: string
   slug: string
   name: string
-  writeLevel: number
+  writeMemberOnly: boolean
   useSecret: boolean
 }
 
