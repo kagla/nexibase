@@ -293,10 +293,10 @@ export default function OrderDetailPage() {
 
               {/* 무통장입금 안내 */}
               {order.paymentMethod === "bank" && order.status === "pending" && bankInfo && (
-                <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <p className="text-sm font-medium text-blue-800 mb-2">입금 계좌 안내</p>
-                  <p className="text-sm text-blue-700 whitespace-pre-line">{bankInfo}</p>
-                  <p className="text-xs text-blue-600 mt-2">
+                <div className="mt-4 p-4 bg-primary/10 border border-primary/30 rounded-lg">
+                  <p className="text-sm font-medium text-primary mb-2">입금 계좌 안내</p>
+                  <p className="text-sm text-foreground whitespace-pre-line">{bankInfo}</p>
+                  <p className="text-xs text-muted-foreground mt-2">
                     * 입금 확인 후 결제 완료 처리됩니다.
                   </p>
                 </div>
