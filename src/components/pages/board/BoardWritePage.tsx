@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -10,7 +10,6 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { UserLayout } from "@/components/layout/UserLayout"
 import { TiptapEditor } from "@/components/editor/TiptapEditor"
-import { useSession } from "@/components/providers/SessionProvider"
 import {
   Loader2,
   ArrowLeft,
@@ -25,12 +24,18 @@ interface Board {
   useSecret: boolean
 }
 
+interface User {
+  id: string
+  name: string
+}
+
 export default function BoardWritePage() {
   const params = useParams()
   const router = useRouter()
   const slug = params.slug as string
-  const { user, loading: sessionLoading } = useSession()
 
+  const [user, setUser] = useState<User | null>(null)
+  const [sessionChecked, setSessionChecked] = useState(false)
   const [board, setBoard] = useState<Board | null>(null)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
@@ -40,16 +45,35 @@ export default function BoardWritePage() {
   const [isSecret, setIsSecret] = useState(false)
 
   // 로그인 체크 - 글쓰기는 회원만 가능
-  useEffect(() => {
-    if (!sessionLoading && !user) {
+  const checkSession = useCallback(async () => {
+    try {
+      const response = await fetch('/api/me')
+      const data = await response.json()
+      if (data.user) {
+        setUser(data.user)
+      } else {
+        // 비로그인 시 로그인 페이지로 이동
+        alert('로그인이 필요합니다.')
+        router.push(`/login?callbackUrl=/board/${slug}/write`)
+        return
+      }
+    } catch (err) {
+      console.error('세션 체크 에러:', err)
       alert('로그인이 필요합니다.')
       router.push(`/login?callbackUrl=/board/${slug}/write`)
+      return
+    } finally {
+      setSessionChecked(true)
     }
-  }, [sessionLoading, user, router, slug])
+  }, [router, slug])
+
+  useEffect(() => {
+    checkSession()
+  }, [checkSession])
 
   useEffect(() => {
     // 로그인 체크 후에 게시판 정보 로드
-    if (sessionLoading || !user) return
+    if (!sessionChecked || !user) return
 
     const fetchBoard = async () => {
       try {
@@ -62,8 +86,8 @@ export default function BoardWritePage() {
         }
 
         setBoard(data.board)
-      } catch (error) {
-        console.error('게시판 조회 에러:', error)
+      } catch (err) {
+        console.error('게시판 조회 에러:', err)
         setError('게시판 정보를 불러오는 중 오류가 발생했습니다.')
       } finally {
         setLoading(false)
@@ -71,7 +95,7 @@ export default function BoardWritePage() {
     }
 
     fetchBoard()
-  }, [slug, sessionLoading, user])
+  }, [slug, sessionChecked, user])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -125,8 +149,8 @@ export default function BoardWritePage() {
     }
   }
 
-  // 세션 로딩 중이거나 비로그인 상태면 로딩 표시 (리다이렉트 중)
-  if (sessionLoading || !user || loading) {
+  // 세션 체크 중이거나 비로그인 상태면 로딩 표시 (리다이렉트 중)
+  if (!sessionChecked || !user || loading) {
     return (
       <UserLayout>
         <div className="flex items-center justify-center py-20">
