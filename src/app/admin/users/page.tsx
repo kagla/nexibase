@@ -27,6 +27,7 @@ import {
   UserCheck,
   UserX,
   UserMinus,
+  UserCog,
   RotateCcw,
   ChevronLeft,
   ChevronRight,
@@ -52,6 +53,7 @@ interface User {
 interface UserStats {
   totalUsers: number
   activeUsers: number
+  inactiveUsers: number
   bannedUsers: number
   deletedUsers: number
 }
@@ -342,6 +344,7 @@ export default function UsersPage() {
   const [stats, setStats] = useState<UserStats>({
     totalUsers: 0,
     activeUsers: 0,
+    inactiveUsers: 0,
     bannedUsers: 0,
     deletedUsers: 0
   })
@@ -522,7 +525,7 @@ export default function UsersPage() {
           </div>
 
           {/* Stats */}
-          <div className="grid gap-4 md:grid-cols-4 mb-8">
+          <div className="grid gap-4 md:grid-cols-5 mb-8">
             <StatCard
               title="전체 사용자"
               value={stats.totalUsers}
@@ -536,6 +539,13 @@ export default function UsersPage() {
               icon={UserCheck}
               active={statusFilter === 'active' && !deletedFilter}
               onClick={() => { setStatusFilter('active'); setDeletedFilter(false); setCurrentPage(1) }}
+            />
+            <StatCard
+              title="비활성 사용자"
+              value={stats.inactiveUsers}
+              icon={UserCog}
+              active={statusFilter === 'inactive' && !deletedFilter}
+              onClick={() => { setStatusFilter('inactive'); setDeletedFilter(false); setCurrentPage(1) }}
             />
             <StatCard
               title="차단된 사용자"
