@@ -501,11 +501,11 @@ export default function ShopSettingsPage() {
                 테스트 모드 (실제 결제 안됨)
               </label>
             </div>
-            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm">
-              <p className="font-medium text-yellow-800 mb-2">테스트 모드 안내</p>
-              <ul className="list-disc list-inside text-yellow-700 space-y-1">
-                <li>테스트 MID: <code className="bg-yellow-100 px-1 rounded">INIpayTest</code></li>
-                <li>테스트 API Key: <code className="bg-yellow-100 px-1 rounded">ItEQKi3rY7uvDS8l</code></li>
+            <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg text-sm">
+              <p className="font-medium text-amber-600 dark:text-amber-400 mb-2">테스트 모드 안내</p>
+              <ul className="list-disc list-inside text-amber-700 dark:text-amber-300 space-y-1">
+                <li>테스트 MID: <code className="bg-amber-500/20 px-1.5 py-0.5 rounded font-mono text-amber-800 dark:text-amber-200">INIpayTest</code></li>
+                <li>테스트 API Key: <code className="bg-amber-500/20 px-1.5 py-0.5 rounded font-mono text-amber-800 dark:text-amber-200">ItEQKi3rY7uvDS8l</code></li>
                 <li>테스트 SignKey: 이니시스 개발자센터에서 확인</li>
                 <li>실제 운영 시 테스트 모드를 해제하세요</li>
               </ul>
