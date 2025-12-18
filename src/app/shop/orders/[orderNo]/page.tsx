@@ -511,8 +511,8 @@ export default function OrderDetailPage() {
             {/* 주문 취소 (결제대기/결제완료 상태) - 즉시 취소 */}
             {["pending", "paid"].includes(order.status) && (
               <Button
-                variant="ghost"
-                className="flex-1 text-muted-foreground hover:text-destructive"
+                variant="outline"
+                className="flex-1 text-muted-foreground hover:text-destructive hover:border-destructive"
                 onClick={() => openDialog("cancel")}
               >
                 <XCircle className="h-4 w-4 mr-2" />
@@ -523,8 +523,8 @@ export default function OrderDetailPage() {
             {/* 취소 요청 (준비중 상태) - 관리자 승인 필요 */}
             {order.status === "preparing" && (
               <Button
-                variant="ghost"
-                className="flex-1 text-muted-foreground hover:text-destructive"
+                variant="outline"
+                className="flex-1 text-muted-foreground hover:text-destructive hover:border-destructive"
                 onClick={() => openDialog("cancel")}
               >
                 <XCircle className="h-4 w-4 mr-2" />
@@ -549,8 +549,8 @@ export default function OrderDetailPage() {
             {/* 환불 요청 (배송중/배송완료 상태) */}
             {["shipping", "delivered"].includes(order.status) && (
               <Button
-                variant="ghost"
-                className="flex-1 text-muted-foreground hover:text-destructive"
+                variant="outline"
+                className="flex-1 text-muted-foreground hover:text-destructive hover:border-destructive"
                 onClick={() => openDialog("refund")}
               >
                 <RotateCcw className="h-4 w-4 mr-2" />
