@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
-import { createOrderStatusNotification } from '@/lib/notification'
+import { createOrderStatusNotification, createOrderCancelledByAdminNotification } from '@/lib/notification'
 import crypto from 'crypto'
 
 // 쇼핑몰 설정 가져오기
@@ -501,6 +501,117 @@ export async function PUT(
       return NextResponse.json({
         success: true,
         message: '환불 요청이 거절되었습니다.'
+      })
+    }
+
+    // 관리자 주문 취소 (피치 못할 사정으로 인한 취소)
+    if (action === 'admin_cancel') {
+      const cancelReason = body.cancelReason
+
+      if (!cancelReason) {
+        return NextResponse.json(
+          { error: '취소 사유를 입력해주세요.' },
+          { status: 400 }
+        )
+      }
+
+      // 이미 취소/환불된 주문은 취소 불가
+      if (['cancelled', 'refunded'].includes(order.status)) {
+        return NextResponse.json(
+          { error: '이미 취소 또는 환불된 주문입니다.' },
+          { status: 400 }
+        )
+      }
+
+      const settings = await getShopSettings()
+      let pgCancelResult = null
+
+      // 카드 결제인 경우 PG 승인 취소
+      const tid = getPaymentTid(order.paymentInfo)
+      if (order.paymentMethod === 'card' && tid) {
+        console.log('관리자 주문 취소 - 카드 결제 취소 시도, tid:', tid)
+        pgCancelResult = await cancelInicisPayment(tid, cancelReason, settings)
+        console.log('PG 취소 결과:', pgCancelResult)
+
+        // 실제 운영 모드에서 PG 취소 실패 시 에러 반환
+        const testMode = settings.pg_test_mode !== 'false'
+        if (!testMode && !pgCancelResult.success) {
+          return NextResponse.json(
+            { error: `카드 결제 취소 실패: ${pgCancelResult.message}` },
+            { status: 400 }
+          )
+        }
+      }
+
+      // paymentInfo에 취소 정보 추가
+      let updatedPaymentInfo = order.paymentInfo
+      if (pgCancelResult) {
+        try {
+          const paymentData = order.paymentInfo ? JSON.parse(order.paymentInfo) : {}
+          paymentData.cancelInfo = {
+            cancelledAt: new Date().toISOString(),
+            cancelReason: cancelReason,
+            pgResult: pgCancelResult,
+            cancelledBy: 'admin'
+          }
+          updatedPaymentInfo = JSON.stringify(paymentData)
+        } catch {
+          updatedPaymentInfo = JSON.stringify({
+            cancelInfo: {
+              cancelledAt: new Date().toISOString(),
+              cancelReason: cancelReason,
+              pgResult: pgCancelResult,
+              cancelledBy: 'admin'
+            }
+          })
+        }
+      }
+
+      // 재고 복구 + 주문 취소
+      await prisma.$transaction(async (tx) => {
+        // 재고 복구
+        for (const item of order.items) {
+          if (item.optionId) {
+            await tx.productOption.update({
+              where: { id: item.optionId },
+              data: {
+                stock: { increment: item.quantity }
+              }
+            })
+          }
+          // 판매 수량 감소
+          await tx.product.update({
+            where: { id: item.productId },
+            data: {
+              soldCount: { decrement: item.quantity }
+            }
+          })
+        }
+
+        // 주문 상태 변경 (전액 환불)
+        await tx.order.update({
+          where: { id: order.id },
+          data: {
+            status: 'cancelled',
+            cancelReason,
+            cancelledAt: new Date(),
+            refundAmount: order.totalPrice,
+            refundedAt: new Date(),
+            paymentInfo: updatedPaymentInfo
+          }
+        })
+      })
+
+      // 고객에게 관리자 취소 알림 발송 (취소 사유 포함)
+      if (order.userId) {
+        createOrderCancelledByAdminNotification(order.userId, order.orderNo, order.totalPrice, cancelReason)
+          .catch(err => console.error('고객 취소 알림 발송 실패:', err))
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: '주문이 취소되었습니다.',
+        pgCancelResult
       })
     }
 

@@ -171,6 +171,24 @@ export async function createOrderCancelledNotification(
 }
 
 /**
+ * 관리자에 의한 주문 취소 알림을 주문자에게 전송 (취소 사유 포함)
+ */
+export async function createOrderCancelledByAdminNotification(
+  userId: number,
+  orderNo: string,
+  refundAmount: number,
+  cancelReason: string
+) {
+  return createNotification({
+    userId,
+    type: 'order_status',
+    title: '❌ 주문이 취소되었습니다',
+    message: `[주문번호: ${orderNo}] 관리자에 의해 주문이 취소되었습니다.\n\n취소 사유: ${cancelReason}\n\n${refundAmount.toLocaleString()}원이 환불 처리됩니다.`,
+    link: `/shop/orders/${orderNo}`,
+  })
+}
+
+/**
  * 주문 취소 완료 알림을 관리자에게 전송
  */
 export async function createOrderCancelledNotificationForAdmins(

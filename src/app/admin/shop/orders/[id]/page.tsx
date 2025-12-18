@@ -191,6 +191,10 @@ export default function AdminOrderDetailPage() {
   // 취소/환불 요청 처리 상태
   const [processingAction, setProcessingAction] = useState<string | null>(null)
 
+  // 관리자 주문 취소 다이얼로그
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
+  const [cancelReason, setCancelReason] = useState("")
+
   useEffect(() => {
     fetchOrder()
   }, [orderId])
@@ -364,6 +368,62 @@ export default function AdminOrderDetailPage() {
       setTimeout(() => setSuccessMessage(null), 3000)
     } catch (err) {
       setError(`${actionLabel} 중 오류가 발생했습니다.`)
+    } finally {
+      setProcessingAction(null)
+    }
+  }
+
+  // 관리자 주문 취소 처리
+  const handleAdminCancel = async () => {
+    if (!order || !cancelReason.trim()) return
+
+    // 카드 결제 안내 메시지
+    let confirmMessage = `주문번호 ${order.orderNo}을(를) 취소하시겠습니까?\n\n취소 사유: ${cancelReason}`
+    if (order.paymentMethod === "card") {
+      confirmMessage += `\n\n[카드 결제]\nPG사(이니시스)로 결제 승인 취소 요청이 함께 진행됩니다.`
+    }
+
+    if (!confirm(confirmMessage)) {
+      return
+    }
+
+    setProcessingAction("admin_cancel")
+    setError(null)
+
+    try {
+      const res = await fetch(`/api/admin/shop/orders/${orderId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "admin_cancel",
+          cancelReason: cancelReason.trim(),
+        }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setError(data.error || "주문 취소에 실패했습니다.")
+        return
+      }
+
+      // 성공 메시지
+      let message = "주문이 취소되었습니다."
+      if (data.pgCancelResult) {
+        if (data.pgCancelResult.success) {
+          message += " (카드 결제 승인 취소 완료)"
+        } else {
+          message += ` (카드 취소 실패: ${data.pgCancelResult.message})`
+        }
+      }
+
+      setSuccessMessage(message)
+      setCancelDialogOpen(false)
+      setCancelReason("")
+      fetchOrder()
+      setTimeout(() => setSuccessMessage(null), 3000)
+    } catch (err) {
+      setError("주문 취소 중 오류가 발생했습니다.")
     } finally {
       setProcessingAction(null)
     }
@@ -911,6 +971,19 @@ export default function AdminOrderDetailPage() {
                 </div>
               )}
 
+              {/* 관리자 주문 취소 버튼 (취소/환불 상태가 아닌 경우) */}
+              {!["cancelled", "refunded", "cancel_requested", "refund_requested"].includes(order.status) && (
+                <Button
+                  variant="outline"
+                  className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                  onClick={() => setCancelDialogOpen(true)}
+                  disabled={!!processingAction}
+                >
+                  <AlertCircle className="h-4 w-4 mr-2" />
+                  관리자 주문 취소
+                </Button>
+              )}
+
               {error && (
                 <div className="flex items-center gap-2 p-3 bg-red-100 text-red-800 rounded-lg text-sm">
                   <AlertCircle className="h-4 w-4" />
@@ -1011,6 +1084,57 @@ export default function AdminOrderDetailPage() {
               ) : (
                 "삭제"
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 관리자 주문 취소 다이얼로그 */}
+      <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>관리자 주문 취소</DialogTitle>
+            <DialogDescription>
+              주문번호 <span className="font-mono font-bold">{order.orderNo}</span>을(를) 취소합니다.
+              <br />
+              취소 사유는 고객에게 알림으로 전송됩니다.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="cancelReason">취소 사유 *</Label>
+            <Textarea
+              id="cancelReason"
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              placeholder="고객에게 전달할 취소 사유를 입력하세요"
+              rows={3}
+              className="mt-2"
+            />
+            {order.paymentMethod === "card" && (
+              <p className="text-xs text-orange-600 mt-2">
+                * 카드 결제 주문입니다. 취소 시 PG사로 환불 요청이 함께 진행됩니다.
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setCancelDialogOpen(false)
+                setCancelReason("")
+              }}
+            >
+              닫기
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleAdminCancel}
+              disabled={!cancelReason.trim() || processingAction === "admin_cancel"}
+            >
+              {processingAction === "admin_cancel" ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : null}
+              주문 취소
             </Button>
           </DialogFooter>
         </DialogContent>
