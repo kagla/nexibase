@@ -223,6 +223,43 @@ export default function AdminOrderDetailPage() {
     }
   }
 
+  // 무통장입금 입금확인
+  const handleConfirmPayment = async () => {
+    if (!order) return
+
+    if (!confirm("입금을 확인하셨습니까?\n결제완료 상태로 변경됩니다.")) {
+      return
+    }
+
+    setProcessingAction("confirm_payment")
+    setError(null)
+
+    try {
+      const res = await fetch(`/api/admin/shop/orders/${orderId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "confirm_payment",
+        }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setError(data.error || "입금확인 처리에 실패했습니다.")
+        return
+      }
+
+      setSuccessMessage("입금이 확인되었습니다.")
+      fetchOrder()
+      setTimeout(() => setSuccessMessage(null), 2000)
+    } catch (err) {
+      setError("입금확인 처리 중 오류가 발생했습니다.")
+    } finally {
+      setProcessingAction(null)
+    }
+  }
+
   // 취소/환불 요청 처리 (승인/거절)
   const handleRequestAction = async (action: "approve" | "reject", requestType: "cancel" | "refund") => {
     if (!order) return
@@ -671,6 +708,30 @@ export default function AdminOrderDetailPage() {
                   rows={4}
                 />
               </div>
+
+              {/* 무통장입금 입금확인 버튼 */}
+              {order.paymentMethod === "bank" && order.status === "pending" && (
+                <div className="p-4 bg-primary/10 border border-primary/30 rounded-lg space-y-3">
+                  <p className="text-sm font-medium text-primary">
+                    무통장입금 주문입니다.
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    입금 확인 후 버튼을 눌러주세요.
+                  </p>
+                  <Button
+                    className="w-full"
+                    onClick={() => handleConfirmPayment()}
+                    disabled={!!processingAction}
+                  >
+                    {processingAction === "confirm_payment" ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <CreditCard className="h-4 w-4 mr-2" />
+                    )}
+                    입금확인
+                  </Button>
+                </div>
+              )}
 
               {/* 취소 요청 처리 버튼 */}
               {order.status === "cancel_requested" && (

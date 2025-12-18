@@ -476,6 +476,41 @@ export async function PUT(
       })
     }
 
+    // 무통장입금 입금확인
+    if (action === 'confirm_payment') {
+      if (order.paymentMethod !== 'bank') {
+        return NextResponse.json(
+          { error: '무통장입금 주문만 입금확인이 가능합니다.' },
+          { status: 400 }
+        )
+      }
+
+      if (order.status !== 'pending') {
+        return NextResponse.json(
+          { error: '결제대기 상태에서만 입금확인이 가능합니다.' },
+          { status: 400 }
+        )
+      }
+
+      await prisma.order.update({
+        where: { id: order.id },
+        data: {
+          status: 'paid',
+          paidAt: new Date()
+        }
+      })
+
+      // 고객에게 결제 완료 알림 발송
+      if (order.userId) {
+        await createOrderStatusNotification(order.userId, order.orderNo, 'pending', 'paid')
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: '입금이 확인되었습니다.'
+      })
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updateData: any = {}
 
