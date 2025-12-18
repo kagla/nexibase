@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
 import crypto from 'crypto'
-import { createOrderCancelledNotification, createCancelRequestNotificationForAdmins } from '@/lib/notification'
+import { createOrderCancelledNotification, createOrderCancelledNotificationForAdmins, createCancelRequestNotificationForAdmins } from '@/lib/notification'
 
 // 쇼핑몰 설정 가져오기
 async function getShopSettings() {
@@ -390,6 +390,10 @@ export async function PUT(
       // 주문자에게 취소 완료 알림 발송 (비동기)
       createOrderCancelledNotification(order.userId, orderNo, order.totalPrice)
         .catch(err => console.error('주문자 취소 알림 발송 실패:', err))
+
+      // 관리자에게 취소 완료 알림 발송 (비동기 - 설정에 따라)
+      createOrderCancelledNotificationForAdmins(orderNo, order.ordererName, order.totalPrice)
+        .catch(err => console.error('관리자 취소 알림 발송 실패:', err))
 
       return NextResponse.json({
         success: true,

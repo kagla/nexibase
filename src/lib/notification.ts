@@ -171,6 +171,69 @@ export async function createOrderCancelledNotification(
 }
 
 /**
+ * 주문 취소 완료 알림을 관리자에게 전송
+ */
+export async function createOrderCancelledNotificationForAdmins(
+  orderNo: string,
+  customerName: string,
+  refundAmount: number
+) {
+  try {
+    // 쇼핑몰 설정에서 알림 수신 대상 조회
+    const shopSetting = await prisma.shopSetting.findUnique({
+      where: { key: 'order_notification_target' }
+    })
+
+    const notificationTarget = shopSetting?.value || 'admin'
+
+    // 알림을 안 받는 설정이면 종료
+    if (notificationTarget === 'none') {
+      return []
+    }
+
+    // 알림 대상 역할 결정
+    let targetRoles: string[] = []
+    switch (notificationTarget) {
+      case 'admin':
+        targetRoles = ['admin']
+        break
+      case 'manager':
+        targetRoles = ['manager']
+        break
+      case 'both':
+        targetRoles = ['admin', 'manager']
+        break
+    }
+
+    // 대상 관리자 조회
+    const admins = await prisma.user.findMany({
+      where: {
+        role: { in: targetRoles }
+      },
+      select: { id: true }
+    })
+
+    // 각 관리자에게 알림 생성
+    const notifications = await Promise.all(
+      admins.map(admin =>
+        createNotification({
+          userId: admin.id,
+          type: 'order_status',
+          title: '❌ 주문이 취소되었습니다',
+          message: `[주문번호: ${orderNo}] ${customerName}님의 주문이 취소되었습니다. 환불금액: ${refundAmount.toLocaleString()}원`,
+          link: `/admin/shop/orders/${orderNo}`,
+        })
+      )
+    )
+
+    return notifications.filter(n => n !== null)
+  } catch (error) {
+    console.error('관리자 주문 취소 알림 생성 에러:', error)
+    return []
+  }
+}
+
+/**
  * 취소/환불 요청 알림을 관리자에게 전송
  */
 export async function createCancelRequestNotificationForAdmins(
