@@ -709,6 +709,32 @@ export default function OrderPage() {
     }
   }
 
+  // 전화번호 자동 포맷팅
+  const formatPhoneNumber = (value: string): string => {
+    // 숫자만 추출
+    const numbers = value.replace(/[^0-9]/g, '')
+
+    // 1588, 1577 등 대표번호 (4자리-4자리)
+    if (/^(15|16|17|18)/.test(numbers)) {
+      if (numbers.length <= 4) return numbers
+      return `${numbers.slice(0, 4)}-${numbers.slice(4, 8)}`
+    }
+
+    // 02 서울 지역번호 (02-xxxx-xxxx)
+    if (numbers.startsWith('02')) {
+      if (numbers.length <= 2) return numbers
+      if (numbers.length <= 6) return `${numbers.slice(0, 2)}-${numbers.slice(2)}`
+      if (numbers.length <= 10) return `${numbers.slice(0, 2)}-${numbers.slice(2, 6)}-${numbers.slice(6)}`
+      return `${numbers.slice(0, 2)}-${numbers.slice(2, 6)}-${numbers.slice(6, 10)}`
+    }
+
+    // 휴대폰 및 기타 지역번호 (0xx-xxxx-xxxx)
+    if (numbers.length <= 3) return numbers
+    if (numbers.length <= 7) return `${numbers.slice(0, 3)}-${numbers.slice(3)}`
+    if (numbers.length <= 11) return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7)}`
+    return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7, 11)}`
+  }
+
   // 다음 주소 검색 API
   const searchAddress = () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -838,7 +864,7 @@ export default function OrderPage() {
                         <Input
                           id="ordererPhone"
                           value={ordererPhone}
-                          onChange={(e) => setOrdererPhone(e.target.value)}
+                          onChange={(e) => setOrdererPhone(formatPhoneNumber(e.target.value))}
                           placeholder="010-0000-0000"
                           required
                         />
@@ -940,7 +966,7 @@ export default function OrderPage() {
                         <Input
                           id="recipientPhone"
                           value={recipientPhone}
-                          onChange={(e) => setRecipientPhone(e.target.value)}
+                          onChange={(e) => setRecipientPhone(formatPhoneNumber(e.target.value))}
                           placeholder="010-0000-0000"
                           required
                           disabled={sameAsOrderer}
@@ -1355,7 +1381,7 @@ export default function OrderPage() {
                   id="editRecipientPhone"
                   placeholder="010-0000-0000"
                   value={addressForm.recipientPhone}
-                  onChange={(e) => setAddressForm({ ...addressForm, recipientPhone: e.target.value })}
+                  onChange={(e) => setAddressForm({ ...addressForm, recipientPhone: formatPhoneNumber(e.target.value) })}
                 />
               </div>
             </div>

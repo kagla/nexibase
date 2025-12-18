@@ -344,6 +344,25 @@ function MyPageContent() {
     }
   }
 
+  // 전화번호 자동 포맷팅
+  const formatPhoneNumber = (value: string): string => {
+    const numbers = value.replace(/[^0-9]/g, '')
+    if (/^(15|16|17|18)/.test(numbers)) {
+      if (numbers.length <= 4) return numbers
+      return `${numbers.slice(0, 4)}-${numbers.slice(4, 8)}`
+    }
+    if (numbers.startsWith('02')) {
+      if (numbers.length <= 2) return numbers
+      if (numbers.length <= 6) return `${numbers.slice(0, 2)}-${numbers.slice(2)}`
+      if (numbers.length <= 10) return `${numbers.slice(0, 2)}-${numbers.slice(2, 6)}-${numbers.slice(6)}`
+      return `${numbers.slice(0, 2)}-${numbers.slice(2, 6)}-${numbers.slice(6, 10)}`
+    }
+    if (numbers.length <= 3) return numbers
+    if (numbers.length <= 7) return `${numbers.slice(0, 3)}-${numbers.slice(3)}`
+    if (numbers.length <= 11) return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7)}`
+    return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7, 11)}`
+  }
+
   // 다음 주소 검색 API (주소록용)
   const searchAddressForForm = () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -810,7 +829,7 @@ function MyPageContent() {
                   id="recipientPhone"
                   placeholder="010-0000-0000"
                   value={addressForm.recipientPhone}
-                  onChange={(e) => setAddressForm({ ...addressForm, recipientPhone: e.target.value })}
+                  onChange={(e) => setAddressForm({ ...addressForm, recipientPhone: formatPhoneNumber(e.target.value) })}
                 />
               </div>
             </div>
