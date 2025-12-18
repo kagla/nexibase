@@ -117,7 +117,7 @@ async function cancelInicisPayment(tid: string, cancelReason: string, settings: 
   }
 }
 
-// 주문 상세 조회
+// 주문 상세 조회 (ID 또는 주문번호로 조회 가능)
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -129,10 +129,12 @@ export async function GET(
     }
 
     const { id } = await params
-    const orderId = parseInt(id)
+
+    // 하이픈이 포함되면 주문번호, 아니면 ID로 판단
+    const isOrderNo = id.includes('-')
 
     const order = await prisma.order.findUnique({
-      where: { id: orderId },
+      where: isOrderNo ? { orderNo: id } : { id: parseInt(id) },
       include: {
         user: {
           select: { id: true, name: true, email: true, phone: true }
@@ -187,7 +189,7 @@ export async function GET(
   }
 }
 
-// 주문 상태 변경
+// 주문 상태 변경 (ID 또는 주문번호로 조회 가능)
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -199,7 +201,7 @@ export async function PUT(
     }
 
     const { id } = await params
-    const orderId = parseInt(id)
+    const isOrderNo = id.includes('-')
     const body = await request.json()
     const {
       action,
@@ -211,7 +213,7 @@ export async function PUT(
     } = body
 
     const order = await prisma.order.findUnique({
-      where: { id: orderId },
+      where: isOrderNo ? { orderNo: id } : { id: parseInt(id) },
       include: { items: true }
     })
 
@@ -299,7 +301,7 @@ export async function PUT(
 
         // 주문 상태 변경 (전액 환불)
         await tx.order.update({
-          where: { id: orderId },
+          where: { id: order.id },
           data: {
             status: 'cancelled',
             cancelledAt: new Date(),
@@ -332,7 +334,7 @@ export async function PUT(
       }
 
       await prisma.order.update({
-        where: { id: orderId },
+        where: { id: order.id },
         data: {
           status: 'shipping',
           shippedAt: new Date(),
@@ -428,7 +430,7 @@ export async function PUT(
 
         // 주문 상태 변경 (환불 완료)
         await tx.order.update({
-          where: { id: orderId },
+          where: { id: order.id },
           data: {
             status: 'refunded',
             refundedAt: new Date(),
@@ -460,7 +462,7 @@ export async function PUT(
       }
 
       await prisma.order.update({
-        where: { id: orderId },
+        where: { id: order.id },
         data: {
           status: 'delivered',  // 배송완료로 복원
           cancelReason: null,
@@ -565,7 +567,7 @@ export async function PUT(
     if (adminMemo !== undefined) updateData.adminMemo = adminMemo
 
     const updatedOrder = await prisma.order.update({
-      where: { id: orderId },
+      where: { id: order.id },
       data: updateData
     })
 
@@ -607,7 +609,7 @@ async function restoreStock(items: { productId: number; optionId: number | null;
   }
 }
 
-// 주문 삭제 (소프트 삭제)
+// 주문 삭제 (소프트 삭제) - ID 또는 주문번호로 조회 가능
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -619,10 +621,10 @@ export async function DELETE(
     }
 
     const { id } = await params
-    const orderId = parseInt(id)
+    const isOrderNo = id.includes('-')
 
     const order = await prisma.order.findUnique({
-      where: { id: orderId },
+      where: isOrderNo ? { orderNo: id } : { id: parseInt(id) },
       include: { items: true }
     })
 
@@ -657,7 +659,7 @@ export async function DELETE(
 
     // 소프트 삭제 (deletedAt 설정)
     await prisma.order.update({
-      where: { id: orderId },
+      where: { id: order.id },
       data: { deletedAt: new Date() }
     })
 
@@ -674,7 +676,7 @@ export async function DELETE(
   }
 }
 
-// 주문 복원
+// 주문 복원 - ID 또는 주문번호로 조회 가능
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -686,7 +688,7 @@ export async function PATCH(
     }
 
     const { id } = await params
-    const orderId = parseInt(id)
+    const isOrderNo = id.includes('-')
     const body = await request.json()
     const { action } = body
 
@@ -698,7 +700,7 @@ export async function PATCH(
     }
 
     const order = await prisma.order.findUnique({
-      where: { id: orderId }
+      where: isOrderNo ? { orderNo: id } : { id: parseInt(id) }
     })
 
     if (!order) {
@@ -718,7 +720,7 @@ export async function PATCH(
 
     // 복원 (deletedAt을 null로 설정)
     await prisma.order.update({
-      where: { id: orderId },
+      where: { id: order.id },
       data: { deletedAt: null }
     })
 
