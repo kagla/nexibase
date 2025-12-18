@@ -30,6 +30,7 @@ import {
   XCircle,
   RotateCcw,
   ExternalLink,
+  ShoppingBag,
 } from "lucide-react"
 import { getTrackingUrlByName } from "@/lib/delivery"
 
@@ -496,11 +497,22 @@ export default function OrderDetailPage() {
 
           {/* 액션 버튼 */}
           <div className="flex gap-3">
+            {/* 계속 쇼핑하기 - 취소/환불 가능 상태에서 표시 */}
+            {["pending", "paid", "preparing", "shipping", "delivered"].includes(order.status) && (
+              <Button
+                className="flex-1"
+                onClick={() => router.push("/shop")}
+              >
+                <ShoppingBag className="h-4 w-4 mr-2" />
+                계속 쇼핑하기
+              </Button>
+            )}
+
             {/* 주문 취소 (결제대기/결제완료 상태) - 즉시 취소 */}
             {["pending", "paid"].includes(order.status) && (
               <Button
-                variant="outline"
-                className="flex-1"
+                variant="ghost"
+                className="flex-1 text-muted-foreground hover:text-destructive"
                 onClick={() => openDialog("cancel")}
               >
                 <XCircle className="h-4 w-4 mr-2" />
@@ -511,8 +523,8 @@ export default function OrderDetailPage() {
             {/* 취소 요청 (준비중 상태) - 관리자 승인 필요 */}
             {order.status === "preparing" && (
               <Button
-                variant="outline"
-                className="flex-1"
+                variant="ghost"
+                className="flex-1 text-muted-foreground hover:text-destructive"
                 onClick={() => openDialog("cancel")}
               >
                 <XCircle className="h-4 w-4 mr-2" />
@@ -537,8 +549,8 @@ export default function OrderDetailPage() {
             {/* 환불 요청 (배송중/배송완료 상태) */}
             {["shipping", "delivered"].includes(order.status) && (
               <Button
-                variant="outline"
-                className="flex-1"
+                variant="ghost"
+                className="flex-1 text-muted-foreground hover:text-destructive"
                 onClick={() => openDialog("refund")}
               >
                 <RotateCcw className="h-4 w-4 mr-2" />
