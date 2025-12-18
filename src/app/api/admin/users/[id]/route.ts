@@ -54,7 +54,7 @@ export async function PUT(
     const { id } = await params
     const userId = parseInt(id)
     const body = await request.json()
-    const { action, email, name, nickname, password, phone, role, status } = body
+    const { action, email, name, nickname, password, phone, role, status, adminNote } = body
 
     // 삭제된 사용자 복원
     if (action === 'restore') {
@@ -135,6 +135,7 @@ export async function PUT(
       phone,
       role,
       status,
+      adminNote: adminNote || null,
     }
 
     // 비밀번호가 제공된 경우에만 업데이트

@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { email, name, nickname, password, phone, role, status } = body
+    const { email, name, nickname, password, phone, role, status, adminNote } = body
 
     // 이메일 중복 확인 (삭제되지 않은 사용자 중)
     const existingUser = await prisma.user.findFirst({
@@ -124,6 +124,7 @@ export async function POST(request: NextRequest) {
         phone,
         role: role || 'user',
         status: status || 'active',
+        adminNote: adminNote || null,
       }
     })
 

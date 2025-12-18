@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react"
 import { Sidebar } from "@/components/admin/Sidebar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -46,6 +47,7 @@ interface User {
   lastLoginAt: string | null
   createdAt: string
   deletedAt: string | null
+  adminNote: string | null
   providers: string[]
   selected?: boolean
 }
@@ -121,6 +123,7 @@ function UserModal({
     password: '',
     role: 'user',
     status: 'active',
+    adminNote: '',
   })
   const [loading, setLoading] = useState(false)
 
@@ -134,6 +137,7 @@ function UserModal({
         password: '',
         role: user.role || 'user',
         status: user.status || 'active',
+        adminNote: user.adminNote || '',
       })
     } else {
       setFormData({
@@ -144,6 +148,7 @@ function UserModal({
         password: '',
         role: 'user',
         status: 'active',
+        adminNote: '',
       })
     }
   }, [user, isOpen])
@@ -286,6 +291,18 @@ function UserModal({
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="adminNote">관리자 메모</Label>
+                <Textarea
+                  id="adminNote"
+                  placeholder="관리자만 볼 수 있는 메모입니다."
+                  value={formData.adminNote}
+                  onChange={(e) => setFormData({ ...formData, adminNote: e.target.value })}
+                  rows={3}
+                  className="resize-none"
+                />
               </div>
             </CardContent>
 
