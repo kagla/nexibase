@@ -5,7 +5,7 @@ import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { LogOut, Sun, Moon, ChevronDown, Search, Menu, X, ShoppingCart, User, Settings } from "lucide-react"
+import { LogOut, Sun, Moon, ChevronDown, Search, Menu, X, ShoppingCart, User, Settings, Bell } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter, usePathname } from "next/navigation"
@@ -30,6 +30,16 @@ interface Board {
   name: string
 }
 
+interface Notification {
+  id: number
+  type: string
+  title: string
+  message: string
+  link: string | null
+  isRead: boolean
+  createdAt: string
+}
+
 export default function Header() {
   const [user, setUser] = useState<UserInfo | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -43,7 +53,11 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [cartCount, setCartCount] = useState(0)
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [notificationOpen, setNotificationOpen] = useState(false)
   const moreMenuRef = useRef<HTMLDivElement>(null)
+  const notificationRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
@@ -72,6 +86,76 @@ export default function Header() {
       window.removeEventListener("storage", updateCartCount)
     }
   }, [])
+
+  // 알림 개수 조회
+  const fetchUnreadCount = async () => {
+    try {
+      const res = await fetch('/api/notifications/count')
+      if (res.ok) {
+        const data = await res.json()
+        setUnreadCount(data.count)
+      }
+    } catch (error) {
+      console.error('알림 개수 조회 에러:', error)
+    }
+  }
+
+  // 알림 목록 조회
+  const fetchNotifications = async () => {
+    try {
+      const res = await fetch('/api/notifications?limit=10')
+      if (res.ok) {
+        const data = await res.json()
+        setNotifications(data.notifications)
+        setUnreadCount(data.unreadCount)
+      }
+    } catch (error) {
+      console.error('알림 목록 조회 에러:', error)
+    }
+  }
+
+  // 알림 읽음 처리
+  const markAsRead = async (notificationId: number) => {
+    try {
+      await fetch('/api/notifications', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notificationId }),
+      })
+    } catch (error) {
+      console.error('알림 읽음 처리 에러:', error)
+    }
+  }
+
+  // 모든 알림 읽음 처리
+  const markAllAsRead = async () => {
+    try {
+      await fetch('/api/notifications', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ markAllRead: true }),
+      })
+      setUnreadCount(0)
+      setNotifications(notifications.map(n => ({ ...n, isRead: true })))
+    } catch (error) {
+      console.error('알림 읽음 처리 에러:', error)
+    }
+  }
+
+  // 알림 클릭 처리
+  const handleNotificationClick = (notification: Notification) => {
+    if (!notification.isRead) {
+      markAsRead(notification.id)
+      setNotifications(notifications.map(n =>
+        n.id === notification.id ? { ...n, isRead: true } : n
+      ))
+      setUnreadCount(prev => Math.max(0, prev - 1))
+    }
+    if (notification.link) {
+      router.push(notification.link)
+    }
+    setNotificationOpen(false)
+  }
 
   useEffect(() => {
     const fetchData = async () => {
@@ -140,10 +224,23 @@ export default function Header() {
   // 현재 경로가 해당 게시판인지 확인
   const isActiveBoard = (slug: string) => pathname?.startsWith(`/board/${slug}`)
 
+  // 로그인 시 알림 개수 조회
+  useEffect(() => {
+    if (user) {
+      fetchUnreadCount()
+      // 1분마다 알림 개수 갱신
+      const interval = setInterval(fetchUnreadCount, 60000)
+      return () => clearInterval(interval)
+    }
+  }, [user])
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (moreMenuRef.current && !moreMenuRef.current.contains(event.target as Node)) {
         setMoreMenuOpen(false)
+      }
+      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+        setNotificationOpen(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -216,6 +313,93 @@ export default function Header() {
                   )}
                 </Button>
               </Link>
+
+              {/* 알림 (로그인 시만 표시) */}
+              {user && (
+                <div className="relative" ref={notificationRef}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="relative"
+                    onClick={() => {
+                      if (!notificationOpen) {
+                        fetchNotifications()
+                      }
+                      setNotificationOpen(!notificationOpen)
+                    }}
+                  >
+                    <Bell className="h-5 w-5" />
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                        {unreadCount > 99 ? "99+" : unreadCount}
+                      </span>
+                    )}
+                  </Button>
+
+                  {/* 알림 드롭다운 */}
+                  {notificationOpen && (
+                    <div className="absolute right-0 top-full mt-2 w-80 bg-background border rounded-lg shadow-lg z-50">
+                      <div className="flex items-center justify-between px-4 py-3 border-b">
+                        <span className="font-medium">알림</span>
+                        {unreadCount > 0 && (
+                          <button
+                            onClick={markAllAsRead}
+                            className="text-xs text-primary hover:underline"
+                          >
+                            모두 읽음
+                          </button>
+                        )}
+                      </div>
+                      <div className="max-h-80 overflow-y-auto">
+                        {notifications.length === 0 ? (
+                          <div className="px-4 py-8 text-center text-muted-foreground text-sm">
+                            알림이 없습니다
+                          </div>
+                        ) : (
+                          notifications.map((notification) => (
+                            <button
+                              key={notification.id}
+                              onClick={() => handleNotificationClick(notification)}
+                              className={`w-full text-left px-4 py-3 hover:bg-muted transition-colors border-b last:border-b-0 ${
+                                !notification.isRead ? 'bg-primary/5' : ''
+                              }`}
+                            >
+                              <div className="flex items-start gap-2">
+                                {!notification.isRead && (
+                                  <span className="w-2 h-2 bg-red-500 rounded-full mt-1.5 flex-shrink-0" />
+                                )}
+                                <div className={`flex-1 ${notification.isRead ? 'ml-4' : ''}`}>
+                                  <p className="text-sm font-medium line-clamp-1">{notification.title}</p>
+                                  <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
+                                    {notification.message}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    {new Date(notification.createdAt).toLocaleDateString('ko-KR', {
+                                      month: 'short',
+                                      day: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })}
+                                  </p>
+                                </div>
+                              </div>
+                            </button>
+                          ))
+                        )}
+                      </div>
+                      <div className="border-t px-4 py-2">
+                        <Link
+                          href="/shop/mypage?tab=notifications"
+                          onClick={() => setNotificationOpen(false)}
+                          className="text-xs text-primary hover:underline"
+                        >
+                          모든 알림 보기
+                        </Link>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* 데스크톱: 모든 액션 표시 */}
               <div className="hidden md:flex items-center gap-2">

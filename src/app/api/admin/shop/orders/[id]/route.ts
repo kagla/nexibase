@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
+import { createOrderStatusNotification } from '@/lib/notification'
 import crypto from 'crypto'
 
 // 쇼핑몰 설정 가져오기
@@ -309,6 +310,11 @@ export async function PUT(
         })
       })
 
+      // 알림 생성
+      if (order.userId) {
+        await createOrderStatusNotification(order.userId, order.orderNo, order.status, 'cancelled')
+      }
+
       return NextResponse.json({
         success: true,
         message: '취소 요청이 승인되었습니다.',
@@ -333,6 +339,11 @@ export async function PUT(
           cancelReason: null  // 취소 사유 제거
         }
       })
+
+      // 알림 생성 (취소 거절 -> 배송중)
+      if (order.userId) {
+        await createOrderStatusNotification(order.userId, order.orderNo, order.status, 'shipping')
+      }
 
       return NextResponse.json({
         success: true,
@@ -425,6 +436,11 @@ export async function PUT(
           }
         })
       })
+
+      // 알림 생성
+      if (order.userId) {
+        await createOrderStatusNotification(order.userId, order.orderNo, order.status, 'refunded')
+      }
 
       return NextResponse.json({
         success: true,
@@ -552,6 +568,11 @@ export async function PUT(
       where: { id: orderId },
       data: updateData
     })
+
+    // 상태 변경 시 알림 생성
+    if (status && status !== order.status && order.userId) {
+      await createOrderStatusNotification(order.userId, order.orderNo, order.status, status)
+    }
 
     return NextResponse.json({
       success: true,

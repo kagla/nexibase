@@ -30,6 +30,7 @@ import {
   Pencil,
   Trash2,
   Star,
+  Bell,
 } from "lucide-react"
 import {
   Dialog,
@@ -88,6 +89,17 @@ interface UserAddress {
   createdAt: string
 }
 
+// 알림 타입
+interface Notification {
+  id: number
+  type: string
+  title: string
+  message: string
+  link: string | null
+  isRead: boolean
+  createdAt: string
+}
+
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   pending: { label: "결제대기", color: "bg-yellow-500" },
   paid: { label: "결제완료", color: "bg-blue-500" },
@@ -106,7 +118,7 @@ function MyPageContent() {
 
   // URL에서 탭 상태 읽기
   const tabParam = searchParams.get('tab')
-  const activeTab = (tabParam === 'wishlist' || tabParam === 'addresses') ? tabParam : 'orders'
+  const activeTab = (tabParam === 'wishlist' || tabParam === 'addresses' || tabParam === 'notifications') ? tabParam : 'orders'
 
   // 주문 관련 상태
   const [orders, setOrders] = useState<Order[]>([])
@@ -138,6 +150,12 @@ function MyPageContent() {
   })
   const [addressSaving, setAddressSaving] = useState(false)
   const [deletingAddressId, setDeletingAddressId] = useState<number | null>(null)
+
+  // 알림 관련 상태
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [notificationsLoading, setNotificationsLoading] = useState(true)
+  const [notificationsPage, setNotificationsPage] = useState(1)
+  const [notificationsTotalPages, setNotificationsTotalPages] = useState(1)
 
   // 탭 변경 핸들러
   const setActiveTab = (tab: string) => {
@@ -218,6 +236,67 @@ function MyPageContent() {
     }
   }, [router])
 
+  // 알림 목록 조회
+  const fetchNotifications = useCallback(async () => {
+    setNotificationsLoading(true)
+    try {
+      const res = await fetch(`/api/notifications?page=${notificationsPage}&limit=20`)
+      if (res.status === 401) {
+        router.push('/login?redirect=/shop/mypage?tab=notifications')
+        return
+      }
+      if (res.ok) {
+        const data = await res.json()
+        setNotifications(data.notifications)
+        setNotificationsTotalPages(data.pagination.totalPages)
+      }
+    } catch (error) {
+      console.error('알림 목록 조회 에러:', error)
+    } finally {
+      setNotificationsLoading(false)
+    }
+  }, [notificationsPage, router])
+
+  // 알림 읽음 처리
+  const markAsRead = async (notificationId: number) => {
+    try {
+      await fetch('/api/notifications', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notificationId }),
+      })
+      setNotifications(notifications.map(n =>
+        n.id === notificationId ? { ...n, isRead: true } : n
+      ))
+    } catch (error) {
+      console.error('알림 읽음 처리 에러:', error)
+    }
+  }
+
+  // 모든 알림 읽음 처리
+  const markAllAsRead = async () => {
+    try {
+      await fetch('/api/notifications', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ markAllRead: true }),
+      })
+      setNotifications(notifications.map(n => ({ ...n, isRead: true })))
+    } catch (error) {
+      console.error('알림 읽음 처리 에러:', error)
+    }
+  }
+
+  // 알림 클릭 처리
+  const handleNotificationClick = (notification: Notification) => {
+    if (!notification.isRead) {
+      markAsRead(notification.id)
+    }
+    if (notification.link) {
+      router.push(notification.link)
+    }
+  }
+
   // 탭에 따라 데이터 로드
   useEffect(() => {
     if (activeTab === 'orders') {
@@ -226,8 +305,10 @@ function MyPageContent() {
       fetchWishlist()
     } else if (activeTab === 'addresses') {
       fetchAddresses()
+    } else if (activeTab === 'notifications') {
+      fetchNotifications()
     }
-  }, [activeTab, fetchOrders, fetchWishlist, fetchAddresses])
+  }, [activeTab, fetchOrders, fetchWishlist, fetchAddresses, fetchNotifications])
 
   // 상태 필터 변경 시 페이지 초기화
   useEffect(() => {
@@ -436,6 +517,10 @@ function MyPageContent() {
               <TabsTrigger value="addresses" className="flex items-center gap-2">
                 <MapPin className="h-4 w-4" />
                 배송지
+              </TabsTrigger>
+              <TabsTrigger value="notifications" className="flex items-center gap-2">
+                <Bell className="h-4 w-4" />
+                알림
               </TabsTrigger>
             </TabsList>
 
@@ -788,6 +873,103 @@ function MyPageContent() {
                       </CardContent>
                     </Card>
                   ))}
+                </div>
+              )}
+            </TabsContent>
+
+            {/* 알림 탭 */}
+            <TabsContent value="notifications">
+              {/* 헤더 */}
+              <div className="flex justify-between items-center mb-4">
+                <span className="text-sm text-muted-foreground">
+                  {notifications.filter(n => !n.isRead).length > 0 && (
+                    <span className="text-primary font-medium">
+                      {notifications.filter(n => !n.isRead).length}개의 읽지 않은 알림
+                    </span>
+                  )}
+                </span>
+                {notifications.some(n => !n.isRead) && (
+                  <Button variant="ghost" size="sm" onClick={markAllAsRead}>
+                    모두 읽음
+                  </Button>
+                )}
+              </div>
+
+              {notificationsLoading ? (
+                <div className="flex items-center justify-center py-20">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : notifications.length === 0 ? (
+                <Card>
+                  <CardContent className="py-16 text-center">
+                    <Bell className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">알림이 없습니다.</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-2">
+                  {notifications.map((notification) => (
+                    <Card
+                      key={notification.id}
+                      className={`cursor-pointer transition-colors hover:bg-muted/50 ${!notification.isRead ? 'border-primary/30 bg-primary/5' : ''}`}
+                      onClick={() => handleNotificationClick(notification)}
+                    >
+                      <CardContent className="py-4">
+                        <div className="flex items-start gap-3">
+                          {!notification.isRead && (
+                            <span className="w-2 h-2 bg-red-500 rounded-full mt-2 flex-shrink-0" />
+                          )}
+                          <div className={`flex-1 ${notification.isRead ? 'ml-5' : ''}`}>
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-medium">{notification.title}</span>
+                              <Badge variant="outline" className="text-xs">
+                                {notification.type === 'order_status' ? '주문' :
+                                  notification.type === 'review_reply' ? '리뷰' :
+                                    notification.type === 'qna_reply' ? 'Q&A' : '시스템'}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground line-clamp-2">
+                              {notification.message}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-2">
+                              {new Date(notification.createdAt).toLocaleDateString('ko-KR', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+
+                  {/* 페이지네이션 */}
+                  {notificationsTotalPages > 1 && (
+                    <div className="flex items-center justify-center gap-2 mt-6">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={notificationsPage === 1}
+                        onClick={() => setNotificationsPage(p => p - 1)}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <span className="text-sm">
+                        {notificationsPage} / {notificationsTotalPages}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={notificationsPage === notificationsTotalPages}
+                        onClick={() => setNotificationsPage(p => p + 1)}
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )}
             </TabsContent>

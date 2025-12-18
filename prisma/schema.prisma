@@ -43,6 +43,7 @@ model User {
   qnas          ProductQna[]
   wishlists     Wishlist[]
   addresses     UserAddress[]
+  notifications Notification[]
 
   @@index([email])
   @@index([status])
@@ -592,4 +593,24 @@ model UserAddress {
   @@index([userId])
   @@index([userId, isDefault])
   @@map("user_addresses")
+}
+
+// 알림
+model Notification {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  type      String    @db.VarChar(50)     // order_status, review_reply, qna_reply, system
+  title     String    @db.VarChar(200)
+  message   String    @db.Text
+  link      String?   @db.VarChar(500)    // 클릭 시 이동할 URL
+  isRead    Boolean   @default(false)
+  createdAt DateTime  @default(now())
+
+  // 관계
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, isRead])
+  @@index([createdAt])
+  @@map("notifications")
 }
