@@ -252,7 +252,7 @@ function UserModal({
                     className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   >
                     <option value="user">일반 사용자</option>
-                    <option value="moderator">모더레이터</option>
+                    <option value="manager">부관리자</option>
                     <option value="admin">관리자</option>
                   </select>
                 </div>
@@ -463,7 +463,7 @@ export default function UsersPage() {
   const getRoleBadge = (role: string) => {
     const config: Record<string, string> = {
       admin: '관리자',
-      moderator: '모더레이터',
+      manager: '부관리자',
       user: '사용자',
     }
     return (
@@ -543,7 +543,7 @@ export default function UsersPage() {
                   >
                     <option value="">전체 권한</option>
                     <option value="admin">관리자</option>
-                    <option value="moderator">모더레이터</option>
+                    <option value="manager">부관리자</option>
                     <option value="user">사용자</option>
                   </select>
                 </div>

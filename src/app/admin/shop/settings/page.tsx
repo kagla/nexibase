@@ -19,6 +19,7 @@ import {
   RotateCcw,
   Eye,
   EyeOff,
+  Bell,
 } from "lucide-react"
 import { Sidebar } from "@/components/admin/Sidebar"
 
@@ -42,6 +43,8 @@ interface ShopSettings {
   pg_signkey: string
   pg_apikey: string  // 결제 취소용 API Key
   pg_test_mode: string
+  // 알림 설정
+  order_notification_target: string  // admin, manager, both, none
 }
 
 const DEFAULT_SETTINGS: ShopSettings = {
@@ -64,6 +67,8 @@ const DEFAULT_SETTINGS: ShopSettings = {
   pg_signkey: "",
   pg_apikey: "",
   pg_test_mode: "true",
+  // 알림 설정
+  order_notification_target: "admin",  // 기본값: 관리자만
 }
 
 export default function ShopSettingsPage() {
@@ -504,6 +509,38 @@ export default function ShopSettingsPage() {
                 <li>테스트 SignKey: 이니시스 개발자센터에서 확인</li>
                 <li>실제 운영 시 테스트 모드를 해제하세요</li>
               </ul>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 주문 알림 설정 */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Bell className="h-5 w-5" />
+              주문 알림 설정
+            </CardTitle>
+            <CardDescription>
+              새 주문이 들어올 때 알림을 받을 관리자를 설정합니다.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="order_notification_target">주문 알림 수신 대상</Label>
+              <select
+                id="order_notification_target"
+                value={settings.order_notification_target}
+                onChange={(e) => handleChange("order_notification_target", e.target.value)}
+                className="flex h-10 w-full max-w-xs rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <option value="admin">관리자만</option>
+                <option value="manager">부관리자만</option>
+                <option value="both">관리자 + 부관리자</option>
+                <option value="none">알림 안 받음</option>
+              </select>
+              <p className="text-xs text-muted-foreground mt-1">
+                새 주문 발생 시 선택한 권한을 가진 사용자에게 알림이 발송됩니다.
+              </p>
             </div>
           </CardContent>
         </Card>

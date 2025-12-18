@@ -24,7 +24,7 @@ model User {
   image         String?   @db.VarChar(500) // 프로필 이미지 URL
   phone         String?   @db.VarChar(20)
   level         Int       @default(1) // 사용자 레벨 (게시판 권한용)
-  role          String    @default("user") @db.VarChar(20) // user, admin, moderator
+  role          String    @default("user") @db.VarChar(20) // user, manager, admin
   status        String    @default("active") @db.VarChar(20) // active, inactive, banned
   emailVerified DateTime?
   lastLoginAt   DateTime?
