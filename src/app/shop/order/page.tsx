@@ -123,7 +123,8 @@ export default function OrderPage() {
   const [zipCode, setZipCode] = useState("")
   const [address, setAddress] = useState("")
   const [addressDetail, setAddressDetail] = useState("")
-  const [deliveryMemo, setDeliveryMemo] = useState("")
+  const [deliveryMemoOption, setDeliveryMemoOption] = useState("none") // 선택 옵션
+  const [deliveryMemoCustom, setDeliveryMemoCustom] = useState("") // 직접 입력 텍스트
 
   // 결제 방법 (기본값: 카드결제)
   const [paymentMethod, setPaymentMethod] = useState<"bank" | "card">("card")
@@ -326,6 +327,13 @@ export default function OrderPage() {
     return getTotalPrice() + deliveryFee
   }
 
+  // 배송 메모 값 가져오기
+  const getDeliveryMemo = () => {
+    if (deliveryMemoOption === "none") return null
+    if (deliveryMemoOption === "custom") return deliveryMemoCustom || null
+    return deliveryMemoOption
+  }
+
   const formatPrice = (price: number) => price.toLocaleString() + "원"
 
   // 이니시스 스크립트 동적 로드
@@ -493,7 +501,7 @@ export default function OrderPage() {
             zipCode,
             address,
             addressDetail: addressDetail || null,
-            deliveryMemo: deliveryMemo || null,
+            deliveryMemo: getDeliveryMemo(),
             deliveryFee,  // 화면에 표시된 배송비 전달
             baseUrl: currentBaseUrl,  // 현재 접속 URL 전달
           }),
@@ -536,7 +544,7 @@ export default function OrderPage() {
           zipCode,
           address,
           addressDetail: addressDetail || null,
-          deliveryMemo: deliveryMemo || null,
+          deliveryMemo: getDeliveryMemo(),
           paymentMethod,
         }),
       })
@@ -865,7 +873,7 @@ export default function OrderPage() {
 
                     <div>
                       <Label htmlFor="deliveryMemo">배송 메모</Label>
-                      <Select value={deliveryMemo || 'none'} onValueChange={(v) => setDeliveryMemo(v === 'none' ? '' : v)}>
+                      <Select value={deliveryMemoOption} onValueChange={setDeliveryMemoOption}>
                         <SelectTrigger>
                           <SelectValue placeholder="배송 메모 선택" />
                         </SelectTrigger>
@@ -880,14 +888,15 @@ export default function OrderPage() {
                           <SelectItem value="배송 전 연락 부탁드립니다">
                             배송 전 연락 부탁드립니다
                           </SelectItem>
-                          <SelectItem value="직접 입력">직접 입력</SelectItem>
+                          <SelectItem value="custom">직접 입력</SelectItem>
                         </SelectContent>
                       </Select>
-                      {deliveryMemo === "직접 입력" && (
+                      {deliveryMemoOption === "custom" && (
                         <Input
                           className="mt-2"
                           placeholder="배송 메모 입력"
-                          onChange={(e) => setDeliveryMemo(e.target.value)}
+                          value={deliveryMemoCustom}
+                          onChange={(e) => setDeliveryMemoCustom(e.target.value)}
                         />
                       )}
                     </div>
