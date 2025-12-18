@@ -255,11 +255,12 @@ function UserModal({
                 <div className="space-y-2">
                   <Label htmlFor="role">권한</Label>
                   <Select
+                    key={`role-${user?.id || 'new'}-${formData.role}`}
                     value={formData.role}
                     onValueChange={(value) => setFormData({ ...formData, role: value })}
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="권한 선택" />
+                      <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="user">일반 사용자</SelectItem>
@@ -271,11 +272,12 @@ function UserModal({
                 <div className="space-y-2">
                   <Label htmlFor="status">상태</Label>
                   <Select
+                    key={`status-${user?.id || 'new'}-${formData.status}`}
                     value={formData.status}
                     onValueChange={(value) => setFormData({ ...formData, status: value })}
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="상태 선택" />
+                      <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="active">활성</SelectItem>
