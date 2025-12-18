@@ -20,7 +20,6 @@ import {
   RotateCcw,
   ExternalLink,
   X,
-  Image as ImageIcon,
 } from "lucide-react"
 
 interface Review {
@@ -480,20 +479,57 @@ export default function AdminReviewsPage() {
             >
               <X className="h-6 w-6" />
             </button>
+
+            {/* 이전 버튼 */}
+            {imageModal.length > 1 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setCurrentImageIndex((prev) => (prev === 0 ? imageModal.length - 1 : prev - 1))
+                }}
+                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-12 w-10 h-10 flex items-center justify-center text-white hover:text-gray-300 bg-black/50 rounded-full hover:bg-black/70 transition-colors"
+              >
+                <ChevronLeft className="h-6 w-6" />
+              </button>
+            )}
+
             <img
               src={imageModal[currentImageIndex]}
               alt=""
               className="max-w-full max-h-[80vh] object-contain"
             />
+
+            {/* 다음 버튼 */}
             {imageModal.length > 1 && (
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                {imageModal.map((_, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setCurrentImageIndex(idx)}
-                    className={`w-3 h-3 rounded-full ${idx === currentImageIndex ? 'bg-white' : 'bg-white/50'}`}
-                  />
-                ))}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setCurrentImageIndex((prev) => (prev === imageModal.length - 1 ? 0 : prev + 1))
+                }}
+                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-12 w-10 h-10 flex items-center justify-center text-white hover:text-gray-300 bg-black/50 rounded-full hover:bg-black/70 transition-colors"
+              >
+                <ChevronRight className="h-6 w-6" />
+              </button>
+            )}
+
+            {/* 인디케이터 및 카운터 */}
+            {imageModal.length > 1 && (
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2">
+                <span className="text-white text-sm bg-black/50 px-2 py-1 rounded">
+                  {currentImageIndex + 1} / {imageModal.length}
+                </span>
+                <div className="flex gap-2">
+                  {imageModal.map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setCurrentImageIndex(idx)
+                      }}
+                      className={`w-3 h-3 rounded-full transition-colors ${idx === currentImageIndex ? 'bg-white' : 'bg-white/50 hover:bg-white/70'}`}
+                    />
+                  ))}
+                </div>
               </div>
             )}
           </div>
