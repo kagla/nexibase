@@ -20,6 +20,7 @@ import {
   UserCheck,
   UserX,
   UserMinus,
+  RotateCcw,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react"
@@ -432,6 +433,27 @@ export default function UsersPage() {
     }
   }
 
+  const handleRestoreUser = async (id: string) => {
+    if (!confirm('이 사용자를 복원하시겠습니까?')) return
+
+    try {
+      const response = await fetch(`/api/admin/users/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'restore' })
+      })
+      const result = await response.json()
+
+      if (result.success) {
+        fetchUsers()
+      } else {
+        alert(result.message || '복원 실패')
+      }
+    } catch (error) {
+      console.error('사용자 복원 실패:', error)
+    }
+  }
+
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '-'
     const date = new Date(dateString)
@@ -661,7 +683,17 @@ export default function UsersPage() {
                             {deletedFilter ? formatDate(user.deletedAt) : formatDate(user.lastLoginAt)}
                           </td>
                           <td className="p-4 align-middle text-right">
-                            {!deletedFilter && (
+                            {deletedFilter ? (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-green-600 hover:text-green-700"
+                                onClick={() => handleRestoreUser(user.id)}
+                                title="복원"
+                              >
+                                <RotateCcw className="h-4 w-4" />
+                              </Button>
+                            ) : (
                               <div className="flex justify-end gap-1">
                                 <Button
                                   variant="ghost"

@@ -45,7 +45,7 @@ export async function GET(
   }
 }
 
-// 사용자 수정
+// 사용자 수정 / 복원
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -54,7 +54,40 @@ export async function PUT(
     const { id } = await params
     const userId = parseInt(id)
     const body = await request.json()
-    const { email, name, nickname, password, phone, role, status } = body
+    const { action, email, name, nickname, password, phone, role, status } = body
+
+    // 삭제된 사용자 복원
+    if (action === 'restore') {
+      const deletedUser = await prisma.user.findFirst({
+        where: { id: userId, deletedAt: { not: null } }
+      })
+
+      if (!deletedUser) {
+        return NextResponse.json(
+          { success: false, message: '삭제된 사용자를 찾을 수 없습니다.' },
+          { status: 404 }
+        )
+      }
+
+      // 이메일 중복 확인 (현재 활성 사용자 중)
+      const emailExists = await prisma.user.findFirst({
+        where: { email: deletedUser.email, deletedAt: null }
+      })
+
+      if (emailExists) {
+        return NextResponse.json(
+          { success: false, message: '동일한 이메일을 가진 사용자가 이미 존재합니다.' },
+          { status: 400 }
+        )
+      }
+
+      await prisma.user.update({
+        where: { id: userId },
+        data: { deletedAt: null }
+      })
+
+      return NextResponse.json({ success: true, message: '사용자가 복원되었습니다.' })
+    }
 
     // 기존 사용자 확인 (삭제되지 않은 사용자)
     const existingUser = await prisma.user.findFirst({
