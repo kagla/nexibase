@@ -67,6 +67,24 @@ export default function AdminReviewsPage() {
   const [imageModal, setImageModal] = useState<string[] | null>(null)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
 
+  // 이미지 모달 키보드 이벤트
+  useEffect(() => {
+    if (!imageModal) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setImageModal(null)
+      } else if (e.key === 'ArrowLeft') {
+        setCurrentImageIndex((prev) => (prev === 0 ? imageModal.length - 1 : prev - 1))
+      } else if (e.key === 'ArrowRight') {
+        setCurrentImageIndex((prev) => (prev === imageModal.length - 1 ? 0 : prev + 1))
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [imageModal])
+
   const fetchReviews = useCallback(async () => {
     setLoading(true)
     try {
