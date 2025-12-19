@@ -159,17 +159,40 @@ export default function OrderPage() {
   // 로그인한 사용자 정보 불러오기
   const loadUserInfo = async () => {
     try {
+      // 1. localStorage에서 저장된 주문자 정보 먼저 로드
+      const savedOrdererInfo = localStorage.getItem("ordererInfo")
+      if (savedOrdererInfo) {
+        const { name, phone } = JSON.parse(savedOrdererInfo)
+        if (name) setOrdererName(name)
+        if (phone) setOrdererPhone(phone)
+      }
+
+      // 2. 로그인 사용자 정보에서 이메일만 가져오기
       const res = await fetch("/api/me")
       if (res.ok) {
         const data = await res.json()
         if (data.user) {
-          setOrdererName(data.user.nickname || "")
-          setOrdererPhone(data.user.phone || "")
           setOrdererEmail(data.user.email || "")
+          // 저장된 주문자 정보가 없으면 닉네임 사용
+          if (!savedOrdererInfo) {
+            setOrdererName(data.user.nickname || "")
+          }
         }
       }
     } catch (err) {
       console.error("사용자 정보 로드 에러:", err)
+    }
+  }
+
+  // 주문자 정보 저장
+  const saveOrdererInfo = () => {
+    try {
+      localStorage.setItem("ordererInfo", JSON.stringify({
+        name: ordererName,
+        phone: ordererPhone
+      }))
+    } catch (err) {
+      console.error("주문자 정보 저장 에러:", err)
     }
   }
 
@@ -588,6 +611,9 @@ export default function OrderPage() {
     }
 
     setSubmitting(true)
+
+    // 주문자 정보 localStorage에 저장 (다음 주문 시 자동 입력)
+    saveOrdererInfo()
 
     try {
       // 자동 저장: 새 주소이고 저장 안함 체크가 안된 경우 자동 저장 (중복 체크 포함)
