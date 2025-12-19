@@ -44,6 +44,8 @@ export async function GET(request: NextRequest) {
             email: true,
             nickname: true,
             image: true,
+            name: true,
+            phone: true,
             role: true,
             status: true,
             lastLoginAt: true,
@@ -107,11 +109,21 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { nickname, currentPassword, newPassword } = body
+    const { nickname, name, phone, currentPassword, newPassword } = body
 
     // 업데이트할 데이터
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updateData: any = {}
+
+    // 이름(실명) 업데이트
+    if (name !== undefined) {
+      updateData.name = name.trim() || null
+    }
+
+    // 전화번호 업데이트
+    if (phone !== undefined) {
+      updateData.phone = phone.trim() || null
+    }
 
     // 닉네임 업데이트
     if (nickname !== undefined) {
@@ -194,6 +206,8 @@ export async function PUT(request: NextRequest) {
         id: true,
         email: true,
         nickname: true,
+        name: true,
+        phone: true,
         image: true,
         role: true,
         status: true,
