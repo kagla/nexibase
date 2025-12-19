@@ -45,6 +45,7 @@ interface ShopSettings {
   pg_test_mode: string
   // 알림 설정
   order_notification_target: string  // admin, manager, both, none
+  email_notification_enabled: string  // true, false
 }
 
 const DEFAULT_SETTINGS: ShopSettings = {
@@ -69,6 +70,7 @@ const DEFAULT_SETTINGS: ShopSettings = {
   pg_test_mode: "true",
   // 알림 설정
   order_notification_target: "admin",  // 기본값: 관리자만
+  email_notification_enabled: "false",  // 기본값: 비활성화
 }
 
 export default function ShopSettingsPage() {
@@ -542,6 +544,23 @@ export default function ShopSettingsPage() {
                 새 주문 발생 시 선택한 권한을 가진 사용자에게 알림이 발송됩니다.
               </p>
             </div>
+            <div className="flex items-center gap-2 pt-2 border-t">
+              <input
+                type="checkbox"
+                id="email_notification_enabled"
+                checked={settings.email_notification_enabled === "true"}
+                onChange={(e) => handleChange("email_notification_enabled", e.target.checked ? "true" : "false")}
+                className="rounded"
+              />
+              <label htmlFor="email_notification_enabled" className="text-sm cursor-pointer">
+                이메일 알림 발송
+              </label>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              활성화 시 주문 상태 변경, 새 주문 접수 등의 알림을 이메일로도 발송합니다.
+              <br />
+              SMTP 설정이 필요합니다. (.env 파일의 SMTP_HOST, SMTP_USER, SMTP_PASS)
+            </p>
           </CardContent>
         </Card>
       </div>

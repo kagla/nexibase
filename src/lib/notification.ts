@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { sendOrderStatusEmail, sendNewOrderEmailToAdmin } from '@/lib/email'
 
 export type NotificationType = 'order_status' | 'review_reply' | 'qna_reply' | 'system'
 
@@ -31,13 +32,14 @@ export async function createNotification(params: CreateNotificationParams) {
 }
 
 /**
- * 주문 상태 변경 알림 생성
+ * 주문 상태 변경 알림 생성 (+ 이메일 발송)
  */
 export async function createOrderStatusNotification(
   userId: number,
   orderNo: string,
   oldStatus: string,
-  newStatus: string
+  newStatus: string,
+  trackingNumber?: string
 ) {
   const statusLabels: Record<string, string> = {
     pending: '결제 대기',
@@ -62,6 +64,19 @@ export async function createOrderStatusNotification(
 
   const title = `주문 상태 변경: ${statusLabels[newStatus] || newStatus}`
   const message = statusMessages[newStatus] || `주문 상태가 "${statusLabels[newStatus] || newStatus}"(으)로 변경되었습니다.`
+
+  // 이메일 발송 (비동기로 처리)
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true, name: true }
+    })
+    if (user?.email) {
+      sendOrderStatusEmail(user.email, user.name || '고객', orderNo, newStatus, trackingNumber)
+    }
+  } catch (error) {
+    console.error('주문 상태 이메일 발송 에러:', error)
+  }
 
   return createNotification({
     userId,
@@ -130,20 +145,25 @@ export async function createNewOrderNotificationForAdmins(
       where: {
         role: { in: targetRoles }
       },
-      select: { id: true }
+      select: { id: true, email: true }
     })
 
-    // 각 관리자에게 알림 생성
+    // 각 관리자에게 알림 생성 및 이메일 발송
     const notifications = await Promise.all(
-      admins.map(admin =>
-        createNotification({
+      admins.map(async admin => {
+        // 이메일 발송 (비동기)
+        if (admin.email) {
+          sendNewOrderEmailToAdmin(admin.email, orderNo, customerName, totalAmount)
+        }
+
+        return createNotification({
           userId: admin.id,
           type: 'order_status',
           title: '🛒 새 주문이 접수되었습니다',
           message: `[주문번호: ${orderNo}] ${customerName}님이 ${totalAmount.toLocaleString()}원 주문을 접수했습니다.`,
           link: `/admin/shop/orders/${orderNo}`,
         })
-      )
+      })
     )
 
     return notifications.filter(n => n !== null)
