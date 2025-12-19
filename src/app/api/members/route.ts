@@ -26,9 +26,17 @@ export async function POST(request: NextRequest) {
     }
 
     // 닉네임 길이 검증
-    if (nickname.length < 2) {
+    if (nickname.trim().length < 2) {
       return NextResponse.json(
         { error: '닉네임은 최소 2자 이상이어야 합니다.' },
+        { status: 400 }
+      )
+    }
+
+    // 닉네임 문자 검증 (한글, 영문, 숫자만 허용)
+    if (!/^[가-힣a-zA-Z0-9]+$/.test(nickname.trim())) {
+      return NextResponse.json(
+        { error: '닉네임은 한글, 영문, 숫자만 사용할 수 있습니다.' },
         { status: 400 }
       )
     }

@@ -31,6 +31,8 @@ import {
   Trash2,
   Star,
   Bell,
+  AlertTriangle,
+  UserX,
 } from "lucide-react"
 import {
   Dialog,
@@ -172,6 +174,16 @@ function MyPageContent() {
   const [profileError, setProfileError] = useState('')
   const [profileSuccess, setProfileSuccess] = useState('')
 
+  // 회원탈퇴 관련 상태
+  const [withdrawModalOpen, setWithdrawModalOpen] = useState(false)
+  const [withdrawForm, setWithdrawForm] = useState({
+    password: '',
+    confirmText: '',
+  })
+  const [withdrawing, setWithdrawing] = useState(false)
+  const [withdrawError, setWithdrawError] = useState('')
+  const [isSocialAccount, setIsSocialAccount] = useState(false)
+
   // 탭 변경 핸들러
   const setActiveTab = (tab: string) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -200,6 +212,8 @@ function MyPageContent() {
           phone: data.user.phone || '',
           email: data.user.email || '',
         }))
+        // 소셜 로그인 계정 여부 확인
+        setIsSocialAccount(!data.hasPassword)
       }
     } catch (error) {
       console.error('프로필 조회 에러:', error)
@@ -259,6 +273,56 @@ function MyPageContent() {
     } finally {
       setProfileSaving(false)
     }
+  }
+
+  // 회원탈퇴 처리
+  const handleWithdraw = async () => {
+    setWithdrawError('')
+
+    // 확인 문구 검증
+    if (withdrawForm.confirmText !== '회원탈퇴') {
+      setWithdrawError('"회원탈퇴"를 정확히 입력해주세요.')
+      return
+    }
+
+    // 일반 계정인 경우 비밀번호 필수
+    if (!isSocialAccount && !withdrawForm.password) {
+      setWithdrawError('비밀번호를 입력해주세요.')
+      return
+    }
+
+    setWithdrawing(true)
+    try {
+      const res = await fetch('/api/me', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          password: withdrawForm.password,
+          confirmText: withdrawForm.confirmText,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (res.ok) {
+        alert('회원탈퇴가 완료되었습니다. 그동안 이용해 주셔서 감사합니다.')
+        router.push('/')
+      } else {
+        setWithdrawError(data.error || '회원탈퇴에 실패했습니다.')
+      }
+    } catch (error) {
+      console.error('회원탈퇴 에러:', error)
+      setWithdrawError('회원탈퇴 중 오류가 발생했습니다.')
+    } finally {
+      setWithdrawing(false)
+    }
+  }
+
+  // 회원탈퇴 모달 열기
+  const openWithdrawModal = () => {
+    setWithdrawForm({ password: '', confirmText: '' })
+    setWithdrawError('')
+    setWithdrawModalOpen(true)
   }
 
   // 주문 목록 조회
@@ -755,6 +819,26 @@ function MyPageContent() {
                       <Button onClick={saveProfile} disabled={profileSaving}>
                         {profileSaving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                         저장
+                      </Button>
+                    </div>
+
+                    {/* 회원탈퇴 */}
+                    <div className="space-y-4 pt-6 mt-6 border-t border-destructive/20">
+                      <div className="flex items-center gap-2 text-destructive">
+                        <AlertTriangle className="h-5 w-5" />
+                        <h3 className="font-medium text-sm">회원 탈퇴</h3>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        회원 탈퇴 시 작성한 게시글, 댓글, 리뷰 등은 삭제되지 않으며, 닉네임이 &quot;탈퇴회원&quot;으로 표시됩니다.
+                        주문 내역은 유지되나 개인정보는 즉시 삭제됩니다.
+                      </p>
+                      <Button
+                        variant="outline"
+                        className="text-destructive border-destructive/50 hover:bg-destructive hover:text-destructive-foreground"
+                        onClick={openWithdrawModal}
+                      >
+                        <UserX className="h-4 w-4 mr-2" />
+                        회원 탈퇴
                       </Button>
                     </div>
                   </CardContent>
@@ -1326,6 +1410,85 @@ function MyPageContent() {
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
                 ) : null}
                 {editingAddress ? '수정' : '추가'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* 회원탈퇴 확인 모달 */}
+      <Dialog open={withdrawModalOpen} onOpenChange={setWithdrawModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              회원 탈퇴
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-4 bg-destructive/10 rounded-lg text-sm space-y-2">
+              <p className="font-medium text-destructive">탈퇴 시 주의사항</p>
+              <ul className="text-muted-foreground space-y-1 list-disc list-inside">
+                <li>탈퇴 후에는 계정을 복구할 수 없습니다.</li>
+                <li>작성한 게시글, 댓글, 리뷰는 삭제되지 않습니다.</li>
+                <li>닉네임은 &quot;탈퇴회원&quot;으로 표시됩니다.</li>
+                <li>주문 내역은 유지되나 개인정보는 삭제됩니다.</li>
+              </ul>
+            </div>
+
+            {withdrawError && (
+              <div className="p-3 bg-destructive/10 text-destructive text-sm rounded-lg">
+                {withdrawError}
+              </div>
+            )}
+
+            {/* 일반 계정인 경우 비밀번호 입력 */}
+            {!isSocialAccount && (
+              <div>
+                <Label htmlFor="withdrawPassword">비밀번호 *</Label>
+                <Input
+                  id="withdrawPassword"
+                  type="password"
+                  value={withdrawForm.password}
+                  onChange={(e) => setWithdrawForm({ ...withdrawForm, password: e.target.value })}
+                  placeholder="현재 비밀번호를 입력해주세요"
+                />
+              </div>
+            )}
+
+            <div>
+              <Label htmlFor="confirmText">탈퇴 확인 *</Label>
+              <Input
+                id="confirmText"
+                value={withdrawForm.confirmText}
+                onChange={(e) => setWithdrawForm({ ...withdrawForm, confirmText: e.target.value })}
+                placeholder="회원탈퇴"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                위 입력란에 &quot;회원탈퇴&quot;를 입력해주세요.
+              </p>
+            </div>
+
+            <div className="flex gap-2 pt-4">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setWithdrawModalOpen(false)}
+              >
+                취소
+              </Button>
+              <Button
+                variant="destructive"
+                className="flex-1"
+                onClick={handleWithdraw}
+                disabled={withdrawing}
+              >
+                {withdrawing ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <UserX className="h-4 w-4 mr-2" />
+                )}
+                탈퇴하기
               </Button>
             </div>
           </div>

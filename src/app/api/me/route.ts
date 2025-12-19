@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+import { cookies } from 'next/headers'
 
 // 세션에서 사용자 조회 헬퍼
 async function getUserFromSession(request: NextRequest) {
@@ -75,9 +76,16 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // 사용자 정보 반환
+    // 사용자 정보 반환 (비밀번호 유무도 함께)
+    // 비밀번호 필드를 별도로 조회
+    const userWithPassword = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { password: true }
+    })
+
     return NextResponse.json({
-      user: session.user
+      user: session.user,
+      hasPassword: !!userWithPassword?.password
     })
 
   } catch (error) {
@@ -112,6 +120,13 @@ export async function PUT(request: NextRequest) {
       if (nickname.trim().length < 2) {
         return NextResponse.json(
           { error: '닉네임은 2자 이상 입력해주세요.' },
+          { status: 400 }
+        )
+      }
+      // 한글, 영문, 숫자만 허용
+      if (!/^[가-힣a-zA-Z0-9]+$/.test(nickname.trim())) {
+        return NextResponse.json(
+          { error: '닉네임은 한글, 영문, 숫자만 사용할 수 있습니다.' },
           { status: 400 }
         )
       }
@@ -202,6 +217,91 @@ export async function PUT(request: NextRequest) {
 
   } catch (error) {
     console.error('프로필 수정 에러:', error)
+    return NextResponse.json(
+      { error: '서버 오류가 발생했습니다.' },
+      { status: 500 }
+    )
+  }
+}
+
+// 회원 탈퇴
+export async function DELETE(request: NextRequest) {
+  try {
+    const user = await getUserFromSession(request)
+    if (!user) {
+      return NextResponse.json(
+        { error: '로그인이 필요합니다.' },
+        { status: 401 }
+      )
+    }
+
+    const body = await request.json()
+    const { password, confirmText } = body
+
+    // 탈퇴 확인 문구 검증
+    if (confirmText !== '회원탈퇴') {
+      return NextResponse.json(
+        { error: '탈퇴 확인 문구를 정확히 입력해주세요.' },
+        { status: 400 }
+      )
+    }
+
+    // 소셜 로그인 계정인 경우 비밀번호 확인 생략
+    if (user.password) {
+      if (!password) {
+        return NextResponse.json(
+          { error: '비밀번호를 입력해주세요.' },
+          { status: 400 }
+        )
+      }
+
+      const isValidPassword = await bcrypt.compare(password, user.password)
+      if (!isValidPassword) {
+        return NextResponse.json(
+          { error: '비밀번호가 일치하지 않습니다.' },
+          { status: 400 }
+        )
+      }
+    }
+
+    // 트랜잭션으로 처리
+    await prisma.$transaction(async (tx) => {
+      // 1. 모든 세션 삭제
+      await tx.userSession.deleteMany({
+        where: { userId: user.id }
+      })
+
+      // 2. 연결된 소셜 계정 삭제
+      await tx.account.deleteMany({
+        where: { userId: user.id }
+      })
+
+      // 3. 사용자 정보 익명화 + 소프트 삭제
+      await tx.user.update({
+        where: { id: user.id },
+        data: {
+          email: `**deleted_${user.id}**`,
+          nickname: `**탈퇴회원_${user.id}**`,
+          password: null,
+          phone: null,
+          image: null,
+          status: 'inactive',
+          deletedAt: new Date()
+        }
+      })
+    })
+
+    // 쿠키 삭제
+    const cookieStore = await cookies()
+    cookieStore.delete('session-token')
+
+    return NextResponse.json({
+      success: true,
+      message: '회원 탈퇴가 완료되었습니다.'
+    })
+
+  } catch (error) {
+    console.error('회원 탈퇴 에러:', error)
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }
