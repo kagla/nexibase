@@ -242,7 +242,11 @@ export async function GET(request: NextRequest) {
             if (item.product?.images) {
               try {
                 const images = JSON.parse(item.product.images as string)
-                productImage = Array.isArray(images) && images.length > 0 ? images[0] : null
+                if (Array.isArray(images) && images.length > 0) {
+                  // 썸네일 이미지 사용 (원본.webp -> 원본-thumb.webp)
+                  const originalImage = images[0]
+                  productImage = originalImage.replace(/\.webp$/, '-thumb.webp')
+                }
               } catch {
                 productImage = null
               }
