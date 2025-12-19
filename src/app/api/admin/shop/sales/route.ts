@@ -52,6 +52,13 @@ export async function GET(request: NextRequest) {
         dateFrom = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0)
         dateTo = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999) // 이번달 0일 = 전월 말일
         break
+      case 'current_quarter':
+        // 이번 분기
+        const thisQuarter = Math.floor(now.getMonth() / 3)
+        const thisQuarterStart = thisQuarter * 3
+        dateFrom = new Date(now.getFullYear(), thisQuarterStart, 1, 0, 0, 0, 0)
+        dateTo = new Date(now.getFullYear(), thisQuarterStart + 3, 0, 23, 59, 59, 999)
+        break
       case 'q1':
         // 1분기 (1~3월)
         dateFrom = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0)
@@ -83,6 +90,18 @@ export async function GET(request: NextRequest) {
           const prevQuarterStart = (currentQuarter - 1) * 3
           dateFrom = new Date(now.getFullYear(), prevQuarterStart, 1, 0, 0, 0, 0)
           dateTo = new Date(now.getFullYear(), prevQuarterStart + 3, 0, 23, 59, 59, 999) // 다음달 0일 = 해당월 말일
+        }
+        break
+      case 'current_half':
+        // 이번 반기
+        if (now.getMonth() < 6) {
+          // 상반기
+          dateFrom = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0)
+          dateTo = new Date(now.getFullYear(), 5, 30, 23, 59, 59, 999)
+        } else {
+          // 하반기
+          dateFrom = new Date(now.getFullYear(), 6, 1, 0, 0, 0, 0)
+          dateTo = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999)
         }
         break
       case 'h1':
