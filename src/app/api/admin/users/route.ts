@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('사용자 목록 조회 실패:', error)
     return NextResponse.json(
-      { success: false, message: '사용자 목록 조회 실패' },
+      { success: false, message: '사용자 목록 조회 실패', error: String(error) },
       { status: 500 }
     )
   }
