@@ -123,7 +123,7 @@ const PERIOD_OPTIONS = [
   { value: 'week', label: '최근 7일' },
   { value: 'prev_week', label: '이전 주' },
   { value: 'month', label: '이번 달' },
-  { value: 'prev_month', label: '이전 달' },
+  { value: 'prev_month', label: '지난 달' },
   { value: 'q1', label: '1분기' },
   { value: 'q2', label: '2분기' },
   { value: 'q3', label: '3분기' },
