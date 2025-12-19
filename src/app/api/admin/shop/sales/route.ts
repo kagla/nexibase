@@ -37,6 +37,16 @@ export async function GET(request: NextRequest) {
         dateFrom.setDate(now.getDate() - 7)
         dateFrom.setHours(0, 0, 0, 0)
         break
+      case 'week14':
+        dateFrom = new Date(now)
+        dateFrom.setDate(now.getDate() - 14)
+        dateFrom.setHours(0, 0, 0, 0)
+        break
+      case 'week28':
+        dateFrom = new Date(now)
+        dateFrom.setDate(now.getDate() - 28)
+        dateFrom.setHours(0, 0, 0, 0)
+        break
       case 'prev_week':
         // 지난 주 (지난주 월요일 ~ 일요일)
         const dayOfWeek = now.getDay() // 0=일, 1=월, ...

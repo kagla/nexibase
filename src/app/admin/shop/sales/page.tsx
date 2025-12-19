@@ -121,6 +121,8 @@ const PERIOD_OPTIONS = [
   { value: 'today', label: '오늘' },
   { value: 'yesterday', label: '어제' },
   { value: 'week', label: '최근 7일' },
+  { value: 'week14', label: '최근 14일' },
+  { value: 'week28', label: '최근 28일' },
   { value: 'prev_week', label: '지난 주' },
   { value: 'prev_month', label: '지난 달' },
   { value: 'this_week', label: '이번 주' },
