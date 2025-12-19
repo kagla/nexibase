@@ -459,7 +459,7 @@ export default function AdminSalesPage() {
                             {summaryData.topProducts.map((product, idx) => (
                               <Link
                                 key={product.productId}
-                                href={`/shop/${product.productSlug}`}
+                                href={`/admin/shop/products/${product.productId}`}
                                 className="flex items-center justify-between py-2 border-b last:border-0 hover:bg-muted/50 -mx-2 px-2 rounded transition-colors"
                               >
                                 <div className="flex items-center gap-3">
