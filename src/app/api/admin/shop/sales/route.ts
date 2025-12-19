@@ -120,19 +120,22 @@ export async function GET(request: NextRequest) {
           ORDER BY date DESC
         `,
         // 인기 상품 (판매량 기준 상위 10개)
-        prisma.$queryRaw<{ productId: number; productName: string; totalQty: number; totalAmount: number }[]>`
+        prisma.$queryRaw<{ productId: number; productName: string; productSlug: string; productImages: string | null; totalQty: number; totalAmount: number }[]>`
           SELECT
             oi.productId,
             oi.productName,
+            p.slug as productSlug,
+            p.images as productImages,
             SUM(oi.quantity) as totalQty,
             SUM(oi.subtotal) as totalAmount
           FROM order_items oi
           JOIN orders o ON oi.orderId = o.id
+          LEFT JOIN products p ON oi.productId = p.id
           WHERE o.status IN ('delivered', 'confirmed')
             AND o.deletedAt IS NULL
             AND o.paidAt >= ${dateFrom}
             AND o.paidAt <= ${dateTo}
-          GROUP BY oi.productId, oi.productName
+          GROUP BY oi.productId, oi.productName, p.slug, p.images
           ORDER BY totalQty DESC
           LIMIT 10
         `,
@@ -178,12 +181,28 @@ export async function GET(request: NextRequest) {
           amount: Number(d.amount),
           count: Number(d.count),
         })),
-        topProducts: topProducts.map(p => ({
-          productId: p.productId,
-          productName: p.productName,
-          totalQty: Number(p.totalQty),
-          totalAmount: Number(p.totalAmount),
-        })),
+        topProducts: topProducts.map(p => {
+          // 썸네일 이미지 추출
+          let thumbnail = null
+          if (p.productImages) {
+            try {
+              const images = JSON.parse(p.productImages)
+              if (Array.isArray(images) && images.length > 0) {
+                thumbnail = images[0].replace(/\.webp$/, '-thumb.webp')
+              }
+            } catch {
+              thumbnail = null
+            }
+          }
+          return {
+            productId: p.productId,
+            productName: p.productName,
+            productSlug: p.productSlug,
+            thumbnail,
+            totalQty: Number(p.totalQty),
+            totalAmount: Number(p.totalAmount),
+          }
+        }),
         period: {
           from: dateFrom.toISOString(),
           to: dateTo.toISOString(),

@@ -54,7 +54,7 @@ interface SummaryData {
     growthRate: string | null
   }
   dailySales: { date: string; amount: number; count: number }[]
-  topProducts: { productId: number; productName: string; totalQty: number; totalAmount: number }[]
+  topProducts: { productId: number; productName: string; productSlug: string; thumbnail: string | null; totalQty: number; totalAmount: number }[]
   period: { from: string; to: string }
 }
 
@@ -457,27 +457,39 @@ export default function AdminSalesPage() {
                         ) : (
                           <div className="space-y-2">
                             {summaryData.topProducts.map((product, idx) => (
-                              <div
+                              <Link
                                 key={product.productId}
-                                className="flex items-center justify-between py-2 border-b last:border-0"
+                                href={`/shop/${product.productSlug}`}
+                                className="flex items-center justify-between py-2 border-b last:border-0 hover:bg-muted/50 -mx-2 px-2 rounded transition-colors"
                               >
                                 <div className="flex items-center gap-3">
-                                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
                                     idx < 3 ? 'bg-primary text-primary-foreground' : 'bg-muted'
                                   }`}>
                                     {idx + 1}
                                   </span>
+                                  {product.thumbnail ? (
+                                    <img
+                                      src={product.thumbnail}
+                                      alt=""
+                                      className="w-10 h-10 rounded object-cover flex-shrink-0"
+                                    />
+                                  ) : (
+                                    <div className="w-10 h-10 rounded bg-muted flex items-center justify-center flex-shrink-0">
+                                      <Package className="h-4 w-4 text-muted-foreground" />
+                                    </div>
+                                  )}
                                   <span className="font-medium line-clamp-1">
                                     {product.productName}
                                   </span>
                                 </div>
-                                <div className="text-right">
+                                <div className="text-right flex-shrink-0">
                                   <div className="font-medium">{product.totalQty}개</div>
                                   <div className="text-xs text-muted-foreground">
                                     {formatPrice(product.totalAmount)}
                                   </div>
                                 </div>
-                              </div>
+                              </Link>
                             ))}
                           </div>
                         )}
