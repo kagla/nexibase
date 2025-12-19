@@ -38,10 +38,18 @@ export async function GET(request: NextRequest) {
         dateFrom.setHours(0, 0, 0, 0)
         break
       case 'prev_week':
-        // 이전 주 (지난주 월요일 ~ 일요일)
+        // 지난 주 (지난주 월요일 ~ 일요일)
         const dayOfWeek = now.getDay() // 0=일, 1=월, ...
         const daysToLastSunday = dayOfWeek === 0 ? 7 : dayOfWeek
         dateTo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysToLastSunday, 23, 59, 59, 999)
+        dateFrom = new Date(dateTo.getFullYear(), dateTo.getMonth(), dateTo.getDate() - 6, 0, 0, 0, 0)
+        break
+      case 'prev_prev_week':
+        // 지지난 주 (2주 전 월요일 ~ 일요일)
+        const dayOfWeek2 = now.getDay()
+        const daysToLastSunday2 = dayOfWeek2 === 0 ? 7 : dayOfWeek2
+        const lastSunday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysToLastSunday2)
+        dateTo = new Date(lastSunday.getFullYear(), lastSunday.getMonth(), lastSunday.getDate() - 7, 23, 59, 59, 999)
         dateFrom = new Date(dateTo.getFullYear(), dateTo.getMonth(), dateTo.getDate() - 6, 0, 0, 0, 0)
         break
       case 'month':
@@ -56,36 +64,6 @@ export async function GET(request: NextRequest) {
         // 지지난 달 (전전월 1일 ~ 말일)
         dateFrom = new Date(now.getFullYear(), now.getMonth() - 2, 1, 0, 0, 0, 0)
         dateTo = new Date(now.getFullYear(), now.getMonth() - 1, 0, 23, 59, 59, 999)
-        break
-      case 'q1':
-        // 1분기 (1~3월)
-        dateFrom = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0)
-        dateTo = new Date(now.getFullYear(), 2, 31, 23, 59, 59, 999)
-        break
-      case 'q2':
-        // 2분기 (4~6월)
-        dateFrom = new Date(now.getFullYear(), 3, 1, 0, 0, 0, 0)
-        dateTo = new Date(now.getFullYear(), 5, 30, 23, 59, 59, 999)
-        break
-      case 'q3':
-        // 3분기 (7~9월)
-        dateFrom = new Date(now.getFullYear(), 6, 1, 0, 0, 0, 0)
-        dateTo = new Date(now.getFullYear(), 8, 30, 23, 59, 59, 999)
-        break
-      case 'q4':
-        // 4분기 (10~12월)
-        dateFrom = new Date(now.getFullYear(), 9, 1, 0, 0, 0, 0)
-        dateTo = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999)
-        break
-      case 'h1':
-        // 상반기 (1~6월)
-        dateFrom = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0)
-        dateTo = new Date(now.getFullYear(), 5, 30, 23, 59, 59, 999)
-        break
-      case 'h2':
-        // 하반기 (7~12월)
-        dateFrom = new Date(now.getFullYear(), 6, 1, 0, 0, 0, 0)
-        dateTo = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999)
         break
       case 'year':
         dateFrom = new Date(now.getFullYear(), 0, 1)
