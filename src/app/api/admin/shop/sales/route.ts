@@ -44,14 +44,6 @@ export async function GET(request: NextRequest) {
         dateTo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysToLastSunday, 23, 59, 59, 999)
         dateFrom = new Date(dateTo.getFullYear(), dateTo.getMonth(), dateTo.getDate() - 6, 0, 0, 0, 0)
         break
-      case 'prev_prev_week':
-        // 지지난 주 (2주 전 월요일 ~ 일요일)
-        const dayOfWeek2 = now.getDay()
-        const daysToLastSunday2 = dayOfWeek2 === 0 ? 7 : dayOfWeek2
-        const lastSunday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysToLastSunday2)
-        dateTo = new Date(lastSunday.getFullYear(), lastSunday.getMonth(), lastSunday.getDate() - 7, 23, 59, 59, 999)
-        dateFrom = new Date(dateTo.getFullYear(), dateTo.getMonth(), dateTo.getDate() - 6, 0, 0, 0, 0)
-        break
       case 'month':
         dateFrom = new Date(now.getFullYear(), now.getMonth(), 1)
         break
@@ -59,11 +51,6 @@ export async function GET(request: NextRequest) {
         // 지난 달 (전월 1일 ~ 말일)
         dateFrom = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0)
         dateTo = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999) // 이번달 0일 = 전월 말일
-        break
-      case 'prev_prev_month':
-        // 지지난 달 (전전월 1일 ~ 말일)
-        dateFrom = new Date(now.getFullYear(), now.getMonth() - 2, 1, 0, 0, 0, 0)
-        dateTo = new Date(now.getFullYear(), now.getMonth() - 1, 0, 23, 59, 59, 999)
         break
       case 'year':
         dateFrom = new Date(now.getFullYear(), 0, 1)
