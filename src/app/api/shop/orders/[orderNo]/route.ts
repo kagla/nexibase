@@ -388,12 +388,12 @@ export async function PUT(
         })
       })
 
-      // 주문자에게 취소 완료 알림 발송 (비동기)
-      createOrderCancelledNotification(order.userId, orderNo, order.totalPrice)
+      // 주문자에게 취소 완료 알림 발송 (+ 이메일, 비동기)
+      createOrderCancelledNotification(order.userId, orderNo, order.totalPrice, cancelReason)
         .catch(err => console.error('주문자 취소 알림 발송 실패:', err))
 
-      // 관리자에게 취소 완료 알림 발송 (비동기 - 설정에 따라)
-      createOrderCancelledNotificationForAdmins(orderNo, order.ordererName, order.totalPrice)
+      // 관리자에게 취소 완료 알림 발송 (+ 이메일, 비동기 - 설정에 따라)
+      createOrderCancelledNotificationForAdmins(orderNo, order.ordererName, order.totalPrice, cancelReason)
         .catch(err => console.error('관리자 취소 알림 발송 실패:', err))
 
       return NextResponse.json({

@@ -326,4 +326,123 @@ export const sendNewOrderEmailToAdmin = async (
   } catch (error) {
     console.error('관리자 주문 알림 이메일 발송 실패:', error);
   }
-}; 
+};
+
+/**
+ * 주문 취소 이메일 발송 (고객용)
+ */
+export const sendOrderCancelledEmail = async (
+  email: string,
+  customerName: string,
+  orderNo: string,
+  refundAmount: number,
+  cancelReason: string
+) => {
+  if (!await isEmailNotificationEnabled()) return;
+
+  const shopName = await getShopName();
+  const transporter = createTransporter();
+  const orderUrl = `${process.env.NEXT_PUBLIC_APP_URL}/shop/orders/${orderNo}`;
+
+  const mailOptions = {
+    from: process.env.SMTP_USER,
+    to: email,
+    subject: `[${shopName}] 주문이 취소되었습니다 (${orderNo})`,
+    html: `
+      <div style="font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #333; border-bottom: 2px solid #333; padding-bottom: 10px;">${shopName}</h2>
+        <p style="color: #666; font-size: 16px; line-height: 1.6;">
+          안녕하세요, <strong>${customerName}</strong>님!<br>
+          요청하신 주문이 취소되었습니다.
+        </p>
+
+        <div style="background: #fef2f2; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ef4444;">
+          <h3 style="margin: 0 0 10px; color: #dc2626;">❌ 주문 취소 완료</h3>
+          <p style="margin: 0; color: #333;"><strong>주문번호:</strong> ${orderNo}</p>
+          <p style="margin: 10px 0 0; color: #333;"><strong>취소 사유:</strong> ${cancelReason}</p>
+          <p style="margin: 10px 0 0; color: #333;"><strong>환불 금액:</strong> ${refundAmount.toLocaleString()}원</p>
+        </div>
+
+        <p style="color: #666; font-size: 14px; line-height: 1.6;">
+          카드 결제의 경우 카드사에 따라 3~5 영업일 내에 환불이 진행됩니다.
+        </p>
+
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${orderUrl}"
+             style="background-color: #333; color: white; padding: 12px 30px;
+                    text-decoration: none; border-radius: 5px; display: inline-block;">
+            주문 상세 보기
+          </a>
+        </div>
+
+        <p style="color: #999; font-size: 12px; margin-top: 30px; text-align: center;">
+          본 메일은 발신전용입니다.
+        </p>
+      </div>
+    `,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log('주문 취소 이메일 발송:', email);
+  } catch (error) {
+    console.error('주문 취소 이메일 발송 실패:', error);
+  }
+};
+
+/**
+ * 주문 취소 알림 이메일 발송 (관리자용)
+ */
+export const sendOrderCancelledEmailToAdmin = async (
+  adminEmail: string,
+  orderNo: string,
+  customerName: string,
+  refundAmount: number,
+  cancelReason: string
+) => {
+  if (!await isEmailNotificationEnabled()) return;
+
+  const shopName = await getShopName();
+  const transporter = createTransporter();
+  const orderUrl = `${process.env.NEXT_PUBLIC_APP_URL}/admin/shop/orders/${orderNo}`;
+
+  const mailOptions = {
+    from: process.env.SMTP_USER,
+    to: adminEmail,
+    subject: `[${shopName}] 주문이 취소되었습니다 (${orderNo})`,
+    html: `
+      <div style="font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #333; border-bottom: 2px solid #333; padding-bottom: 10px;">${shopName} - 관리자 알림</h2>
+
+        <div style="background: #fef2f2; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ef4444;">
+          <h3 style="margin: 0 0 10px; color: #dc2626;">❌ 주문 취소</h3>
+          <p style="margin: 0; color: #991b1b;">
+            <strong>${customerName}</strong>님의 주문이 취소되었습니다.
+          </p>
+        </div>
+
+        <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <p style="margin: 0; color: #333;"><strong>주문번호:</strong> ${orderNo}</p>
+          <p style="margin: 10px 0 0; color: #333;"><strong>주문자:</strong> ${customerName}</p>
+          <p style="margin: 10px 0 0; color: #333;"><strong>취소 사유:</strong> ${cancelReason}</p>
+          <p style="margin: 10px 0 0; color: #333;"><strong>환불 금액:</strong> ${refundAmount.toLocaleString()}원</p>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${orderUrl}"
+             style="background-color: #333; color: white; padding: 12px 30px;
+                    text-decoration: none; border-radius: 5px; display: inline-block;">
+            주문 확인하기
+          </a>
+        </div>
+      </div>
+    `,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log('관리자 주문 취소 알림 이메일 발송:', adminEmail);
+  } catch (error) {
+    console.error('관리자 주문 취소 알림 이메일 발송 실패:', error);
+  }
+};

@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { sendOrderStatusEmail, sendNewOrderEmailToAdmin, sendOrderCompletedEmail } from '@/lib/email'
+import { sendOrderStatusEmail, sendNewOrderEmailToAdmin, sendOrderCompletedEmail, sendOrderCancelledEmail, sendOrderCancelledEmailToAdmin } from '@/lib/email'
 
 export type NotificationType = 'order_status' | 'review_reply' | 'qna_reply' | 'system'
 
@@ -194,13 +194,33 @@ export async function createNewOrderNotificationForAdmins(
 }
 
 /**
- * 주문 취소 알림을 주문자에게 전송
+ * 주문 취소 알림을 주문자에게 전송 (+ 이메일 발송)
  */
 export async function createOrderCancelledNotification(
   userId: number,
   orderNo: string,
-  refundAmount: number
+  refundAmount: number,
+  cancelReason?: string
 ) {
+  // 이메일 발송 (비동기로 처리)
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true, nickname: true, name: true }
+    })
+    if (user?.email && cancelReason) {
+      sendOrderCancelledEmail(
+        user.email,
+        user.name || user.nickname || '고객',
+        orderNo,
+        refundAmount,
+        cancelReason
+      )
+    }
+  } catch (error) {
+    console.error('주문 취소 이메일 발송 에러:', error)
+  }
+
   return createNotification({
     userId,
     type: 'order_status',
@@ -229,12 +249,13 @@ export async function createOrderCancelledByAdminNotification(
 }
 
 /**
- * 주문 취소 완료 알림을 관리자에게 전송
+ * 주문 취소 완료 알림을 관리자에게 전송 (+ 이메일 발송)
  */
 export async function createOrderCancelledNotificationForAdmins(
   orderNo: string,
   customerName: string,
-  refundAmount: number
+  refundAmount: number,
+  cancelReason?: string
 ) {
   try {
     // 쇼핑몰 설정에서 알림 수신 대상 조회
@@ -268,20 +289,25 @@ export async function createOrderCancelledNotificationForAdmins(
       where: {
         role: { in: targetRoles }
       },
-      select: { id: true }
+      select: { id: true, email: true }
     })
 
-    // 각 관리자에게 알림 생성
+    // 각 관리자에게 알림 생성 및 이메일 발송
     const notifications = await Promise.all(
-      admins.map(admin =>
-        createNotification({
+      admins.map(async admin => {
+        // 이메일 발송 (비동기)
+        if (admin.email && cancelReason) {
+          sendOrderCancelledEmailToAdmin(admin.email, orderNo, customerName, refundAmount, cancelReason)
+        }
+
+        return createNotification({
           userId: admin.id,
           type: 'order_status',
           title: '❌ 주문이 취소되었습니다',
           message: `[주문번호: ${orderNo}] ${customerName}님의 주문이 취소되었습니다. 환불금액: ${refundAmount.toLocaleString()}원`,
           link: `/admin/shop/orders/${orderNo}`,
         })
-      )
+      })
     )
 
     return notifications.filter(n => n !== null)
