@@ -149,7 +149,7 @@ export async function GET(
         user: {
           select: {
             id: true,
-            name: true,
+            nickname: true,
             email: true
           }
         }

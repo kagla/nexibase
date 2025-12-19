@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
         where,
         include: {
           user: {
-            select: { id: true, name: true, email: true }
+            select: { id: true, nickname: true, email: true }
           },
           items: {
             include: {

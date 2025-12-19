@@ -17,7 +17,6 @@ export const getSession = async () => {
         user: {
           select: {
             id: true,
-            name: true,
             email: true,
             nickname: true,
             role: true,
