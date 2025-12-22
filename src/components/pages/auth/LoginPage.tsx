@@ -172,6 +172,12 @@ export default function LoginPage() {
                 </div>
               </div>
 
+              <div className="flex items-center justify-end">
+                <Link href="/forgot-password" className="text-sm text-primary hover:underline">
+                  비밀번호를 잊으셨나요?
+                </Link>
+              </div>
+
               <Button
                 type="submit"
                 className="w-full"
@@ -179,12 +185,6 @@ export default function LoginPage() {
               >
                 {isLoading ? "로그인 중..." : "로그인"}
               </Button>
-
-              <div className="text-center">
-                <Link href="/forgot-password" className="text-sm text-primary hover:underline">
-                  비밀번호를 잊으셨나요?
-                </Link>
-              </div>
             </form>
 
             <div className="relative">
