@@ -20,12 +20,6 @@ const GoogleIcon = () => (
   </svg>
 );
 
-const NaverIcon = () => (
-  <svg className="w-5 h-5" viewBox="0 0 24 24">
-    <path fill="#03C75A" d="M16.273 12.845L7.376 0H0v24h7.727V11.155L16.624 24H24V0h-7.727z"/>
-  </svg>
-);
-
 export default function SignupPage() {
   // Theme: default/SignupPage
   const [email, setEmail] = useState("");
@@ -468,7 +462,7 @@ export default function SignupPage() {
             </div>
 
             {/* 소셜 로그인 버튼 */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-3">
               <Button
                 type="button"
                 variant="outline"
@@ -481,7 +475,7 @@ export default function SignupPage() {
                 ) : (
                   <>
                     <GoogleIcon />
-                    <span className="ml-2">Google</span>
+                    <span className="ml-2">Google로 계속하기</span>
                   </>
                 )}
               </Button>
@@ -496,8 +490,28 @@ export default function SignupPage() {
                   <div className="animate-spin h-5 w-5 border-2 border-muted border-t-primary rounded-full" />
                 ) : (
                   <>
-                    <NaverIcon />
-                    <span className="ml-2">Naver</span>
+                    <svg className="w-5 h-5" viewBox="0 0 24 24">
+                      <path fill="#03C75A" d="M16.273 12.845L7.376 0H0v24h7.727V11.155L16.624 24H24V0h-7.727z"/>
+                    </svg>
+                    <span className="ml-2">Naver로 계속하기</span>
+                  </>
+                )}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => handleSocialLogin("kakao")}
+                disabled={socialLoading !== null}
+                className="w-full"
+              >
+                {socialLoading === "kakao" ? (
+                  <div className="animate-spin h-5 w-5 border-2 border-muted border-t-primary rounded-full" />
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" viewBox="0 0 24 24">
+                      <path fill="#FEE500" d="M12 3c5.799 0 10.5 3.664 10.5 8.185 0 4.52-4.701 8.184-10.5 8.184a13.5 13.5 0 0 1-1.727-.11l-4.408 2.883c-.501.265-.678.236-.472-.413l.892-3.678c-2.88-1.46-4.785-3.99-4.785-6.866C1.5 6.665 6.201 3 12 3z"/>
+                    </svg>
+                    <span className="ml-2">Kakao로 계속하기</span>
                   </>
                 )}
               </Button>

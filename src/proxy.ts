@@ -1,53 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server';
-import jwt from 'jsonwebtoken';
 
 export function proxy(request: NextRequest) {
-  // 보호된 경로들 (로그인이 필요한 페이지들)
-  const protectedPaths = ['/dashboard', '/profile', '/settings'];
-  const isProtectedPath = protectedPaths.some(path => 
-    request.nextUrl.pathname.startsWith(path)
-  );
+  const response = NextResponse.next();
 
-  if (isProtectedPath) {
-    const token = request.cookies.get('auth-token')?.value;
-    
-    if (!token) {
-      // 로그인이 필요한 페이지에 접근하려고 할 때 로그인 페이지로 리다이렉트
-      return NextResponse.redirect(new URL('/login', request.url));
-    }
+  // NextAuth 세션 토큰 쿠키를 세션 쿠키로 변환
+  // (Max-Age/Expires 제거하여 브라우저 종료 시 삭제되도록)
+  const sessionToken = request.cookies.get("next-auth.session-token");
 
-    try {
-      const jwtSecret = process.env.JWT_SECRET || 'your-secret-key';
-      jwt.verify(token, jwtSecret);
-      
-      // 토큰이 유효하면 요청을 계속 진행
-      return NextResponse.next();
-    } catch {
-      // 토큰이 유효하지 않으면 쿠키를 삭제하고 로그인 페이지로 리다이렉트
-      const response = NextResponse.redirect(new URL('/login', request.url));
-      response.cookies.set('auth-token', '', {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 0,
-        path: '/',
-      });
-      return response;
-    }
+  if (sessionToken) {
+    // 기존 쿠키를 세션 쿠키로 재설정 (Max-Age 없이)
+    response.cookies.set({
+      name: "next-auth.session-token",
+      value: sessionToken.value,
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+      secure: process.env.NODE_ENV === "production",
+      // maxAge 생략 = 세션 쿠키 (브라우저 종료 시 삭제)
+    });
   }
 
-  return NextResponse.next();
+  return response;
 }
 
 export const config = {
   matcher: [
     /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
+     * Match all request paths except for:
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
+     * - image files
+     *
+     * API 라우트도 포함하여 소셜 로그인 콜백에서 설정되는 쿠키도 처리
      */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.png$|.*\\.jpg$|.*\\.jpeg$|.*\\.gif$|.*\\.webp$|.*\\.svg$|.*\\.ico$).*)',
   ],
-}; 
+};

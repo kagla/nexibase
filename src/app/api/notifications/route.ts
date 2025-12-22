@@ -11,6 +11,7 @@ export async function GET(request: Request) {
     }
 
     const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
     const unreadOnly = searchParams.get('unreadOnly') === 'true';
 
@@ -20,18 +21,31 @@ export async function GET(request: Request) {
       ...(unreadOnly && { isRead: false }),
     };
 
-    const [notifications, unreadCount] = await Promise.all([
+    const [notifications, totalCount, unreadCount] = await Promise.all([
       prisma.notification.findMany({
         where,
         orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
         take: limit,
       }),
+      prisma.notification.count({ where }),
       prisma.notification.count({
         where: { userId: session.id, isRead: false, deletedAt: null },
       }),
     ]);
 
-    return NextResponse.json({ notifications, unreadCount });
+    const totalPages = Math.ceil(totalCount / limit);
+
+    return NextResponse.json({
+      notifications,
+      unreadCount,
+      pagination: {
+        page,
+        limit,
+        totalCount,
+        totalPages,
+      }
+    });
   } catch (error) {
     console.error('알림 조회 에러:', error);
     return NextResponse.json({ error: '알림 조회 중 오류가 발생했습니다.' }, { status: 500 });

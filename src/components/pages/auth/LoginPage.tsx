@@ -3,13 +3,13 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
-import { markJustLoggedIn } from "@/components/providers/SessionGuard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
+import { markBrowserSession, markJustLoggedIn } from "@/components/providers/SessionProvider";
 
 // PasswordCredential 타입 선언
 declare global {
@@ -25,12 +25,6 @@ const GoogleIcon = () => (
     <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
     <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
     <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-  </svg>
-);
-
-const NaverIcon = () => (
-  <svg className="w-5 h-5" viewBox="0 0 24 24">
-    <path fill="#03C75A" d="M16.273 12.845L7.376 0H0v24h7.727V11.155L16.624 24H24V0h-7.727z"/>
   </svg>
 );
 
@@ -69,8 +63,8 @@ export default function LoginPage() {
       });
 
       if (result?.ok) {
-        // 브라우저 세션 표시
-        markJustLoggedIn();
+        // 브라우저 세션 마커 설정 (브라우저 종료 시 로그아웃 처리용)
+        markBrowserSession();
 
         // 브라우저 비밀번호 관리자에 자격 증명 저장 요청
         if (window.PasswordCredential && navigator.credentials) {
@@ -103,7 +97,7 @@ export default function LoginPage() {
   const handleSocialLogin = async (provider: string) => {
     setSocialLoading(provider);
     try {
-      // 브라우저 세션 표시 (소셜 로그인은 리다이렉트되므로 미리 설정)
+      // 소셜 로그인은 리다이렉트 방식이므로, 로그인 플래그를 미리 설정
       markJustLoggedIn();
       await signIn(provider, { callbackUrl: "/" });
     } catch (error) {
@@ -205,7 +199,7 @@ export default function LoginPage() {
             </div>
 
             {/* 소셜 로그인 버튼 */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-3">
               <Button
                 type="button"
                 variant="outline"
@@ -218,7 +212,7 @@ export default function LoginPage() {
                 ) : (
                   <>
                     <GoogleIcon />
-                    <span className="ml-2">Google</span>
+                    <span className="ml-2">Google로 계속하기</span>
                   </>
                 )}
               </Button>
@@ -233,8 +227,28 @@ export default function LoginPage() {
                   <div className="animate-spin h-5 w-5 border-2 border-muted border-t-primary rounded-full" />
                 ) : (
                   <>
-                    <NaverIcon />
-                    <span className="ml-2">Naver</span>
+                    <svg className="w-5 h-5" viewBox="0 0 24 24">
+                      <path fill="#03C75A" d="M16.273 12.845L7.376 0H0v24h7.727V11.155L16.624 24H24V0h-7.727z"/>
+                    </svg>
+                    <span className="ml-2">Naver로 계속하기</span>
+                  </>
+                )}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => handleSocialLogin("kakao")}
+                disabled={socialLoading !== null}
+                className="w-full"
+              >
+                {socialLoading === "kakao" ? (
+                  <div className="animate-spin h-5 w-5 border-2 border-muted border-t-primary rounded-full" />
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" viewBox="0 0 24 24">
+                      <path fill="#FEE500" d="M12 3c5.799 0 10.5 3.664 10.5 8.185 0 4.52-4.701 8.184-10.5 8.184a13.5 13.5 0 0 1-1.727-.11l-4.408 2.883c-.501.265-.678.236-.472-.413l.892-3.678c-2.88-1.46-4.785-3.99-4.785-6.866C1.5 6.665 6.201 3 12 3z"/>
+                    </svg>
+                    <span className="ml-2">Kakao로 계속하기</span>
                   </>
                 )}
               </Button>

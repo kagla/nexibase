@@ -1,13 +1,11 @@
 import NextAuth, { NextAuthOptions } from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
 import NaverProvider from "next-auth/providers/naver"
+import KakaoProvider from "next-auth/providers/kakao"
 import CredentialsProvider from "next-auth/providers/credentials"
 import { prisma } from "@/lib/prisma"
 import { CustomPrismaAdapter } from "@/lib/auth-adapter"
 import bcrypt from "bcryptjs"
-
-// 세션 만료 시간 (24시간)
-const SESSION_MAX_AGE = 24 * 60 * 60
 
 export const authOptions: NextAuthOptions = {
   adapter: CustomPrismaAdapter(),
@@ -75,6 +73,13 @@ export const authOptions: NextAuthOptions = {
       clientSecret: process.env.NAVER_CLIENT_SECRET!,
       allowDangerousEmailAccountLinking: true,
     }),
+
+    // Kakao 로그인
+    KakaoProvider({
+      clientId: process.env.KAKAO_CLIENT_ID!,
+      clientSecret: process.env.KAKAO_CLIENT_SECRET!,
+      allowDangerousEmailAccountLinking: true,
+    }),
   ],
 
   callbacks: {
@@ -140,19 +145,26 @@ export const authOptions: NextAuthOptions = {
     },
 
     async jwt({ token, user, account }) {
-      // 최초 로그인 시 user 정보가 전달됨
       if (user) {
         token.id = user.id
-        token.email = user.email
-        token.name = user.name
-        token.image = user.image
-        token.provider = account?.provider || "credentials"
       }
+
+      // 소셜 로그인 시 DB에서 사용자 ID 조회
+      if (account && account.provider !== "credentials" && token.email) {
+        const dbUser = await prisma.user.findUnique({
+          where: { email: token.email as string },
+          select: { id: true }
+        })
+        if (dbUser) {
+          token.id = String(dbUser.id)
+        }
+      }
+
       return token
     },
 
     async session({ session, token }) {
-      if (session.user && token) {
+      if (session.user && token.id) {
         session.user.id = token.id as string
 
         // DB에서 추가 정보 가져오기
@@ -184,7 +196,7 @@ export const authOptions: NextAuthOptions = {
 
   session: {
     strategy: "jwt",
-    maxAge: SESSION_MAX_AGE,
+    maxAge: 24 * 60 * 60, // 24시간
   },
 
   cookies: {
@@ -195,7 +207,7 @@ export const authOptions: NextAuthOptions = {
         sameSite: "lax",
         path: "/",
         secure: process.env.NODE_ENV === "production",
-        // maxAge 없음 = 세션 쿠키 (브라우저 닫으면 삭제)
+        // maxAge 생략 - 프록시에서 세션 쿠키로 변환
       },
     },
   },

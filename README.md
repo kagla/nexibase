@@ -28,7 +28,8 @@
 ### 회원
 - 회원가입/로그인
 - 이메일 인증 (준비 중)
-- 소셜 로그인 (준비 중)
+- 소셜 로그인 (Google, Naver, Kakao)
+- 브라우저 세션 로그인 (브라우저 종료 시 자동 로그아웃)
 - 배송지 관리
 
 ### 관리자
@@ -48,6 +49,7 @@
 | Frontend | Next.js 16, React 19, Tailwind CSS 4 |
 | Backend | Next.js API Routes |
 | Database | MySQL + Prisma ORM |
+| Auth | NextAuth.js (JWT + 브라우저 세션) |
 | Editor | Tiptap |
 | Image | Sharp |
 | Payment | KG이니시스 |
@@ -106,6 +108,18 @@ SMTP_PASS=your-app-password
 
 # 앱 URL
 NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# NextAuth 설정
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your-secret-key
+
+# 소셜 로그인 (선택사항)
+GOOGLE_CLIENT_ID=xxx
+GOOGLE_CLIENT_SECRET=xxx
+NAVER_CLIENT_ID=xxx
+NAVER_CLIENT_SECRET=xxx
+KAKAO_CLIENT_ID=xxx
+KAKAO_CLIENT_SECRET=xxx
 ```
 
 ### 4. 데이터베이스 설정
@@ -159,6 +173,29 @@ http://localhost:3000 에서 확인
 2. 쇼핑몰 기본 정보 입력
 3. PG 설정 (이니시스 MID, SignKey 등)
 4. 배송비 설정
+
+### 소셜 로그인 설정 (선택사항)
+
+#### Google
+1. [Google Cloud Console](https://console.cloud.google.com/) 접속
+2. 프로젝트 생성 → API 및 서비스 → 사용자 인증 정보
+3. OAuth 2.0 클라이언트 ID 생성
+4. 승인된 리디렉션 URI: `http://localhost:3000/api/auth/callback/google`
+5. `.env`에 `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` 설정
+
+#### Naver
+1. [Naver Developers](https://developers.naver.com/) 접속
+2. 애플리케이션 등록 → 네이버 로그인 선택
+3. 서비스 URL: `http://localhost:3000`
+4. Callback URL: `http://localhost:3000/api/auth/callback/naver`
+5. `.env`에 `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET` 설정
+
+#### Kakao
+1. [Kakao Developers](https://developers.kakao.com/) 접속
+2. 애플리케이션 추가 → 카카오 로그인 활성화
+3. Redirect URI: `http://localhost:3000/api/auth/callback/kakao`
+4. 동의항목에서 이메일 필수 설정
+5. `.env`에 `KAKAO_CLIENT_ID` (REST API 키), `KAKAO_CLIENT_SECRET` 설정
 
 ---
 
