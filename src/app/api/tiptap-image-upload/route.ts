@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { mkdir } from 'fs/promises'
 import { existsSync } from 'fs'
 import path from 'path'
-import { prisma } from '@/lib/prisma'
 import sharp from 'sharp'
+import { getAuthUser } from '@/lib/auth'
 
 // 허용 이미지 타입
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
@@ -13,28 +13,11 @@ const THUMB_WIDTH = 200 // 썸네일 너비
 const QUALITY = 80 // 압축 품질
 const THUMB_QUALITY = 70 // 썸네일 압축 품질
 
-// 사용자 확인
-async function getUser(request: NextRequest): Promise<{ userId: number | null }> {
-  const sessionToken = request.cookies.get('session-token')?.value
-  if (!sessionToken) return { userId: null }
-
-  const session = await prisma.session.findUnique({
-    where: { sessionToken },
-    include: { user: { select: { id: true } } }
-  })
-
-  if (!session || new Date() > session.expires) {
-    return { userId: null }
-  }
-
-  return { userId: session.user.id }
-}
-
 export async function POST(request: NextRequest) {
   try {
     // 로그인 확인
-    const { userId } = await getUser(request)
-    if (!userId) {
+    const user = await getAuthUser()
+    if (!user) {
       return NextResponse.json(
         { error: '로그인이 필요합니다.' },
         { status: 401 }

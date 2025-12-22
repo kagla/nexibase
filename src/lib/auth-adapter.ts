@@ -152,84 +152,28 @@ export function CustomPrismaAdapter(): Adapter {
       })
     },
 
-    // 세션 생성
-    async createSession({ sessionToken, userId, expires }: { sessionToken: string; userId: string; expires: Date }) {
-      const session = await prisma.session.create({
-        data: {
-          sessionToken,
-          userId: parseInt(userId),
-          expires,
-        },
-      })
-
-      return {
-        sessionToken: session.sessionToken,
-        userId: String(session.userId),
-        expires: session.expires,
-      }
+    // JWT 전략 사용으로 세션 관련 함수는 사용하지 않음
+    // 하지만 Adapter 인터페이스 호환성을 위해 빈 구현 유지
+    async createSession() {
+      return { sessionToken: "", userId: "", expires: new Date() }
     },
 
-    // 세션 조회 (토큰으로)
-    async getSessionAndUser(sessionToken: string) {
-      const session = await prisma.session.findUnique({
-        where: { sessionToken },
-        include: { user: true },
-      })
-
-      if (!session) return null
-
-      // 탈퇴한 사용자는 세션 무효화
-      if (session.user.status === 'withdrawn') {
-        await prisma.session.delete({ where: { sessionToken } })
-        return null
-      }
-
-      return {
-        session: {
-          sessionToken: session.sessionToken,
-          userId: String(session.userId),
-          expires: session.expires,
-        },
-        user: {
-          id: String(session.user.id),
-          email: session.user.email,
-          emailVerified: session.user.emailVerified,
-          name: session.user.nickname,
-          image: session.user.image,
-        },
-      }
+    async getSessionAndUser() {
+      return null
     },
 
-    // 세션 업데이트
-    async updateSession({ sessionToken, expires }: { sessionToken: string; expires?: Date }) {
-      const session = await prisma.session.update({
-        where: { sessionToken },
-        data: { expires },
-      })
-
-      return {
-        sessionToken: session.sessionToken,
-        userId: String(session.userId),
-        expires: session.expires,
-      }
+    async updateSession() {
+      return { sessionToken: "", userId: "", expires: new Date() }
     },
 
-    // 세션 삭제
-    async deleteSession(sessionToken: string): Promise<void> {
-      await prisma.session.delete({
-        where: { sessionToken },
-      }).catch(() => {
-        // 세션이 이미 삭제된 경우 무시
-      })
-    },
+    async deleteSession() {},
 
-    // 이메일 인증 토큰 생성 (사용 안함)
+    // 이메일 인증 토큰 (사용 안함)
     async createVerificationToken(token: { identifier: string; token: string; expires: Date }) {
       return token
     },
 
-    // 이메일 인증 토큰 사용 (사용 안함)
-    async useVerificationToken({ identifier, token }: { identifier: string; token: string }) {
+    async useVerificationToken() {
       return null
     },
   }

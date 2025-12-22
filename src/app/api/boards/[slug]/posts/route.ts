@@ -1,30 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-
-// 사용자 인증 정보 확인 헬퍼
-async function getUserAuth(request: NextRequest): Promise<{ userId: number | null; isLoggedIn: boolean; isAdmin: boolean }> {
-  const sessionToken = request.cookies.get('session-token')?.value
-  if (!sessionToken) return { userId: null, isLoggedIn: false, isAdmin: false }
-
-  const session = await prisma.session.findUnique({
-    where: { sessionToken },
-    include: {
-      user: {
-        select: { id: true, role: true }
-      }
-    }
-  })
-
-  if (!session || new Date() > session.expires) {
-    return { userId: null, isLoggedIn: false, isAdmin: false }
-  }
-
-  return {
-    userId: session.user.id,
-    isLoggedIn: true,
-    isAdmin: session.user.role === 'admin'
-  }
-}
+import { getAuthUser } from '@/lib/auth'
 
 // 게시글 목록 조회
 export async function GET(
@@ -57,8 +33,8 @@ export async function GET(
     }
 
     // 권한 확인
-    const { isLoggedIn } = await getUserAuth(request)
-    if (board.listMemberOnly && !isLoggedIn) {
+    const user = await getAuthUser()
+    if (board.listMemberOnly && !user) {
       return NextResponse.json(
         { error: '목록을 볼 권한이 없습니다. 로그인이 필요합니다.', requireLogin: true },
         { status: 403 }
@@ -181,10 +157,10 @@ export async function POST(
     }
 
     // 로그인 및 권한 확인
-    const { userId, isLoggedIn, isAdmin } = await getUserAuth(request)
+    const user = await getAuthUser()
 
     // 회원전용 게시판에서 비로그인 시
-    if (board.writeMemberOnly && !isLoggedIn) {
+    if (board.writeMemberOnly && !user) {
       return NextResponse.json(
         { error: '로그인이 필요합니다.' },
         { status: 401 }
@@ -192,7 +168,7 @@ export async function POST(
     }
 
     // 비회원 게시판이더라도 글 작성 시에는 로그인 필요
-    if (!userId) {
+    if (!user) {
       return NextResponse.json(
         { error: '로그인이 필요합니다.' },
         { status: 401 }
@@ -223,10 +199,10 @@ export async function POST(
     const post = await prisma.post.create({
       data: {
         boardId: board.id,
-        authorId: userId,
+        authorId: user.id,
         title: title.trim(),
         content: content.trim(),
-        isNotice: isNotice && isAdmin, // 관리자만 공지 가능
+        isNotice: isNotice && user.role === 'admin', // 관리자만 공지 가능
         isSecret: isSecret && board.useSecret,
         ip
       },

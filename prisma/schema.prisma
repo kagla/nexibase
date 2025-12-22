@@ -38,7 +38,6 @@ model User {
 
   // 관계
   accounts      Account[]
-  sessions      Session[]
   posts         Post[]
   comments      Comment[]
   reactions     Reaction[]
@@ -78,25 +77,6 @@ model Account {
   @@unique([provider, providerAccountId])
   @@index([userId])
   @@map("accounts")
-}
-
-// 세션 테이블 (NextAuth 호환)
-model Session {
-  id           Int      @id @default(autoincrement())
-  sessionToken String   @unique @db.VarChar(255)
-  userId       Int
-  expires      DateTime
-  createdAt    DateTime @default(now())
-
-  // 추가 정보
-  userAgent    String?  @db.VarChar(500)  // 브라우저/기기 정보
-  ipAddress    String?  @db.VarChar(50)   // 접속 IP
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([expires])
-  @@map("sessions")
 }
 
 // ============================================

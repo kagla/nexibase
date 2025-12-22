@@ -1,35 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-
-// 관리자 권한 체크
-async function checkAdmin(request: NextRequest) {
-  const sessionToken = request.cookies.get('session-token')?.value
-  if (!sessionToken) return null
-
-  const session = await prisma.session.findUnique({
-    where: { sessionToken },
-    include: { user: true }
-  })
-
-  if (!session || session.expires < new Date()) return null
-  if (session.user.role !== 'admin') return null
-
-  return session.user
-}
+import { getAdminUser } from '@/lib/auth'
 
 // 카테고리 목록 조회
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const admin = await checkAdmin(request)
+    const admin = await getAdminUser()
     if (!admin) {
       return NextResponse.json({ error: '권한이 없습니다.' }, { status: 401 })
     }
 
-    const { searchParams } = new URL(request.url)
-    const includeInactive = searchParams.get('includeInactive') === 'true'
-
     const categories = await prisma.productCategory.findMany({
-      where: includeInactive ? {} : { isActive: true },
       include: {
         _count: {
           select: { products: true }
@@ -54,7 +35,7 @@ export async function GET(request: NextRequest) {
 // 카테고리 생성
 export async function POST(request: NextRequest) {
   try {
-    const admin = await checkAdmin(request)
+    const admin = await getAdminUser()
     if (!admin) {
       return NextResponse.json({ error: '권한이 없습니다.' }, { status: 401 })
     }
@@ -94,7 +75,7 @@ export async function POST(request: NextRequest) {
 // 카테고리 수정
 export async function PUT(request: NextRequest) {
   try {
-    const admin = await checkAdmin(request)
+    const admin = await getAdminUser()
     if (!admin) {
       return NextResponse.json({ error: '권한이 없습니다.' }, { status: 401 })
     }
@@ -137,7 +118,7 @@ export async function PUT(request: NextRequest) {
 // 카테고리 삭제
 export async function DELETE(request: NextRequest) {
   try {
-    const admin = await checkAdmin(request)
+    const admin = await getAdminUser()
     if (!admin) {
       return NextResponse.json({ error: '권한이 없습니다.' }, { status: 401 })
     }

@@ -200,8 +200,6 @@ export async function DELETE(
 
       // 관련 데이터 삭제 후 사용자 삭제
       await prisma.$transaction(async (tx) => {
-        // 세션 삭제
-        await tx.session.deleteMany({ where: { userId } })
         // 소셜 계정 연결 삭제
         await tx.account.deleteMany({ where: { userId } })
         // 알림 삭제

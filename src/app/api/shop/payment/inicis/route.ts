@@ -1,20 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import crypto from 'crypto'
-
-// 세션에서 사용자 정보 가져오기
-async function getUser(request: NextRequest) {
-  const sessionToken = request.cookies.get('session-token')?.value
-  if (!sessionToken) return null
-
-  const session = await prisma.session.findUnique({
-    where: { sessionToken },
-    include: { user: true }
-  })
-
-  if (!session || session.expires < new Date()) return null
-  return session.user
-}
+import { getAuthUser } from '@/lib/auth'
 
 // 쇼핑몰 설정 가져오기
 async function getShopSettings() {
@@ -61,7 +48,7 @@ function sha256(str: string) {
 // 결제 준비 (결제 데이터 생성)
 export async function POST(request: NextRequest) {
   try {
-    const user = await getUser(request)
+    const user = await getAuthUser()
     if (!user) {
       return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
     }

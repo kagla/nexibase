@@ -1,26 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-
-// 관리자 권한 체크
-async function checkAdmin(request: NextRequest) {
-  const sessionToken = request.cookies.get('session-token')?.value
-  if (!sessionToken) return null
-
-  const session = await prisma.session.findUnique({
-    where: { sessionToken },
-    include: { user: true }
-  })
-
-  if (!session || session.expires < new Date()) return null
-  if (session.user.role !== 'admin') return null
-
-  return session.user
-}
+import { getAdminUser } from '@/lib/auth'
 
 // 상품 목록 조회
 export async function GET(request: NextRequest) {
   try {
-    const admin = await checkAdmin(request)
+    const admin = await getAdminUser()
     if (!admin) {
       return NextResponse.json({ error: '권한이 없습니다.' }, { status: 401 })
     }
@@ -111,7 +96,7 @@ export async function GET(request: NextRequest) {
 // 상품 생성
 export async function POST(request: NextRequest) {
   try {
-    const admin = await checkAdmin(request)
+    const admin = await getAdminUser()
     if (!admin) {
       return NextResponse.json({ error: '권한이 없습니다.' }, { status: 401 })
     }
@@ -172,7 +157,7 @@ export async function POST(request: NextRequest) {
 // 상품 일괄 삭제
 export async function DELETE(request: NextRequest) {
   try {
-    const admin = await checkAdmin(request)
+    const admin = await getAdminUser()
     if (!admin) {
       return NextResponse.json({ error: '권한이 없습니다.' }, { status: 401 })
     }

@@ -1,30 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getAuthUser } from '@/lib/auth'
 
 // 허용된 리액션 타입 (긍정적인 것만)
 const REACTION_TYPES = ['like', 'haha', 'agree', 'thanks', 'wow'] as const
 type ReactionType = typeof REACTION_TYPES[number]
-
-// 사용자 정보 확인 헬퍼
-async function getUser(request: NextRequest): Promise<{ userId: number | null }> {
-  const sessionToken = request.cookies.get('session-token')?.value
-  if (!sessionToken) return { userId: null }
-
-  const session = await prisma.session.findUnique({
-    where: { sessionToken },
-    include: {
-      user: {
-        select: { id: true }
-      }
-    }
-  })
-
-  if (!session || new Date() > session.expires) {
-    return { userId: null }
-  }
-
-  return { userId: session.user.id }
-}
 
 // 댓글 리액션 조회 (GET)
 export async function GET(
@@ -36,7 +16,7 @@ export async function GET(
     const commentId = parseInt(commentIdParam)
 
     // 사용자 확인
-    const { userId } = await getUser(request)
+    const user = await getAuthUser()
 
     // 리액션 집계
     const reactions = await prisma.reaction.groupBy({
@@ -47,9 +27,9 @@ export async function GET(
 
     // 사용자의 리액션 조회
     let userReactions: string[] = []
-    if (userId) {
+    if (user) {
       const userReactionRecords = await prisma.reaction.findMany({
-        where: { commentId, userId },
+        where: { commentId, userId: user.id },
         select: { type: true }
       })
       userReactions = userReactionRecords.map(r => r.type)
@@ -97,8 +77,8 @@ export async function POST(
     }
 
     // 로그인 확인
-    const { userId } = await getUser(request)
-    if (!userId) {
+    const user = await getAuthUser()
+    if (!user) {
       return NextResponse.json(
         { error: '로그인이 필요합니다.' },
         { status: 401 }
@@ -140,7 +120,7 @@ export async function POST(
     // 기존 반응 확인 (같은 타입)
     const existingReaction = await prisma.reaction.findFirst({
       where: {
-        userId,
+        userId: user.id,
         commentId,
         type
       }
@@ -166,7 +146,7 @@ export async function POST(
       await prisma.reaction.create({
         data: {
           type,
-          userId,
+          userId: user.id,
           commentId
         }
       })
@@ -190,7 +170,7 @@ export async function POST(
     })
 
     const userReactionRecords = await prisma.reaction.findMany({
-      where: { commentId, userId },
+      where: { commentId, userId: user.id },
       select: { type: true }
     })
 

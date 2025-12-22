@@ -1,32 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-
-// 관리자 확인 헬퍼
-async function isAdmin(request: NextRequest): Promise<boolean> {
-  const sessionToken = request.cookies.get('session-token')?.value
-  if (!sessionToken) return false
-
-  const session = await prisma.session.findUnique({
-    where: { sessionToken },
-    include: {
-      user: {
-        select: { role: true }
-      }
-    }
-  })
-
-  if (!session || new Date() > session.expires) {
-    return false
-  }
-
-  return session.user.role === 'admin'
-}
+import { getAdminUser } from '@/lib/auth'
 
 // 리액션 수 동기화 (POST)
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     // 관리자 확인
-    if (!await isAdmin(request)) {
+    const admin = await getAdminUser()
+    if (!admin) {
       return NextResponse.json(
         { error: '권한이 없습니다.' },
         { status: 403 }

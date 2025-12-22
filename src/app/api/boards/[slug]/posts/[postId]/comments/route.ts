@@ -1,30 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-
-// 사용자 인증 정보 확인 헬퍼
-async function getUserAuth(request: NextRequest): Promise<{ userId: number | null; isLoggedIn: boolean; isAdmin: boolean }> {
-  const sessionToken = request.cookies.get('session-token')?.value
-  if (!sessionToken) return { userId: null, isLoggedIn: false, isAdmin: false }
-
-  const session = await prisma.session.findUnique({
-    where: { sessionToken },
-    include: {
-      user: {
-        select: { id: true, role: true }
-      }
-    }
-  })
-
-  if (!session || new Date() > session.expires) {
-    return { userId: null, isLoggedIn: false, isAdmin: false }
-  }
-
-  return {
-    userId: session.user.id,
-    isLoggedIn: true,
-    isAdmin: session.user.role === 'admin'
-  }
-}
+import { getAuthUser } from '@/lib/auth'
 
 // 댓글 작성
 export async function POST(
@@ -38,8 +14,8 @@ export async function POST(
     const { content, parentId } = body
 
     // 로그인 확인
-    const { userId, isLoggedIn } = await getUserAuth(request)
-    if (!isLoggedIn) {
+    const user = await getAuthUser()
+    if (!user) {
       return NextResponse.json(
         { error: '로그인이 필요합니다.' },
         { status: 401 }
@@ -59,7 +35,7 @@ export async function POST(
     }
 
     // 댓글 권한 확인
-    if (board.commentMemberOnly && !isLoggedIn) {
+    if (board.commentMemberOnly && !user) {
       return NextResponse.json(
         { error: '댓글을 쓸 권한이 없습니다. 로그인이 필요합니다.', requireLogin: true },
         { status: 403 }
@@ -112,7 +88,7 @@ export async function POST(
     const comment = await prisma.comment.create({
       data: {
         content: content.trim(),
-        authorId: userId!,
+        authorId: user.id,
         postId,
         parentId: parentId ? parseInt(parentId) : null
       },
