@@ -3,11 +3,17 @@ import GoogleProvider from "next-auth/providers/google"
 import NaverProvider from "next-auth/providers/naver"
 import CredentialsProvider from "next-auth/providers/credentials"
 import { prisma } from "@/lib/prisma"
+import { CustomPrismaAdapter } from "@/lib/auth-adapter"
 import bcrypt from "bcryptjs"
 
+// 세션 만료 시간 (24시간)
+const SESSION_MAX_AGE = 24 * 60 * 60
+
 export const authOptions: NextAuthOptions = {
+  adapter: CustomPrismaAdapter(),
+
   providers: [
-    // 기존 이메일/비밀번호 로그인
+    // 이메일/비밀번호 로그인
     CredentialsProvider({
       name: "credentials",
       credentials: {
@@ -27,11 +33,25 @@ export const authOptions: NextAuthOptions = {
           throw new Error("등록되지 않은 이메일입니다.")
         }
 
+        if (user.status === 'withdrawn') {
+          throw new Error("탈퇴한 계정입니다.")
+        }
+
+        if (user.status === 'banned') {
+          throw new Error("정지된 계정입니다.")
+        }
+
         const isPasswordValid = await bcrypt.compare(credentials.password, user.password)
 
         if (!isPasswordValid) {
           throw new Error("비밀번호가 올바르지 않습니다.")
         }
+
+        // 마지막 로그인 시간 업데이트
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { lastLoginAt: new Date() }
+        })
 
         return {
           id: String(user.id),
@@ -46,12 +66,14 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      allowDangerousEmailAccountLinking: true,
     }),
 
     // Naver 로그인
     NaverProvider({
       clientId: process.env.NAVER_CLIENT_ID!,
       clientSecret: process.env.NAVER_CLIENT_SECRET!,
+      allowDangerousEmailAccountLinking: true,
     }),
   ],
 
@@ -67,62 +89,42 @@ export const authOptions: NextAuthOptions = {
             return false
           }
 
-          // 1. 먼저 providerAccountId로 탈퇴한 계정인지 확인
-          const withdrawnUser = await prisma.user.findFirst({
+          // providerAccountId로 탈퇴한 계정인지 확인
+          const existingAccount = await prisma.account.findUnique({
             where: {
-              provider: account?.provider,
-              providerId: account?.providerAccountId,
-              status: 'withdrawn'
-            }
+              provider_providerAccountId: {
+                provider: account!.provider,
+                providerAccountId: account!.providerAccountId,
+              }
+            },
+            include: { user: true }
           })
 
-          if (withdrawnUser) {
-            // 탈퇴한 계정으로 다시 로그인 시도
-            console.log("탈퇴한 계정으로 로그인 시도:", account?.providerAccountId)
+          if (existingAccount?.user.status === 'withdrawn') {
             return "/login?error=WithdrawnAccount"
           }
 
-          // 2. 기존 사용자 확인 (이메일로)
-          let existingUser = await prisma.user.findUnique({
+          // 이메일로 기존 사용자 확인
+          const existingUser = await prisma.user.findUnique({
             where: { email }
           })
 
           if (existingUser) {
-            // 기존 사용자가 탈퇴 상태인지 확인
             if (existingUser.status === 'withdrawn') {
               return "/login?error=WithdrawnAccount"
             }
+            if (existingUser.status === 'banned') {
+              return "/login?error=AccessDenied"
+            }
 
-            // 기존 사용자가 있으면 소셜 연동 정보 업데이트
+            // provider 정보 업데이트
             await prisma.user.update({
               where: { email },
               data: {
-                provider: account?.provider,
-                providerId: account?.providerAccountId,
+                provider: account!.provider,
+                providerId: account!.providerAccountId,
                 image: user.image || existingUser.image,
-              }
-            })
-          } else {
-            // 새 사용자 생성
-            const nickname = user.name || `user_${Date.now()}`
-
-            // 닉네임 중복 확인
-            let finalNickname = nickname
-            let counter = 1
-            while (await prisma.user.findFirst({ where: { nickname: finalNickname } })) {
-              finalNickname = `${nickname}_${counter}`
-              counter++
-            }
-
-            existingUser = await prisma.user.create({
-              data: {
-                email,
-                nickname: finalNickname,
-                provider: account?.provider,
-                providerId: account?.providerAccountId,
-                image: user.image,
-                emailVerified: new Date(), // 소셜 로그인은 이메일 인증 완료로 처리
-                level: 1,
+                lastLoginAt: new Date(),
               }
             })
           }
@@ -138,31 +140,38 @@ export const authOptions: NextAuthOptions = {
     },
 
     async jwt({ token, user, account }) {
+      // 최초 로그인 시 user 정보가 전달됨
       if (user) {
         token.id = user.id
+        token.email = user.email
+        token.name = user.name
+        token.image = user.image
+        token.provider = account?.provider || "credentials"
       }
-
-      // 소셜 로그인 후 DB에서 사용자 정보 가져오기
-      if (account?.provider !== "credentials" && token.email) {
-        const dbUser = await prisma.user.findUnique({
-          where: { email: token.email }
-        })
-        if (dbUser) {
-          token.id = String(dbUser.id)
-          token.name = dbUser.nickname
-          token.level = dbUser.level
-          token.role = dbUser.role
-        }
-      }
-
       return token
     },
 
     async session({ session, token }) {
-      if (session.user) {
+      if (session.user && token) {
         session.user.id = token.id as string
-        session.user.level = token.level as number
-        session.user.role = token.role as string
+
+        // DB에서 추가 정보 가져오기
+        const dbUser = await prisma.user.findUnique({
+          where: { id: parseInt(token.id as string) },
+          select: { level: true, role: true, nickname: true, image: true, status: true }
+        })
+
+        if (dbUser) {
+          // 탈퇴/정지된 사용자는 세션 무효화
+          if (dbUser.status === 'withdrawn' || dbUser.status === 'banned') {
+            return { ...session, user: undefined }
+          }
+
+          session.user.level = dbUser.level
+          session.user.role = dbUser.role
+          session.user.name = dbUser.nickname
+          session.user.image = dbUser.image
+        }
       }
       return session
     },
@@ -175,7 +184,20 @@ export const authOptions: NextAuthOptions = {
 
   session: {
     strategy: "jwt",
-    maxAge: 24 * 60 * 60, // 24시간
+    maxAge: SESSION_MAX_AGE,
+  },
+
+  cookies: {
+    sessionToken: {
+      name: "next-auth.session-token",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+        // maxAge 없음 = 세션 쿠키 (브라우저 닫으면 삭제)
+      },
+    },
   },
 
   secret: process.env.NEXTAUTH_SECRET,

@@ -6,7 +6,7 @@ async function isAdmin(request: NextRequest): Promise<boolean> {
   const sessionToken = request.cookies.get('session-token')?.value
   if (!sessionToken) return false
 
-  const session = await prisma.userSession.findUnique({
+  const session = await prisma.session.findUnique({
     where: { sessionToken },
     include: {
       user: {

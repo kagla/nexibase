@@ -7,7 +7,7 @@ async function getUser(request: NextRequest) {
   const sessionToken = request.cookies.get('session-token')?.value
   if (!sessionToken) return null
 
-  const session = await prisma.userSession.findUnique({
+  const session = await prisma.session.findUnique({
     where: { sessionToken },
     include: { user: true }
   })

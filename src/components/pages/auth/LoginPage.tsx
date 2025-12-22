@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
+import { markJustLoggedIn } from "@/components/providers/SessionGuard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -68,6 +69,9 @@ export default function LoginPage() {
       });
 
       if (result?.ok) {
+        // 브라우저 세션 표시
+        markJustLoggedIn();
+
         // 브라우저 비밀번호 관리자에 자격 증명 저장 요청
         if (window.PasswordCredential && navigator.credentials) {
           try {
@@ -99,6 +103,8 @@ export default function LoginPage() {
   const handleSocialLogin = async (provider: string) => {
     setSocialLoading(provider);
     try {
+      // 브라우저 세션 표시 (소셜 로그인은 리다이렉트되므로 미리 설정)
+      markJustLoggedIn();
       await signIn(provider, { callbackUrl: "/" });
     } catch (error) {
       console.error(`${provider} 로그인 에러:`, error);
