@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Nexibase",
-  description: "Nexibase - Community Platform",
+  title: "NexiBase",
+  description: "NexiBase - Community Platform",
 };
 
 export default function RootLayout({
