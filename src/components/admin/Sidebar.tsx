@@ -40,22 +40,42 @@ interface UserInfo {
   role: string
 }
 
+// 캐시된 사용자 정보를 가져오는 함수
+const getCachedUser = (): UserInfo | null => {
+  if (typeof window === 'undefined') return null
+  try {
+    const cached = sessionStorage.getItem('admin_user')
+    return cached ? JSON.parse(cached) : null
+  } catch {
+    return null
+  }
+}
+
 export function Sidebar({ activeMenu, onMenuChange }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [shopMenuOpen, setShopMenuOpen] = useState(true)
-  const [user, setUser] = useState<UserInfo | null>(null)
+  const [user, setUser] = useState<UserInfo | null>(getCachedUser)
   const router = useRouter()
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
 
-  // 마운트 시 한 번만 사용자 정보 가져오기
+  // 마운트 시 한 번만 사용자 정보 가져오기 (캐시 우선)
   useEffect(() => {
     setMounted(true)
-    fetch('/api/me')
-      .then(res => res.ok ? res.json() : null)
-      .then(data => data?.user && setUser(data.user))
-      .catch(() => {})
+    // 캐시가 없거나 오래된 경우에만 API 호출
+    const cached = sessionStorage.getItem('admin_user')
+    if (!cached) {
+      fetch('/api/me')
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data?.user) {
+            setUser(data.user)
+            sessionStorage.setItem('admin_user', JSON.stringify(data.user))
+          }
+        })
+        .catch(() => {})
+    }
   }, [])
 
   // 쇼핑몰 관련 경로면 쇼핑몰 메뉴 열기
