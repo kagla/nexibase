@@ -384,15 +384,25 @@ function BoardModal({
 }
 
 // 통계 카드
-function StatCard({ icon: Icon, label, value, color, href }: {
+function StatCard({ icon: Icon, label, value, color, href, scrollTo }: {
   icon: React.ElementType
   label: string
   value: number
   color: string
   href?: string
+  scrollTo?: string
 }) {
+  const handleClick = () => {
+    if (scrollTo) {
+      const element = document.getElementById(scrollTo)
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' })
+      }
+    }
+  }
+
   const content = (
-    <Card className={href ? "cursor-pointer hover:bg-muted/50 transition-colors" : ""}>
+    <Card className={(href || scrollTo) ? "cursor-pointer hover:bg-muted/50 transition-colors" : ""}>
       <CardContent className="p-4">
         <div className="flex items-center space-x-3">
           <div className={`p-2 rounded-lg ${color}`}>
@@ -409,6 +419,9 @@ function StatCard({ icon: Icon, label, value, color, href }: {
 
   if (href) {
     return <a href={href} target="_blank" rel="noopener noreferrer">{content}</a>
+  }
+  if (scrollTo) {
+    return <div onClick={handleClick}>{content}</div>
   }
   return content
 }
@@ -610,14 +623,14 @@ export default function BoardsPage() {
               label="전체 게시판"
               value={stats.totalBoards}
               color="bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400"
-              href="/boards"
+              scrollTo="board-list"
             />
             <StatCard
               icon={Check}
               label="활성 게시판"
               value={stats.activeBoards}
               color="bg-green-500/10 text-green-600 dark:bg-green-500/20 dark:text-green-400"
-              href="/boards"
+              scrollTo="board-list"
             />
             <StatCard
               icon={FileText}
@@ -662,7 +675,7 @@ export default function BoardsPage() {
           </Card>
 
           {/* 게시판 목록 */}
-          <Card>
+          <Card id="board-list">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg">게시판 목록</CardTitle>
             </CardHeader>
