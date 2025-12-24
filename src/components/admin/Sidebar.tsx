@@ -49,17 +49,20 @@ export function Sidebar({ activeMenu, onMenuChange }: SidebarProps) {
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
 
+  // 마운트 시 한 번만 사용자 정보 가져오기
   useEffect(() => {
     setMounted(true)
-    // 쇼핑몰 관련 경로면 쇼핑몰 메뉴 열기
-    if (pathname.startsWith('/admin/shop')) {
-      setShopMenuOpen(true)
-    }
-    // 사용자 정보 가져오기
     fetch('/api/me')
       .then(res => res.ok ? res.json() : null)
       .then(data => data?.user && setUser(data.user))
       .catch(() => {})
+  }, [])
+
+  // 쇼핑몰 관련 경로면 쇼핑몰 메뉴 열기
+  useEffect(() => {
+    if (pathname.startsWith('/admin/shop')) {
+      setShopMenuOpen(true)
+    }
   }, [pathname])
 
   const menuItems = [
