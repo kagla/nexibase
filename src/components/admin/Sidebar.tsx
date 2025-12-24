@@ -250,23 +250,23 @@ export function Sidebar({ activeMenu, onMenuChange }: SidebarProps) {
                       </Button>
                     )
                   })}
+
+                  {/* 사용자 정보 - 쇼핑몰설정 바로 아래 */}
+                  <div className="pt-3 mt-2 border-t border-border">
+                    <div className="flex items-center gap-2 px-2">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                        <User className="h-4 w-4 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{user?.name || '로딩중...'}</p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {user?.role === 'admin' ? '관리자' : user?.role === 'manager' ? '부관리자' : user?.role || ''}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
-            </div>
-
-            {/* 사용자 정보 */}
-            <div className="pt-4 mt-4 border-t border-border">
-              <div className="flex items-center gap-2 px-2">
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                  <User className="h-4 w-4 text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{user?.name || '로딩중...'}</p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {user?.role === 'admin' ? '관리자' : user?.role === 'manager' ? '부관리자' : user?.role || ''}
-                  </p>
-                </div>
-              </div>
             </div>
           </nav>
         </div>
