@@ -25,9 +25,9 @@ export { default as ShopQnaSection } from './shop/QnaSection'
 // Home
 export { default as HomePage } from './HomePage'
 
-// Popular & Recent
+// Popular & Latest
 export { default as PopularPage } from './PopularPage'
-export { default as RecentPage } from './RecentPage'
+export { default as LatestPage } from './LatestPage'
 
 // Boards
 export { default as BoardsPage } from './BoardsPage'

@@ -78,7 +78,7 @@ export default function HomePage() {
           fetch('/api/settings'),
           fetch('/api/boards?limit=6'),
           fetch('/api/stats'),
-          fetch('/api/posts/recent?limit=8')
+          fetch('/api/posts/latest?limit=8')
         ])
 
         if (userRes.ok) {

@@ -1,5 +1,5 @@
 import { Suspense } from "react"
-import { RecentPage } from "@/components/pages"
+import { LatestPage } from "@/components/pages"
 import { Loader2 } from "lucide-react"
 
 function Loading() {
@@ -13,7 +13,7 @@ function Loading() {
 export default function Page() {
   return (
     <Suspense fallback={<Loading />}>
-      <RecentPage />
+      <LatestPage />
     </Suspense>
   )
 }

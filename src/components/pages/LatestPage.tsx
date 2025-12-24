@@ -33,7 +33,7 @@ interface Pagination {
   totalPages: number
 }
 
-export default function RecentPage() {
+export default function LatestPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -48,7 +48,7 @@ export default function RecentPage() {
     const fetchPosts = async () => {
       setIsLoading(true)
       try {
-        const res = await fetch(`/api/posts/recent?page=${currentPage}&limit=20`)
+        const res = await fetch(`/api/posts/latest?page=${currentPage}&limit=20`)
         if (res.ok) {
           const data = await res.json()
           setPosts(data.posts || [])
