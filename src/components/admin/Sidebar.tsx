@@ -43,7 +43,7 @@ interface UserInfo {
 export function Sidebar({ activeMenu, onMenuChange }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
-  const [shopMenuOpen, setShopMenuOpen] = useState(false)
+  const [shopMenuOpen, setShopMenuOpen] = useState(true)
   const [user, setUser] = useState<UserInfo | null>(null)
   const router = useRouter()
   const pathname = usePathname()
