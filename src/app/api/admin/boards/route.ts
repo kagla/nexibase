@@ -74,6 +74,7 @@ export async function POST(request: NextRequest) {
       useSecret,
       postsPerPage,
       sortOrder,
+      displayType,
       isActive
     } = body
 
@@ -124,6 +125,7 @@ export async function POST(request: NextRequest) {
         useSecret: useSecret ?? false,
         postsPerPage: postsPerPage ?? 20,
         sortOrder: sortOrder || 'latest',
+        displayType: displayType || 'list',
         isActive: isActive ?? true
       }
     })

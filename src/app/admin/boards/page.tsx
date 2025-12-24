@@ -44,6 +44,7 @@ interface Board {
   useSecret: boolean
   postsPerPage: number
   sortOrder: string
+  displayType: string
   isActive: boolean
   postCount: number
   createdAt: string
@@ -102,6 +103,7 @@ function BoardModal({
     useSecret: false,
     postsPerPage: 20,
     sortOrder: 'latest',
+    displayType: 'list',
     isActive: true,
   })
   const [loading, setLoading] = useState(false)
@@ -123,6 +125,7 @@ function BoardModal({
         useSecret: board.useSecret ?? false,
         postsPerPage: board.postsPerPage ?? 20,
         sortOrder: board.sortOrder || 'latest',
+        displayType: board.displayType || 'list',
         isActive: board.isActive ?? true,
       })
     } else {
@@ -141,6 +144,7 @@ function BoardModal({
         useSecret: false,
         postsPerPage: 20,
         sortOrder: 'latest',
+        displayType: 'list',
         isActive: true,
       })
     }
@@ -340,25 +344,34 @@ function BoardModal({
 
           <Separator />
 
-          {/* 상태 설정 */}
+          {/* 표시 설정 */}
           <div>
-            <h3 className="text-sm font-medium text-muted-foreground mb-4">상태</h3>
-            <div className="flex items-center space-x-4">
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.isActive}
-                  onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                  className="rounded border-gray-300"
-                />
-                <span className="text-sm">활성화</span>
-              </label>
+            <h3 className="text-sm font-medium text-muted-foreground mb-4">표시 설정</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
+                <Label htmlFor="displayType">표시 형식</Label>
+                <select
+                  id="displayType"
+                  value={formData.displayType}
+                  onChange={(e) => setFormData({ ...formData, displayType: e.target.value })}
+                  className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
+                >
+                  <option value="list">목록형</option>
+                  <option value="gallery">갤러리형</option>
+                </select>
+                <p className="text-xs text-muted-foreground">
+                  {formData.displayType === 'gallery'
+                    ? '첨부파일의 첫 번째 이미지가 썸네일로 표시됩니다'
+                    : '기본 목록 형태로 표시됩니다'}
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="sortOrder">정렬 순서</Label>
                 <select
                   id="sortOrder"
                   value={formData.sortOrder}
                   onChange={(e) => setFormData({ ...formData, sortOrder: e.target.value })}
-                  className="h-10 px-3 rounded-md border border-input bg-background text-sm"
+                  className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
                 >
                   <option value="latest">최신순</option>
                   <option value="popular">인기순</option>
@@ -366,6 +379,22 @@ function BoardModal({
                 </select>
               </div>
             </div>
+          </div>
+
+          <Separator />
+
+          {/* 상태 설정 */}
+          <div>
+            <h3 className="text-sm font-medium text-muted-foreground mb-4">상태</h3>
+            <label className="flex items-center space-x-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.isActive}
+                onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                className="rounded border-gray-300"
+              />
+              <span className="text-sm">활성화</span>
+            </label>
           </div>
 
           <div className="flex justify-end space-x-3 pt-4">

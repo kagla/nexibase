@@ -17,6 +17,7 @@ import {
   Pin,
   PenSquare,
   Home,
+  ImageIcon,
 } from "lucide-react"
 
 interface Board {
@@ -31,6 +32,7 @@ interface Board {
   useComment: boolean
   useReaction: boolean
   postsPerPage: number
+  displayType: string
 }
 
 interface Post {
@@ -43,6 +45,7 @@ interface Post {
   isNotice: boolean
   isSecret: boolean
   createdAt: string
+  thumbnail?: string | null
   author: {
     id: string
     nickname: string | null
@@ -212,7 +215,7 @@ export default function BoardListPage() {
               )}
             </div>
             {canWrite && (
-              <Button onClick={() => router.push(`/boards/${slug}/write`)}>
+              <Button onClick={() => router.push(`/boards/${slug}/create`)}>
                 <PenSquare className="h-4 w-4 mr-2" />
                 글쓰기
               </Button>
@@ -251,7 +254,63 @@ export default function BoardListPage() {
               <div className="py-12 text-center text-muted-foreground">
                 게시글이 없습니다.
               </div>
+            ) : board.displayType === 'gallery' ? (
+              /* 갤러리 뷰 */
+              <div className="p-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {posts.map((post) => (
+                    <div
+                      key={post.id}
+                      onClick={() => handlePostClick(post)}
+                      className="group cursor-pointer"
+                    >
+                      {/* 썸네일 */}
+                      <div className="aspect-square relative rounded-lg overflow-hidden bg-muted mb-2">
+                        {post.thumbnail ? (
+                          <img
+                            src={post.thumbnail}
+                            alt={post.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <ImageIcon className="h-12 w-12 text-muted-foreground/30" />
+                          </div>
+                        )}
+                        {post.isSecret && (
+                          <div className="absolute top-2 left-2">
+                            <Lock className="h-4 w-4 text-yellow-500 drop-shadow-md" />
+                          </div>
+                        )}
+                      </div>
+                      {/* 정보 */}
+                      <div className="space-y-1">
+                        <h3 className="font-medium text-sm truncate group-hover:text-primary transition-colors">
+                          {post.title}
+                          {post.commentCount > 0 && board.useComment && (
+                            <span className="text-primary ml-1">[{post.commentCount}]</span>
+                          )}
+                        </h3>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span className="truncate">{post.author.nickname}</span>
+                          <span className="flex items-center gap-0.5">
+                            <Eye className="h-3 w-3" />
+                            {post.viewCount}
+                          </span>
+                          {board.useReaction && post.likeCount > 0 && (
+                            <span className="flex items-center gap-0.5">
+                              <ThumbsUp className="h-3 w-3" />
+                              {post.likeCount}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             ) : (
+              /* 목록 뷰 */
               <div>
                 {posts.map((post) => (
                   <div
@@ -323,7 +382,7 @@ export default function BoardListPage() {
         {/* 글쓰기 버튼 (하단) */}
         {canWrite && posts.length > 0 && (
           <div className="flex justify-end mt-4">
-            <Button onClick={() => router.push(`/boards/${slug}/write`)}>
+            <Button onClick={() => router.push(`/boards/${slug}/create`)}>
               <PenSquare className="h-4 w-4 mr-2" />
               글쓰기
             </Button>

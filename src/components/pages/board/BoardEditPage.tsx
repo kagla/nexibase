@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -14,6 +14,10 @@ import {
   Loader2,
   ArrowLeft,
   Lock,
+  Paperclip,
+  X,
+  Upload,
+  GripVertical,
 } from "lucide-react"
 
 interface Board {
@@ -21,6 +25,27 @@ interface Board {
   slug: string
   name: string
   useSecret: boolean
+  useFile: boolean
+}
+
+interface ExistingAttachment {
+  id: number
+  filename: string
+  filePath: string
+  fileSize: number
+  mimeType: string
+  downloadCount: number
+}
+
+interface AttachmentFile {
+  id?: number
+  filename: string
+  storedName?: string
+  filePath: string
+  thumbnailPath?: string | null
+  fileSize: number
+  mimeType: string
+  isNew?: boolean
 }
 
 interface Post {
@@ -28,6 +53,25 @@ interface Post {
   title: string
   content: string
   isSecret: boolean
+  attachments?: ExistingAttachment[]
+}
+
+// 파일 크기 포맷
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+// 파일 아이콘 선택
+function getFileIcon(mimeType: string): string {
+  if (mimeType.startsWith('image/')) return '🖼️'
+  if (mimeType.includes('pdf')) return '📕'
+  if (mimeType.includes('word') || mimeType.includes('document')) return '📘'
+  if (mimeType.includes('excel') || mimeType.includes('spreadsheet')) return '📗'
+  if (mimeType.includes('powerpoint') || mimeType.includes('presentation')) return '📙'
+  if (mimeType.includes('zip') || mimeType.includes('rar') || mimeType.includes('7z')) return '📦'
+  return '📄'
 }
 
 export default function BoardEditPage() {
@@ -45,6 +89,16 @@ export default function BoardEditPage() {
   const [content, setContent] = useState("")
   const [isSecret, setIsSecret] = useState(false)
 
+  // 파일 첨부 상태
+  const [attachments, setAttachments] = useState<AttachmentFile[]>([])
+  const [deletedAttachmentIds, setDeletedAttachmentIds] = useState<number[]>([])
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // 드래그 상태
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
+
   useEffect(() => {
     const fetchPost = async () => {
       try {
@@ -61,6 +115,18 @@ export default function BoardEditPage() {
         setTitle(data.post.title)
         setContent(data.post.content)
         setIsSecret(data.post.isSecret)
+
+        // 기존 첨부파일 로드
+        if (data.post.attachments && data.post.attachments.length > 0) {
+          setAttachments(data.post.attachments.map((att: ExistingAttachment) => ({
+            id: att.id,
+            filename: att.filename,
+            filePath: att.filePath,
+            fileSize: att.fileSize,
+            mimeType: att.mimeType,
+            isNew: false
+          })))
+        }
       } catch (error) {
         console.error('게시글 조회 에러:', error)
         setError('게시글을 불러오는 중 오류가 발생했습니다.')
@@ -71,6 +137,91 @@ export default function BoardEditPage() {
 
     fetchPost()
   }, [slug, postId])
+
+  // 파일 업로드 핸들러
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+
+    // 최대 5개까지
+    if (attachments.length + files.length > 5) {
+      alert('첨부파일은 최대 5개까지 가능합니다.')
+      return
+    }
+
+    setUploading(true)
+
+    try {
+      for (const file of Array.from(files)) {
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('boardSlug', slug)
+
+        const response = await fetch('/api/attachments', {
+          method: 'POST',
+          body: formData
+        })
+
+        const data = await response.json()
+
+        if (response.ok && data.file) {
+          setAttachments(prev => [...prev, { ...data.file, isNew: true }])
+        } else {
+          alert(data.error || `${file.name} 업로드에 실패했습니다.`)
+        }
+      }
+    } catch (error) {
+      console.error('파일 업로드 에러:', error)
+      alert('파일 업로드 중 오류가 발생했습니다.')
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }
+
+  // 파일 삭제
+  const handleRemoveFile = (index: number) => {
+    const fileToRemove = attachments[index]
+
+    // 기존 파일이면 삭제 목록에 추가
+    if (fileToRemove.id && !fileToRemove.isNew) {
+      setDeletedAttachmentIds(prev => [...prev, fileToRemove.id!])
+    }
+
+    setAttachments(prev => prev.filter((_, i) => i !== index))
+  }
+
+  // 드래그 시작
+  const handleDragStart = (index: number) => {
+    setDraggedIndex(index)
+  }
+
+  // 드래그 오버
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault()
+    if (draggedIndex !== null && draggedIndex !== index) {
+      setDragOverIndex(index)
+    }
+  }
+
+  // 드래그 종료
+  const handleDragEnd = () => {
+    if (draggedIndex !== null && dragOverIndex !== null && draggedIndex !== dragOverIndex) {
+      const newAttachments = [...attachments]
+      const [draggedItem] = newAttachments.splice(draggedIndex, 1)
+      newAttachments.splice(dragOverIndex, 0, draggedItem)
+      setAttachments(newAttachments)
+    }
+    setDraggedIndex(null)
+    setDragOverIndex(null)
+  }
+
+  // 드래그 이탈
+  const handleDragLeave = () => {
+    setDragOverIndex(null)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -94,7 +245,17 @@ export default function BoardEditPage() {
         body: JSON.stringify({
           title: title.trim(),
           content: content.trim(),
-          isSecret
+          isSecret,
+          attachments: attachments.filter(a => a.isNew).map(a => ({
+            filename: a.filename,
+            storedName: a.storedName,
+            filePath: a.filePath,
+            thumbnailPath: a.thumbnailPath,
+            fileSize: a.fileSize,
+            mimeType: a.mimeType
+          })),
+          deletedAttachmentIds,
+          attachmentOrder: attachments.filter(a => !a.isNew && a.id).map(a => a.id)
         })
       })
 
@@ -196,6 +357,102 @@ export default function BoardEditPage() {
                   placeholder="내용을 입력하세요..."
                 />
               </div>
+
+              {/* 파일 첨부 */}
+              {board.useFile && (
+                <div className="space-y-3">
+                  <Label className="flex items-center gap-2">
+                    <Paperclip className="h-4 w-4" />
+                    파일 첨부
+                    <span className="text-xs text-muted-foreground">(최대 5개, 각 10MB 이하, 드래그로 순서 변경)</span>
+                  </Label>
+
+                  {/* 파일 선택 버튼 */}
+                  <div className="flex items-center gap-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      multiple
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.rtf,.csv,.zip,.rar,.7z,.jpg,.jpeg,.png,.gif,.webp,.bmp,.hwp,.hwpx"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading || attachments.length >= 5}
+                    >
+                      {uploading ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Upload className="h-4 w-4 mr-2" />
+                      )}
+                      파일 선택
+                    </Button>
+                    <span className="text-xs text-muted-foreground">
+                      {attachments.length}/5개
+                    </span>
+                  </div>
+
+                  {/* 첨부된 파일 목록 */}
+                  {attachments.length > 0 && (
+                    <div className="border rounded-lg divide-y">
+                      {attachments.map((file, index) => (
+                        <div
+                          key={file.id || `new-${index}`}
+                          draggable
+                          onDragStart={() => handleDragStart(index)}
+                          onDragOver={(e) => handleDragOver(e, index)}
+                          onDragEnd={handleDragEnd}
+                          onDragLeave={handleDragLeave}
+                          className={`flex items-center justify-between px-3 py-2 cursor-move transition-colors ${
+                            draggedIndex === index ? 'opacity-50 bg-muted' : ''
+                          } ${
+                            dragOverIndex === index ? 'bg-primary/10 border-primary' : 'hover:bg-muted/50'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
+                            {file.mimeType.startsWith('image/') ? (
+                              <div className="w-10 h-10 shrink-0 rounded overflow-hidden bg-muted">
+                                <img
+                                  src={file.filePath}
+                                  alt={file.filename}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            ) : (
+                              <span className="text-lg">{getFileIcon(file.mimeType)}</span>
+                            )}
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium truncate">
+                                {file.filename}
+                                {file.isNew && (
+                                  <span className="ml-2 text-xs text-primary">(새 파일)</span>
+                                )}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {formatFileSize(file.fileSize)}
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveFile(index)}
+                            className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive shrink-0"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {board.useSecret && (
                 <div className="flex items-center gap-2">

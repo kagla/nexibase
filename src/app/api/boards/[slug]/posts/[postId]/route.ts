@@ -11,6 +11,13 @@ export async function GET(
     const { slug, postId: postIdParam } = await params
     const postId = parseInt(postIdParam)
 
+    if (isNaN(postId)) {
+      return NextResponse.json(
+        { error: '잘못된 게시글 ID입니다.' },
+        { status: 400 }
+      )
+    }
+
     // 게시판 정보 조회
     const board = await prisma.board.findUnique({
       where: { slug }
@@ -48,10 +55,13 @@ export async function GET(
             id: true,
             filename: true,
             filePath: true,
+            thumbnailPath: true,
             fileSize: true,
             mimeType: true,
-            downloadCount: true
-          }
+            downloadCount: true,
+            sortOrder: true
+          },
+          orderBy: { sortOrder: 'asc' }
         } : false,
         comments: board.useComment ? {
           where: { status: 'published', parentId: null },
@@ -163,7 +173,8 @@ export async function GET(
         useComment: board.useComment,
         useReaction: board.useReaction,
         useFile: board.useFile,
-        commentMemberOnly: board.commentMemberOnly
+        commentMemberOnly: board.commentMemberOnly,
+        displayType: board.displayType
       },
       post: {
         ...post,
@@ -191,8 +202,16 @@ export async function PUT(
   try {
     const { slug, postId: postIdParam } = await params
     const postId = parseInt(postIdParam)
+
+    if (isNaN(postId)) {
+      return NextResponse.json(
+        { error: '잘못된 게시글 ID입니다.' },
+        { status: 400 }
+      )
+    }
+
     const body = await request.json()
-    const { title, content, isNotice, isSecret } = body
+    const { title, content, isNotice, isSecret, attachments, deletedAttachmentIds, attachmentOrder } = body
 
     // 로그인 확인
     const user = await getAuthUser()
@@ -235,15 +254,63 @@ export async function PUT(
       )
     }
 
-    // 게시글 수정
-    const updatedPost = await prisma.post.update({
-      where: { id: postId },
-      data: {
-        title: title?.trim() || post.title,
-        content: content?.trim() || post.content,
-        isNotice: isNotice !== undefined ? (isNotice && user.role === 'admin') : post.isNotice,
-        isSecret: isSecret !== undefined ? (isSecret && board.useSecret) : post.isSecret
+    // 트랜잭션으로 게시글과 첨부파일 수정
+    const updatedPost = await prisma.$transaction(async (tx) => {
+      // 게시글 수정
+      const updated = await tx.post.update({
+        where: { id: postId },
+        data: {
+          title: title?.trim() || post.title,
+          content: content?.trim() || post.content,
+          isNotice: isNotice !== undefined ? (isNotice && user.role === 'admin') : post.isNotice,
+          isSecret: isSecret !== undefined ? (isSecret && board.useSecret) : post.isSecret
+        }
+      })
+
+      // 첨부파일 처리 (게시판이 파일 사용 설정된 경우만)
+      if (board.useFile) {
+        // 삭제할 첨부파일 삭제
+        if (deletedAttachmentIds && Array.isArray(deletedAttachmentIds) && deletedAttachmentIds.length > 0) {
+          await tx.postAttachment.deleteMany({
+            where: {
+              id: { in: deletedAttachmentIds },
+              postId: postId
+            }
+          })
+        }
+
+        // 새 첨부파일 추가
+        if (attachments && Array.isArray(attachments) && attachments.length > 0) {
+          await tx.postAttachment.createMany({
+            data: attachments.map((file: { filename: string; storedName: string; filePath: string; thumbnailPath?: string | null; fileSize: number; mimeType: string }) => ({
+              postId: postId,
+              filename: file.filename,
+              storedName: file.storedName,
+              filePath: file.filePath,
+              thumbnailPath: file.thumbnailPath || null,
+              fileSize: file.fileSize,
+              mimeType: file.mimeType
+            }))
+          })
+        }
+
+        // 첨부파일 순서 업데이트 (기존 파일들)
+        if (attachmentOrder && Array.isArray(attachmentOrder) && attachmentOrder.length > 0) {
+          for (let i = 0; i < attachmentOrder.length; i++) {
+            await tx.postAttachment.updateMany({
+              where: {
+                id: attachmentOrder[i],
+                postId: postId
+              },
+              data: {
+                sortOrder: i
+              }
+            })
+          }
+        }
       }
+
+      return updated
     })
 
     return NextResponse.json({
@@ -269,6 +336,13 @@ export async function DELETE(
   try {
     const { slug, postId: postIdParam } = await params
     const postId = parseInt(postIdParam)
+
+    if (isNaN(postId)) {
+      return NextResponse.json(
+        { error: '잘못된 게시글 ID입니다.' },
+        { status: 400 }
+      )
+    }
 
     // 로그인 확인
     const user = await getAuthUser()

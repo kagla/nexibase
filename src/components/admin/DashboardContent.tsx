@@ -196,7 +196,7 @@ export function DashboardContent() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>최근 게시글</CardTitle>
-            <Link href="/admin/boards" className="text-sm text-muted-foreground hover:text-primary">
+            <Link href="/latest" className="text-sm text-muted-foreground hover:text-primary">
               전체보기
             </Link>
           </CardHeader>

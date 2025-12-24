@@ -27,6 +27,7 @@ export async function GET(
         useSecret: true,
         postsPerPage: true,
         sortOrder: true,
+        displayType: true,
         isActive: true,
         postCount: true
       }

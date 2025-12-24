@@ -70,6 +70,9 @@ export async function GET(
         orderBy = [{ isNotice: 'desc' }, { createdAt: 'desc' }]
     }
 
+    // 갤러리 형식이면 첨부파일 정보도 함께 조회
+    const includeAttachments = board.displayType === 'gallery'
+
     // 게시글 목록 조회
     const [posts, total] = await Promise.all([
       prisma.post.findMany({
@@ -93,11 +96,40 @@ export async function GET(
               nickname: true,
               image: true
             }
-          }
+          },
+          // 갤러리 형식이면 첫 번째 이미지를 썸네일로 사용
+          ...(includeAttachments && {
+            attachments: {
+              where: {
+                mimeType: { startsWith: 'image/' }
+              },
+              take: 1,
+              orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
+              select: {
+                id: true,
+                filePath: true,
+                thumbnailPath: true,
+                mimeType: true
+              }
+            }
+          })
         }
       }),
       prisma.post.count({ where })
     ])
+
+    // 갤러리 형식일 때 썸네일 정보 추가
+    // thumbnailPath가 있으면 사용, 없으면 원본 filePath 사용
+    const postsWithThumbnail = includeAttachments
+      ? posts.map(post => {
+          const attachment = (post as { attachments?: { filePath: string; thumbnailPath?: string | null }[] }).attachments?.[0]
+          return {
+            ...post,
+            thumbnail: attachment?.thumbnailPath || attachment?.filePath || null,
+            attachments: undefined // 불필요한 배열 제거
+          }
+        })
+      : posts
 
     return NextResponse.json({
       success: true,
@@ -108,9 +140,10 @@ export async function GET(
         description: board.description,
         writeMemberOnly: board.writeMemberOnly,
         useComment: board.useComment,
-        useReaction: board.useReaction
+        useReaction: board.useReaction,
+        displayType: board.displayType
       },
-      posts,
+      posts: postsWithThumbnail,
       pagination: {
         page,
         limit,
@@ -132,6 +165,7 @@ interface AttachmentFile {
   filename: string
   storedName: string
   filePath: string
+  thumbnailPath?: string | null
   fileSize: number
   mimeType: string
 }
@@ -232,6 +266,7 @@ export async function POST(
             filename: file.filename,
             storedName: file.storedName,
             filePath: file.filePath,
+            thumbnailPath: file.thumbnailPath || null,
             fileSize: file.fileSize,
             mimeType: file.mimeType
           }))

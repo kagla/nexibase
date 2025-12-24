@@ -16,8 +16,8 @@ import {
   Lock,
   Paperclip,
   X,
-  FileText,
   Upload,
+  GripVertical,
 } from "lucide-react"
 
 interface Board {
@@ -38,6 +38,7 @@ interface AttachmentFile {
   filename: string
   storedName: string
   filePath: string
+  thumbnailPath?: string | null
   fileSize: number
   mimeType: string
 }
@@ -80,6 +81,10 @@ export default function BoardWritePage() {
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // 드래그 상태
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
+
   // 로그인 체크 - 글쓰기는 회원만 가능
   const checkSession = useCallback(async () => {
     try {
@@ -90,13 +95,13 @@ export default function BoardWritePage() {
       } else {
         // 비로그인 시 로그인 페이지로 이동
         alert('로그인이 필요합니다.')
-        router.push(`/login?callbackUrl=/board/${slug}/write`)
+        router.push(`/login?callbackUrl=/boards/${slug}/create`)
         return
       }
     } catch (err) {
       console.error('세션 체크 에러:', err)
       alert('로그인이 필요합니다.')
-      router.push(`/login?callbackUrl=/board/${slug}/write`)
+      router.push(`/login?callbackUrl=/boards/${slug}/create`)
       return
     } finally {
       setSessionChecked(true)
@@ -150,6 +155,7 @@ export default function BoardWritePage() {
       for (const file of Array.from(files)) {
         const formData = new FormData()
         formData.append('file', file)
+        formData.append('boardSlug', slug)
 
         const response = await fetch('/api/attachments', {
           method: 'POST',
@@ -179,6 +185,36 @@ export default function BoardWritePage() {
   // 파일 삭제
   const handleRemoveFile = (index: number) => {
     setAttachments(prev => prev.filter((_, i) => i !== index))
+  }
+
+  // 드래그 시작
+  const handleDragStart = (index: number) => {
+    setDraggedIndex(index)
+  }
+
+  // 드래그 오버
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault()
+    if (draggedIndex !== null && draggedIndex !== index) {
+      setDragOverIndex(index)
+    }
+  }
+
+  // 드래그 종료
+  const handleDragEnd = () => {
+    if (draggedIndex !== null && dragOverIndex !== null && draggedIndex !== dragOverIndex) {
+      const newAttachments = [...attachments]
+      const [draggedItem] = newAttachments.splice(draggedIndex, 1)
+      newAttachments.splice(dragOverIndex, 0, draggedItem)
+      setAttachments(newAttachments)
+    }
+    setDraggedIndex(null)
+    setDragOverIndex(null)
+  }
+
+  // 드래그 이탈
+  const handleDragLeave = () => {
+    setDragOverIndex(null)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -314,7 +350,7 @@ export default function BoardWritePage() {
                   <Label className="flex items-center gap-2">
                     <Paperclip className="h-4 w-4" />
                     파일 첨부
-                    <span className="text-xs text-muted-foreground">(최대 5개, 각 10MB 이하)</span>
+                    <span className="text-xs text-muted-foreground">(최대 5개, 각 10MB 이하, 드래그로 순서 변경)</span>
                   </Label>
 
                   {/* 파일 선택 버튼 */}
@@ -352,10 +388,30 @@ export default function BoardWritePage() {
                       {attachments.map((file, index) => (
                         <div
                           key={index}
-                          className="flex items-center justify-between px-3 py-2 hover:bg-muted/50"
+                          draggable
+                          onDragStart={() => handleDragStart(index)}
+                          onDragOver={(e) => handleDragOver(e, index)}
+                          onDragEnd={handleDragEnd}
+                          onDragLeave={handleDragLeave}
+                          className={`flex items-center justify-between px-3 py-2 cursor-move transition-colors ${
+                            draggedIndex === index ? 'opacity-50 bg-muted' : ''
+                          } ${
+                            dragOverIndex === index ? 'bg-primary/10 border-primary' : 'hover:bg-muted/50'
+                          }`}
                         >
                           <div className="flex items-center gap-2 min-w-0">
-                            <span className="text-lg">{getFileIcon(file.mimeType)}</span>
+                            <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
+                            {file.mimeType.startsWith('image/') ? (
+                              <div className="w-10 h-10 shrink-0 rounded overflow-hidden bg-muted">
+                                <img
+                                  src={file.filePath}
+                                  alt={file.filename}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            ) : (
+                              <span className="text-lg">{getFileIcon(file.mimeType)}</span>
+                            )}
                             <div className="min-w-0">
                               <p className="text-sm font-medium truncate">{file.filename}</p>
                               <p className="text-xs text-muted-foreground">
@@ -368,7 +424,7 @@ export default function BoardWritePage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleRemoveFile(index)}
-                            className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                            className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive shrink-0"
                           >
                             <X className="h-4 w-4" />
                           </Button>

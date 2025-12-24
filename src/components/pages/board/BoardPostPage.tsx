@@ -24,6 +24,9 @@ import {
   ChevronRight,
   Paperclip,
   Download,
+  X,
+  ZoomIn,
+  ZoomOut,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { CommentReactions } from "@/components/comment/CommentReactions"
@@ -50,12 +53,14 @@ interface Board {
   useReaction: boolean
   useFile: boolean
   commentMemberOnly: boolean
+  displayType: string
 }
 
 interface Attachment {
   id: number
   filename: string
   filePath: string
+  thumbnailPath?: string | null
   fileSize: number
   mimeType: string
   downloadCount: number
@@ -110,6 +115,191 @@ function getFileIcon(mimeType: string): string {
   return '📄'
 }
 
+// 이미지 뷰어 모달 컴포넌트
+interface ImageViewerProps {
+  images: Attachment[]
+  initialIndex: number
+  onClose: () => void
+}
+
+function ImageViewer({ images, initialIndex, onClose }: ImageViewerProps) {
+  const [currentIndex, setCurrentIndex] = useState(initialIndex)
+  const [scale, setScale] = useState(1)
+
+  const currentImage = images[currentIndex]
+
+  // 키보드 이벤트 핸들러
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      switch (e.key) {
+        case 'Escape':
+          onClose()
+          break
+        case 'ArrowLeft':
+          // 처음이면 마지막으로
+          setCurrentIndex(prev => prev === 0 ? images.length - 1 : prev - 1)
+          setScale(1)
+          break
+        case 'ArrowRight':
+          // 마지막이면 처음으로
+          setCurrentIndex(prev => prev === images.length - 1 ? 0 : prev + 1)
+          setScale(1)
+          break
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    document.body.style.overflow = 'hidden'
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = ''
+    }
+  }, [images.length, onClose])
+
+  const handlePrev = () => {
+    // 처음이면 마지막으로
+    setCurrentIndex(prev => prev === 0 ? images.length - 1 : prev - 1)
+    setScale(1)
+  }
+
+  const handleNext = () => {
+    // 마지막이면 처음으로
+    setCurrentIndex(prev => prev === images.length - 1 ? 0 : prev + 1)
+    setScale(1)
+  }
+
+  const handleZoomIn = () => {
+    setScale(prev => Math.min(prev + 0.5, 3))
+  }
+
+  const handleZoomOut = () => {
+    setScale(prev => Math.max(prev - 0.5, 0.5))
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose()
+      }}
+    >
+      {/* 상단 툴바 */}
+      <div className="absolute top-0 left-0 right-0 p-4 flex items-center justify-between bg-gradient-to-b from-black/50 to-transparent z-10">
+        <div className="text-white text-sm">
+          <span className="font-medium">{currentIndex + 1}</span>
+          <span className="text-white/60"> / {images.length}</span>
+          <span className="ml-4 text-white/80 truncate max-w-[200px] md:max-w-[400px] inline-block align-middle">
+            {currentImage.filename}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleZoomOut}
+            disabled={scale <= 0.5}
+            className="text-white hover:bg-white/20"
+          >
+            <ZoomOut className="h-5 w-5" />
+          </Button>
+          <span className="text-white text-sm min-w-[50px] text-center">
+            {Math.round(scale * 100)}%
+          </span>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleZoomIn}
+            disabled={scale >= 3}
+            className="text-white hover:bg-white/20"
+          >
+            <ZoomIn className="h-5 w-5" />
+          </Button>
+          <a
+            href={currentImage.filePath}
+            download={currentImage.filename}
+            className="p-2 text-white hover:bg-white/20 rounded-md transition-colors"
+          >
+            <Download className="h-5 w-5" />
+          </a>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="text-white hover:bg-white/20"
+          >
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
+      </div>
+
+      {/* 이전 버튼 */}
+      {images.length > 1 && (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handlePrev}
+          className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/20 h-12 w-12 z-10"
+        >
+          <ChevronLeft className="h-8 w-8" />
+        </Button>
+      )}
+
+      {/* 이미지 */}
+      <div className="flex items-center justify-center w-full h-full p-16 overflow-auto">
+        <img
+          src={currentImage.filePath}
+          alt={currentImage.filename}
+          className="max-w-full max-h-full object-contain transition-transform duration-200"
+          style={{ transform: `scale(${scale})` }}
+          draggable={false}
+        />
+      </div>
+
+      {/* 다음 버튼 */}
+      {images.length > 1 && (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleNext}
+          className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:bg-white/20 h-12 w-12 z-10"
+        >
+          <ChevronRight className="h-8 w-8" />
+        </Button>
+      )}
+
+      {/* 하단 썸네일 */}
+      {images.length > 1 && (
+        <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/50 to-transparent">
+          <div className="flex items-center justify-center gap-2 overflow-x-auto py-2">
+            {images.map((img, idx) => (
+              <button
+                key={img.id}
+                onClick={() => {
+                  setCurrentIndex(idx)
+                  setScale(1)
+                }}
+                className={cn(
+                  "w-16 h-16 shrink-0 rounded-lg overflow-hidden border-2 transition-all",
+                  idx === currentIndex
+                    ? "border-white ring-2 ring-white/50"
+                    : "border-transparent opacity-60 hover:opacity-100"
+                )}
+              >
+                <img
+                  src={img.filePath}
+                  alt={img.filename}
+                  className="w-full h-full object-cover"
+                />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 interface AdjacentPost {
   id: string
   title: string
@@ -140,6 +330,8 @@ export default function BoardPostPage() {
   const [submittingComment, setSubmittingComment] = useState(false)
   const [prevPost, setPrevPost] = useState<AdjacentPost | null>(null)
   const [nextPost, setNextPost] = useState<AdjacentPost | null>(null)
+  const [imageViewerOpen, setImageViewerOpen] = useState(false)
+  const [imageViewerIndex, setImageViewerIndex] = useState(0)
 
   const isLoggedIn = !!user
   const isAdmin = user?.role === 'admin'
@@ -468,39 +660,123 @@ export default function BoardPostPage() {
               dangerouslySetInnerHTML={{ __html: post.content }}
             />
 
-            {/* 첨부파일 */}
-            {board.useFile && post.attachments && post.attachments.length > 0 && (
-              <div className="border rounded-lg p-4 mb-6 bg-muted/30">
-                <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
-                  <Paperclip className="h-4 w-4" />
-                  첨부파일 ({post.attachments.length})
-                </h4>
-                <div className="space-y-2">
-                  {post.attachments.map((file) => (
-                    <a
-                      key={file.id}
-                      href={file.filePath}
-                      download={file.filename}
-                      className="flex items-center justify-between p-2 rounded hover:bg-muted transition-colors group"
-                    >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-lg">{getFileIcon(file.mimeType)}</span>
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium truncate group-hover:text-primary transition-colors">
-                            {file.filename}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {formatFileSize(file.fileSize)}
-                            {file.downloadCount > 0 && ` · 다운로드 ${file.downloadCount}회`}
-                          </p>
-                        </div>
-                      </div>
-                      <Download className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
-                    </a>
-                  ))}
+            {/* 갤러리 형식: 이미지 갤러리 */}
+            {board.displayType === 'gallery' && board.useFile && post.attachments && (() => {
+              const imageAttachments = post.attachments.filter(f => f.mimeType.startsWith('image/'))
+              if (imageAttachments.length === 0) return null
+              return (
+                <div className="mb-6">
+                  <div className={`grid gap-2 ${
+                    imageAttachments.length === 1 ? 'grid-cols-1' :
+                    imageAttachments.length === 2 ? 'grid-cols-2' :
+                    'grid-cols-2 md:grid-cols-3'
+                  }`}>
+                    {imageAttachments.map((file, index) => (
+                      <button
+                        key={file.id}
+                        onClick={() => {
+                          setImageViewerIndex(index)
+                          setImageViewerOpen(true)
+                        }}
+                        className="block aspect-square rounded-lg overflow-hidden bg-muted hover:opacity-90 transition-opacity cursor-pointer"
+                      >
+                        <img
+                          src={file.thumbnailPath || file.filePath}
+                          alt={file.filename}
+                          className="w-full h-full object-cover"
+                        />
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )
+            })()}
+
+            {/* 첨부파일 */}
+            {board.useFile && post.attachments && post.attachments.length > 0 && (() => {
+              const imageAttachments = post.attachments.filter(f => f.mimeType.startsWith('image/'))
+              return (
+                <div className="border rounded-lg p-4 mb-6 bg-muted/30">
+                  <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                    <Paperclip className="h-4 w-4" />
+                    첨부파일 ({post.attachments.length})
+                  </h4>
+                  <div className="space-y-2">
+                    {post.attachments.map((file) => {
+                      const isImage = file.mimeType.startsWith('image/')
+                      const imageIndex = isImage ? imageAttachments.findIndex(img => img.id === file.id) : -1
+
+                      if (isImage) {
+                        return (
+                          <div
+                            key={file.id}
+                            className="flex items-center p-2 rounded hover:bg-muted transition-colors group"
+                          >
+                            <button
+                              onClick={() => {
+                                setImageViewerIndex(imageIndex)
+                                setImageViewerOpen(true)
+                              }}
+                              className="flex items-center gap-3 min-w-0 flex-1 text-left"
+                            >
+                              <div className="w-8 h-8 shrink-0 rounded overflow-hidden bg-muted flex items-center justify-center">
+                                <img
+                                  src={file.thumbnailPath || file.filePath}
+                                  alt={file.filename}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-medium truncate group-hover:text-primary transition-colors">
+                                  {file.filename}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {formatFileSize(file.fileSize)}
+                                  {file.downloadCount > 0 && ` · 다운로드 ${file.downloadCount}회`}
+                                </p>
+                              </div>
+                            </button>
+                            <a
+                              href={file.filePath}
+                              download={file.filename}
+                              className="w-8 h-8 shrink-0 flex items-center justify-center hover:bg-muted-foreground/10 rounded transition-colors"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <Download className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                            </a>
+                          </div>
+                        )
+                      }
+
+                      return (
+                        <a
+                          key={file.id}
+                          href={file.filePath}
+                          download={file.filename}
+                          className="flex items-center p-2 rounded hover:bg-muted transition-colors group"
+                        >
+                          <div className="w-8 h-8 shrink-0 flex items-center justify-center">
+                            <span className="text-xl">{getFileIcon(file.mimeType)}</span>
+                          </div>
+                          <div className="min-w-0 flex-1 ml-3">
+                            <p className="text-sm font-medium truncate group-hover:text-primary transition-colors">
+                              {file.filename}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {formatFileSize(file.fileSize)}
+                              {file.downloadCount > 0 && ` · 다운로드 ${file.downloadCount}회`}
+                            </p>
+                          </div>
+                          <div className="w-8 h-8 shrink-0 flex items-center justify-center">
+                            <Download className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                          </div>
+                        </a>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })()}
 
             {/* 리액션 버튼들 */}
             {board.useReaction && (
@@ -680,6 +956,19 @@ export default function BoardPostPage() {
             </CardContent>
           </Card>
         )}
+
+        {/* 이미지 뷰어 모달 */}
+        {imageViewerOpen && board.useFile && post.attachments && (() => {
+          const imageAttachments = post.attachments.filter(f => f.mimeType.startsWith('image/'))
+          if (imageAttachments.length === 0) return null
+          return (
+            <ImageViewer
+              images={imageAttachments}
+              initialIndex={imageViewerIndex}
+              onClose={() => setImageViewerOpen(false)}
+            />
+          )
+        })()}
       </div>
     </UserLayout>
   )

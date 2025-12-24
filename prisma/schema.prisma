@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,43 +7,36 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ============================================
-// 사용자 시스템
-// ============================================
-
-// 사용자 테이블
 model User {
-  id            Int       @id @default(autoincrement())
-  email         String    @unique @db.VarChar(255)
-  nickname      String    @unique @db.VarChar(100)
-  password      String?   @db.VarChar(255) // 소셜 로그인 사용자는 null
-  image         String?   @db.VarChar(500) // 프로필 이미지 URL
-  name          String?   @db.VarChar(50)  // 실명 (주문자명)
-  phone         String?   @db.VarChar(20)  // 연락처 (주문자 연락처)
-  role          String    @default("user") @db.VarChar(20) // user, manager, admin
-  status        String    @default("active") @db.VarChar(20) // active, inactive, banned
+  id            Int             @id @default(autoincrement())
+  email         String          @unique @db.VarChar(255)
+  nickname      String          @unique @db.VarChar(100)
+  password      String?         @db.VarChar(255)
+  image         String?         @db.VarChar(500)
+  role          String          @default("user") @db.VarChar(20)
+  status        String          @default("active") @db.VarChar(20)
   emailVerified DateTime?
   lastLoginAt   DateTime?
-  lastLoginIp   String?   @db.VarChar(50)
-  level         Int       @default(1)                        // 회원 레벨
-  provider      String?   @db.VarChar(50)                    // 소셜 로그인 제공자 (google, naver, kakao)
-  providerId    String?   @db.VarChar(255)                   // 소셜 로그인 제공자 ID
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  deletedAt     DateTime?                                    // 소프트 삭제 (null이면 삭제되지 않음)
-  adminNote     String?   @db.Text                           // 관리자 메모
-
-  // 관계
+  lastLoginIp   String?         @db.VarChar(50)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  deletedAt     DateTime?
+  adminNote     String?         @db.Text
+  name          String?         @db.VarChar(50)
+  phone         String?         @db.VarChar(20)
+  level         Int             @default(1)
+  provider      String?         @db.VarChar(50)
+  providerId    String?         @db.VarChar(255)
   accounts      Account[]
-  posts         Post[]
   comments      Comment[]
-  reactions     Reaction[]
-  orders        Order[]
-  reviews       ProductReview[]
-  qnas          ProductQna[]
-  wishlists     Wishlist[]
-  addresses     UserAddress[]
   notifications Notification[]
+  orders        Order[]
+  posts         Post[]
+  qnas          ProductQna[]
+  reviews       ProductReview[]
+  reactions     Reaction[]
+  addresses     UserAddress[]
+  wishlists     Wishlist[]
 
   @@index([email])
   @@index([status])
@@ -55,67 +45,50 @@ model User {
   @@map("users")
 }
 
-// 소셜 로그인 계정 연동 테이블 (NextAuth 호환)
 model Account {
-  id                Int     @id @default(autoincrement())
+  id                Int      @id @default(autoincrement())
   userId            Int
-  type              String  @db.VarChar(50) // oauth, credentials
-  provider          String  @db.VarChar(50) // google, kakao, naver, github
-  providerAccountId String  @db.VarChar(255)
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  type              String   @db.VarChar(50)
+  provider          String   @db.VarChar(50)
+  providerAccountId String   @db.VarChar(255)
+  refresh_token     String?  @db.Text
+  access_token      String?  @db.Text
   expires_at        Int?
-  token_type        String? @db.VarChar(50)
-  scope             String? @db.VarChar(255)
-  id_token          String? @db.Text
-  session_state     String? @db.VarChar(255)
+  token_type        String?  @db.VarChar(50)
+  scope             String?  @db.VarChar(255)
+  id_token          String?  @db.Text
+  session_state     String?  @db.VarChar(255)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
   @@index([userId])
   @@map("accounts")
 }
 
-// ============================================
-// 게시판 시스템
-// ============================================
-
-// 게시판 테이블
 model Board {
-  id          Int      @id @default(autoincrement())
-  slug        String   @unique @db.VarChar(50) // URL용 슬러그 (예: free, notice, qa)
-  name        String   @db.VarChar(100) // 게시판 이름
-  description String?  @db.VarChar(500) // 게시판 설명
-  category    String?  @db.VarChar(50) // 카테고리 (community, support, etc.)
-
-  // 권한 설정 (회원전용 여부, true=회원만, false=모두)
-  listMemberOnly    Boolean  @default(false) // 목록 보기 권한
-  readMemberOnly    Boolean  @default(false) // 글 읽기 권한
-  writeMemberOnly   Boolean  @default(true)  // 글 쓰기 권한
-  commentMemberOnly Boolean  @default(true)  // 댓글 쓰기 권한
-
-  // 기능 설정
-  useComment  Boolean  @default(true) // 댓글 사용
-  useReaction Boolean  @default(true) // 반응(좋아요 등) 사용
-  useFile     Boolean  @default(true) // 파일 첨부 사용
-  useSecret   Boolean  @default(false) // 비밀글 사용
-
-  // 표시 설정
-  postsPerPage Int     @default(20) // 페이지당 게시글 수
-  sortOrder   String   @default("latest") @db.VarChar(20) // latest, popular, oldest
-  isActive    Boolean  @default(true) // 활성화 여부
-
-  // 통계
-  postCount   Int      @default(0)
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // 관계
-  posts       Post[]
+  id                Int      @id @default(autoincrement())
+  slug              String   @unique @db.VarChar(50)
+  name              String   @db.VarChar(100)
+  description       String?  @db.VarChar(500)
+  category          String?  @db.VarChar(50)
+  listMemberOnly    Boolean  @default(false)
+  readMemberOnly    Boolean  @default(false)
+  writeMemberOnly   Boolean  @default(true)
+  commentMemberOnly Boolean  @default(true)
+  useComment        Boolean  @default(true)
+  useReaction       Boolean  @default(true)
+  useFile           Boolean  @default(true)
+  useSecret         Boolean  @default(false)
+  postsPerPage      Int      @default(20)
+  sortOrder         String   @default("latest") @db.VarChar(20)
+  isActive          Boolean  @default(true)
+  postCount         Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  displayType       String   @default("list") @db.VarChar(20)
+  posts             Post[]
 
   @@index([slug])
   @@index([category])
@@ -123,37 +96,26 @@ model Board {
   @@map("boards")
 }
 
-// 게시글 테이블
 model Post {
-  id          Int      @id @default(autoincrement())
-  boardId     Int
-  authorId    Int
-
-  title       String   @db.VarChar(200)
-  content     String   @db.Text
-
-  // 상태
-  status      String   @default("published") @db.VarChar(20) // draft, published, hidden, deleted
-  isNotice    Boolean  @default(false) // 공지글 여부
-  isSecret    Boolean  @default(false) // 비밀글 여부
-
-  // 통계
-  viewCount   Int      @default(0)
-  likeCount   Int      @default(0)
-  commentCount Int     @default(0)
-
-  // 메타 정보
-  ip          String?  @db.VarChar(50)
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // 관계
-  board       Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
-  author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  comments    Comment[]
-  reactions   Reaction[]
-  attachments PostAttachment[]
+  id           Int              @id @default(autoincrement())
+  boardId      Int
+  authorId     Int
+  title        String           @db.VarChar(200)
+  content      String           @db.Text
+  status       String           @default("published") @db.VarChar(20)
+  isNotice     Boolean          @default(false)
+  isSecret     Boolean          @default(false)
+  viewCount    Int              @default(0)
+  likeCount    Int              @default(0)
+  commentCount Int              @default(0)
+  ip           String?          @db.VarChar(50)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  comments     Comment[]
+  attachments  PostAttachment[]
+  author       User             @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  board        Board            @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  reactions    Reaction[]
 
   @@index([boardId])
   @@index([authorId])
@@ -163,56 +125,41 @@ model Post {
   @@map("posts")
 }
 
-// 게시글 첨부파일 테이블
 model PostAttachment {
-  id          Int      @id @default(autoincrement())
-  postId      Int
-
-  filename    String   @db.VarChar(255)   // 원본 파일명
-  storedName  String   @db.VarChar(255)   // 저장된 파일명
-  filePath    String   @db.VarChar(500)   // 파일 경로 (URL)
-  fileSize    Int                          // 파일 크기 (bytes)
-  mimeType    String   @db.VarChar(100)   // MIME 타입
-
-  downloadCount Int    @default(0)        // 다운로드 횟수
-
-  createdAt   DateTime @default(now())
-
-  // 관계
-  post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  id            Int      @id @default(autoincrement())
+  postId        Int
+  filename      String   @db.VarChar(255)
+  storedName    String   @db.VarChar(255)
+  filePath      String   @db.VarChar(500)
+  fileSize      Int
+  mimeType      String   @db.VarChar(100)
+  downloadCount Int      @default(0)
+  createdAt     DateTime @default(now())
+  sortOrder     Int      @default(0)
+  thumbnailPath String?  @db.VarChar(500)
+  post          Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@index([postId])
   @@map("post_attachments")
 }
 
-// 댓글 테이블
 model Comment {
-  id          Int      @id @default(autoincrement())
-  postId      Int
-  authorId    Int
-  parentId    Int?     // 대댓글용 부모 댓글 ID
-
-  content     String   @db.Text
-
-  // 상태
-  status      String   @default("published") @db.VarChar(20) // published, hidden, deleted
-  isSecret    Boolean  @default(false) // 비밀 댓글
-
-  // 통계
-  likeCount   Int      @default(0)
-
-  // 메타 정보
-  ip          String?  @db.VarChar(50)
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // 관계
-  post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  parent      Comment? @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies     Comment[] @relation("CommentReplies")
-  reactions   Reaction[]
+  id        Int        @id @default(autoincrement())
+  postId    Int
+  authorId  Int
+  parentId  Int?
+  content   String     @db.Text
+  status    String     @default("published") @db.VarChar(20)
+  isSecret  Boolean    @default(false)
+  likeCount Int        @default(0)
+  ip        String?    @db.VarChar(50)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  author    User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parent    Comment?   @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   Comment[]  @relation("CommentReplies")
+  post      Post       @relation(fields: [postId], references: [id], onDelete: Cascade)
+  reactions Reaction[]
 
   @@index([postId])
   @@index([authorId])
@@ -221,23 +168,17 @@ model Comment {
   @@map("comments")
 }
 
-// 반응(좋아요 등) 테이블
 model Reaction {
-  id          Int      @id @default(autoincrement())
-  userId      Int
-  postId      Int?
-  commentId   Int?
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  postId    Int?
+  commentId Int?
+  type      String   @db.VarChar(20)
+  createdAt DateTime @default(now())
+  comment   Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  post      Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  type        String   @db.VarChar(20) // like, dislike, love, haha, sad, angry
-
-  createdAt   DateTime @default(now())
-
-  // 관계
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  post        Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
-  comment     Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
-
-  // 한 사용자가 같은 게시글/댓글에 같은 타입 반응은 한 번만
   @@unique([userId, postId, type])
   @@unique([userId, commentId, type])
   @@index([postId])
@@ -245,11 +186,6 @@ model Reaction {
   @@map("reactions")
 }
 
-// ============================================
-// 콘텐츠 관리 시스템
-// ============================================
-
-// 일반 콘텐츠 테이블 (회사소개, About 등)
 model Content {
   id        Int      @id @default(autoincrement())
   slug      String   @unique @db.VarChar(100)
@@ -264,14 +200,13 @@ model Content {
   @@map("contents")
 }
 
-// 약관/정책 테이블 (버전 관리)
 model Policy {
   id        Int      @id @default(autoincrement())
-  slug      String   @db.VarChar(100)  // "terms", "privacy"
-  version   String   @db.VarChar(20)   // "1.0", "1.1"
+  slug      String   @db.VarChar(100)
+  version   String   @db.VarChar(20)
   title     String   @db.VarChar(200)
   content   String   @db.LongText
-  isActive  Boolean  @default(false)   // 슬러그당 하나만 true
+  isActive  Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -280,11 +215,6 @@ model Policy {
   @@map("policies")
 }
 
-// ============================================
-// 환경설정 시스템
-// ============================================
-
-// 사이트 설정 테이블 (key-value)
 model Setting {
   id        Int      @id @default(autoincrement())
   key       String   @unique @db.VarChar(100)
@@ -294,11 +224,6 @@ model Setting {
   @@map("settings")
 }
 
-// ============================================
-// 쇼핑몰 시스템
-// ============================================
-
-// 상품 카테고리
 model ProductCategory {
   id          Int       @id @default(autoincrement())
   name        String    @db.VarChar(50)
@@ -307,52 +232,38 @@ model ProductCategory {
   sortOrder   Int       @default(0)
   isActive    Boolean   @default(true)
   createdAt   DateTime  @default(now())
-
-  // 관계
   products    Product[]
 
   @@index([isActive])
   @@map("product_categories")
 }
 
-// 상품
 model Product {
   id          Int              @id @default(autoincrement())
   categoryId  Int?
   name        String           @db.VarChar(200)
   slug        String           @unique @db.VarChar(200)
-  description String?          @db.Text           // 짧은 설명
-  content     String?          @db.LongText       // 상세 설명 (HTML)
-  price       Int                                 // 기본 판매가 (옵션 없을 때)
-  originPrice Int?                                // 원가 (할인 표시용)
-  images      String?          @db.Text           // JSON 배열 (이미지 URL들)
-
-  // 옵션 설정
-  optionName1 String?          @db.VarChar(20)    // 1단계 옵션명 (예: "색상")
-  optionName2 String?          @db.VarChar(20)    // 2단계 옵션명 (예: "사이즈")
-  optionName3 String?          @db.VarChar(20)    // 3단계 옵션명 (예: "모델")
-
-  // 재고 (옵션 없는 상품용)
-  stock       Int              @default(0)
-
-  // 상태
+  description String?          @db.Text
+  content     String?          @db.LongText
+  price       Int
+  originPrice Int?
+  images      String?          @db.Text
+  optionName1 String?          @db.VarChar(20)
+  optionName2 String?          @db.VarChar(20)
+  optionName3 String?          @db.VarChar(20)
   isActive    Boolean          @default(true)
   isSoldOut   Boolean          @default(false)
   sortOrder   Int              @default(0)
-
-  // 통계
   viewCount   Int              @default(0)
-  soldCount   Int              @default(0)        // 판매 수량
-
+  soldCount   Int              @default(0)
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
-
-  // 관계
-  category    ProductCategory? @relation(fields: [categoryId], references: [id])
-  options     ProductOption[]
+  stock       Int              @default(0)
   orderItems  OrderItem[]
-  reviews     ProductReview[]
+  options     ProductOption[]
   qnas        ProductQna[]
+  reviews     ProductReview[]
+  category    ProductCategory? @relation(fields: [categoryId], references: [id])
   wishlists   Wishlist[]
 
   @@index([categoryId])
@@ -361,98 +272,71 @@ model Product {
   @@map("products")
 }
 
-// 상품 옵션 (3단계: 색상 → 사이즈 → 모델)
 model ProductOption {
-  id          Int       @id @default(autoincrement())
-  productId   Int
-
-  // 3단계 옵션값 (예: "빨강", "L", "프리미엄")
-  option1     String?   @db.VarChar(50)   // 1단계 값
-  option2     String?   @db.VarChar(50)   // 2단계 값
-  option3     String?   @db.VarChar(50)   // 3단계 값
-
-  price       Int                         // 이 옵션의 가격
-  stock       Int       @default(0)       // 이 옵션의 재고
-  sku         String?   @db.VarChar(50)   // 재고관리코드
-  isActive    Boolean   @default(true)
-  sortOrder   Int       @default(0)
-
-  // 관계
-  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  id        Int     @id @default(autoincrement())
+  productId Int
+  option1   String? @db.VarChar(50)
+  option2   String? @db.VarChar(50)
+  option3   String? @db.VarChar(50)
+  price     Int
+  stock     Int     @default(0)
+  sku       String? @db.VarChar(50)
+  isActive  Boolean @default(true)
+  sortOrder Int     @default(0)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([productId, option1, option2, option3])
   @@index([productId])
   @@map("product_options")
 }
 
-// 배송비 정책 (지역별)
 model DeliveryFee {
-  id          Int       @id @default(autoincrement())
-  name        String    @db.VarChar(50)   // 예: "기본", "제주", "도서산간"
-  regions     String    @db.Text          // JSON 배열 (우편번호 범위)
-  fee         Int                         // 배송비
-  freeAmount  Int?                        // 무료배송 기준금액 (null이면 무료배송 없음)
-  isDefault   Boolean   @default(false)   // 기본 배송비 여부
-  isActive    Boolean   @default(true)
-  sortOrder   Int       @default(0)
+  id         Int     @id @default(autoincrement())
+  name       String  @db.VarChar(50)
+  regions    String  @db.Text
+  fee        Int
+  freeAmount Int?
+  isDefault  Boolean @default(false)
+  isActive   Boolean @default(true)
+  sortOrder  Int     @default(0)
 
   @@map("delivery_fees")
 }
 
-// 주문
 model Order {
-  id              Int         @id @default(autoincrement())
-  orderNo         String      @unique @db.VarChar(20)  // 주문번호 (ORD-YYYYMMDD-XXXX)
+  id              Int             @id @default(autoincrement())
+  orderNo         String          @unique @db.VarChar(20)
   userId          Int
-
-  // 주문자 정보
-  ordererName     String      @db.VarChar(50)
-  ordererPhone    String      @db.VarChar(20)
-  ordererEmail    String?     @db.VarChar(100)
-
-  // 배송지 정보
-  recipientName   String      @db.VarChar(50)
-  recipientPhone  String      @db.VarChar(20)
-  zipCode         String      @db.VarChar(10)
-  address         String      @db.VarChar(200)
-  addressDetail   String?     @db.VarChar(100)
-  deliveryMemo    String?     @db.VarChar(200)
-
-  // 금액
-  totalPrice      Int                         // 상품 합계
-  deliveryFee     Int         @default(0)     // 배송비
-  finalPrice      Int                         // 최종 결제금액
-
-  // 상태 (pending, paid, preparing, shipping, delivered, confirmed, cancelled, refund_requested, refunded, exchange_requested, exchanged)
-  status          String      @default("pending") @db.VarChar(20)
-
-  // 결제 정보
-  paymentMethod   String?     @db.VarChar(20)  // bank (무통장), card (카드)
-  paymentInfo     String?     @db.Text         // 입금자명, PG 응답 등 JSON
+  ordererName     String          @db.VarChar(50)
+  ordererPhone    String          @db.VarChar(20)
+  ordererEmail    String?         @db.VarChar(100)
+  recipientName   String          @db.VarChar(50)
+  recipientPhone  String          @db.VarChar(20)
+  zipCode         String          @db.VarChar(10)
+  address         String          @db.VarChar(200)
+  addressDetail   String?         @db.VarChar(100)
+  deliveryMemo    String?         @db.VarChar(200)
+  totalPrice      Int
+  deliveryFee     Int             @default(0)
+  finalPrice      Int
+  status          String          @default("pending") @db.VarChar(20)
+  paymentMethod   String?         @db.VarChar(20)
+  paymentInfo     String?         @db.Text
   paidAt          DateTime?
-
-  // 배송 정보
-  trackingCompany String?     @db.VarChar(50)  // 택배사
-  trackingNumber  String?     @db.VarChar(50)  // 송장번호
+  trackingCompany String?         @db.VarChar(50)
+  trackingNumber  String?         @db.VarChar(50)
   shippedAt       DateTime?
   deliveredAt     DateTime?
-
-  // 취소/환불/교환
-  cancelReason    String?     @db.Text
+  cancelReason    String?         @db.Text
   cancelledAt     DateTime?
   refundAmount    Int?
   refundedAt      DateTime?
-
-  // 관리자 메모
-  adminMemo       String?     @db.Text
-
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-  deletedAt       DateTime?                     // 소프트 삭제 (null이면 삭제되지 않음)
-
-  // 관계
-  user            User        @relation(fields: [userId], references: [id])
+  adminMemo       String?         @db.Text
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  deletedAt       DateTime?
   items           OrderItem[]
+  user            User            @relation(fields: [userId], references: [id])
   reviews         ProductReview[]
 
   @@index([userId])
@@ -463,29 +347,24 @@ model Order {
   @@map("orders")
 }
 
-// 주문 상품
 model OrderItem {
-  id          Int      @id @default(autoincrement())
+  id          Int     @id @default(autoincrement())
   orderId     Int
   productId   Int
-  optionId    Int?                          // 선택한 옵션 ID
-
-  productName String   @db.VarChar(200)     // 주문 시점 상품명
-  optionText  String?  @db.VarChar(200)     // 옵션 텍스트 (예: "빨강 / L / 프리미엄")
-  price       Int                           // 주문 시점 가격
+  optionId    Int?
+  productName String  @db.VarChar(200)
+  optionText  String? @db.VarChar(200)
+  price       Int
   quantity    Int
-  subtotal    Int                           // price * quantity
-
-  // 관계
-  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product     Product  @relation(fields: [productId], references: [id])
+  subtotal    Int
+  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product @relation(fields: [productId], references: [id])
 
   @@index([orderId])
   @@index([productId])
   @@map("order_items")
 }
 
-// 쇼핑몰 설정
 model ShopSetting {
   id        Int      @id @default(autoincrement())
   key       String   @unique @db.VarChar(100)
@@ -495,13 +374,12 @@ model ShopSetting {
   @@map("shop_settings")
 }
 
-// 결제 대기 주문 (카드결제 완료 전 임시 저장)
 model PendingOrder {
   id        Int      @id @default(autoincrement())
   orderNo   String   @unique @db.VarChar(20)
   userId    Int
-  orderData String   @db.LongText          // JSON 형태의 주문 데이터
-  expiresAt DateTime                       // 만료 시간 (30분)
+  orderData String   @db.LongText
+  expiresAt DateTime
   createdAt DateTime @default(now())
 
   @@index([userId])
@@ -509,32 +387,24 @@ model PendingOrder {
   @@map("pending_orders")
 }
 
-// 상품 리뷰
 model ProductReview {
   id          Int       @id @default(autoincrement())
   productId   Int
   userId      Int
-  orderId     Int                           // 구매한 주문 ID (배송완료 확인용)
-  orderItemId Int                           // 구매한 주문 상품 ID
-
-  rating      Int                           // 별점 (1~5)
-  content     String    @db.Text            // 리뷰 내용
-  images      String?   @db.Text            // JSON 배열 (리뷰 이미지 URL들)
-
-  // 관리자 답변
+  orderId     Int
+  orderItemId Int       @unique
+  rating      Int
+  content     String    @db.Text
+  images      String?   @db.Text
   reply       String?   @db.Text
   repliedAt   DateTime?
-
   isActive    Boolean   @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-
-  // 관계
+  order       Order     @relation(fields: [orderId], references: [id])
   product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  order       Order     @relation(fields: [orderId], references: [id])
 
-  @@unique([orderItemId])                   // 주문 상품당 리뷰 1개
   @@index([productId])
   @@index([userId])
   @@index([orderId])
@@ -542,26 +412,19 @@ model ProductReview {
   @@map("product_reviews")
 }
 
-// 상품 Q&A
 model ProductQna {
-  id          Int       @id @default(autoincrement())
-  productId   Int
-  userId      Int
-
-  question    String    @db.Text            // 질문 내용
-  isSecret    Boolean   @default(false)     // 비밀글 여부
-
-  // 관리자 답변
-  answer      String?   @db.Text
-  answeredAt  DateTime?
-
-  isActive    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  // 관계
-  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id         Int       @id @default(autoincrement())
+  productId  Int
+  userId     Int
+  question   String    @db.Text
+  isSecret   Boolean   @default(false)
+  answer     String?   @db.Text
+  answeredAt DateTime?
+  isActive   Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  product    Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([productId])
   @@index([userId])
@@ -569,58 +432,49 @@ model ProductQna {
   @@map("product_qnas")
 }
 
-// 찜하기 (위시리스트)
 model Wishlist {
-  id          Int       @id @default(autoincrement())
-  userId      Int
-  productId   Int
-  createdAt   DateTime  @default(now())
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  productId Int
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // 관계
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, productId])  // 사용자당 상품 1개만 찜 가능
+  @@unique([userId, productId])
   @@index([userId])
   @@index([productId])
   @@map("wishlists")
 }
 
-// 사용자 배송지 주소록
 model UserAddress {
-  id            Int       @id @default(autoincrement())
-  userId        Int
-  name          String    @db.VarChar(50)     // 배송지명 (예: "집", "회사")
-  recipientName String    @db.VarChar(50)     // 받는 분 이름
-  recipientPhone String   @db.VarChar(20)     // 받는 분 연락처
-  zipCode       String    @db.VarChar(10)     // 우편번호
-  address       String    @db.VarChar(200)    // 기본 주소
-  addressDetail String?   @db.VarChar(100)    // 상세 주소
-  isDefault     Boolean   @default(false)     // 기본 배송지 여부
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  // 관계
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             Int      @id @default(autoincrement())
+  userId         Int
+  name           String   @db.VarChar(50)
+  recipientName  String   @db.VarChar(50)
+  recipientPhone String   @db.VarChar(20)
+  zipCode        String   @db.VarChar(10)
+  address        String   @db.VarChar(200)
+  addressDetail  String?  @db.VarChar(100)
+  isDefault      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([userId, isDefault])
   @@map("user_addresses")
 }
 
-// 알림
 model Notification {
   id        Int       @id @default(autoincrement())
   userId    Int
-  type      String    @db.VarChar(50)     // order_status, review_reply, qna_reply, system
+  type      String    @db.VarChar(50)
   title     String    @db.VarChar(200)
   message   String    @db.Text
-  link      String?   @db.VarChar(500)    // 클릭 시 이동할 URL
+  link      String?   @db.VarChar(500)
   isRead    Boolean   @default(false)
   createdAt DateTime  @default(now())
-  deletedAt DateTime?                     // 소프트 삭제
-
-  // 관계
+  deletedAt DateTime?
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
