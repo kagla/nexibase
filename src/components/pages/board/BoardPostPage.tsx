@@ -22,6 +22,8 @@ import {
   Send,
   ChevronLeft,
   ChevronRight,
+  Paperclip,
+  Download,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { CommentReactions } from "@/components/comment/CommentReactions"
@@ -46,7 +48,17 @@ interface Board {
   name: string
   useComment: boolean
   useReaction: boolean
+  useFile: boolean
   commentMemberOnly: boolean
+}
+
+interface Attachment {
+  id: number
+  filename: string
+  filePath: string
+  fileSize: number
+  mimeType: string
+  downloadCount: number
 }
 
 interface Author {
@@ -77,6 +89,25 @@ interface Post {
   updatedAt: string
   author: Author
   comments?: Comment[]
+  attachments?: Attachment[]
+}
+
+// 파일 크기 포맷
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+// 파일 아이콘 선택
+function getFileIcon(mimeType: string): string {
+  if (mimeType.startsWith('image/')) return '🖼️'
+  if (mimeType.includes('pdf')) return '📕'
+  if (mimeType.includes('word') || mimeType.includes('document')) return '📘'
+  if (mimeType.includes('excel') || mimeType.includes('spreadsheet')) return '📗'
+  if (mimeType.includes('powerpoint') || mimeType.includes('presentation')) return '📙'
+  if (mimeType.includes('zip') || mimeType.includes('rar') || mimeType.includes('7z')) return '📦'
+  return '📄'
 }
 
 interface AdjacentPost {
@@ -436,6 +467,40 @@ export default function BoardPostPage() {
               className="tiptap prose dark:prose-invert max-w-none mb-6"
               dangerouslySetInnerHTML={{ __html: post.content }}
             />
+
+            {/* 첨부파일 */}
+            {board.useFile && post.attachments && post.attachments.length > 0 && (
+              <div className="border rounded-lg p-4 mb-6 bg-muted/30">
+                <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                  <Paperclip className="h-4 w-4" />
+                  첨부파일 ({post.attachments.length})
+                </h4>
+                <div className="space-y-2">
+                  {post.attachments.map((file) => (
+                    <a
+                      key={file.id}
+                      href={file.filePath}
+                      download={file.filename}
+                      className="flex items-center justify-between p-2 rounded hover:bg-muted transition-colors group"
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-lg">{getFileIcon(file.mimeType)}</span>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate group-hover:text-primary transition-colors">
+                            {file.filename}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatFileSize(file.fileSize)}
+                            {file.downloadCount > 0 && ` · 다운로드 ${file.downloadCount}회`}
+                          </p>
+                        </div>
+                      </div>
+                      <Download className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* 리액션 버튼들 */}
             {board.useReaction && (

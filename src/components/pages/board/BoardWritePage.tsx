@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -14,6 +14,10 @@ import {
   Loader2,
   ArrowLeft,
   Lock,
+  Paperclip,
+  X,
+  FileText,
+  Upload,
 } from "lucide-react"
 
 interface Board {
@@ -22,11 +26,38 @@ interface Board {
   name: string
   writeMemberOnly: boolean
   useSecret: boolean
+  useFile: boolean
 }
 
 interface User {
   id: string
   name: string
+}
+
+interface AttachmentFile {
+  filename: string
+  storedName: string
+  filePath: string
+  fileSize: number
+  mimeType: string
+}
+
+// 파일 크기 포맷
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+// 파일 아이콘 선택
+function getFileIcon(mimeType: string): string {
+  if (mimeType.startsWith('image/')) return '🖼️'
+  if (mimeType.includes('pdf')) return '📕'
+  if (mimeType.includes('word') || mimeType.includes('document')) return '📘'
+  if (mimeType.includes('excel') || mimeType.includes('spreadsheet')) return '📗'
+  if (mimeType.includes('powerpoint') || mimeType.includes('presentation')) return '📙'
+  if (mimeType.includes('zip') || mimeType.includes('rar') || mimeType.includes('7z')) return '📦'
+  return '📄'
 }
 
 export default function BoardWritePage() {
@@ -43,6 +74,11 @@ export default function BoardWritePage() {
   const [title, setTitle] = useState("")
   const [content, setContent] = useState("")
   const [isSecret, setIsSecret] = useState(false)
+
+  // 파일 첨부 상태
+  const [attachments, setAttachments] = useState<AttachmentFile[]>([])
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // 로그인 체크 - 글쓰기는 회원만 가능
   const checkSession = useCallback(async () => {
@@ -97,6 +133,54 @@ export default function BoardWritePage() {
     fetchBoard()
   }, [slug, sessionChecked, user])
 
+  // 파일 업로드 핸들러
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+
+    // 최대 5개까지
+    if (attachments.length + files.length > 5) {
+      alert('첨부파일은 최대 5개까지 가능합니다.')
+      return
+    }
+
+    setUploading(true)
+
+    try {
+      for (const file of Array.from(files)) {
+        const formData = new FormData()
+        formData.append('file', file)
+
+        const response = await fetch('/api/attachments', {
+          method: 'POST',
+          body: formData
+        })
+
+        const data = await response.json()
+
+        if (response.ok && data.file) {
+          setAttachments(prev => [...prev, data.file])
+        } else {
+          alert(data.error || `${file.name} 업로드에 실패했습니다.`)
+        }
+      }
+    } catch (error) {
+      console.error('파일 업로드 에러:', error)
+      alert('파일 업로드 중 오류가 발생했습니다.')
+    } finally {
+      setUploading(false)
+      // input 초기화
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }
+
+  // 파일 삭제
+  const handleRemoveFile = (index: number) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index))
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -119,7 +203,8 @@ export default function BoardWritePage() {
         body: JSON.stringify({
           title: title.trim(),
           content: content.trim(),
-          isSecret
+          isSecret,
+          attachments // 첨부파일 정보 포함
         })
       })
 
@@ -222,6 +307,77 @@ export default function BoardWritePage() {
                   placeholder="내용을 입력하세요..."
                 />
               </div>
+
+              {/* 파일 첨부 */}
+              {board.useFile && (
+                <div className="space-y-3">
+                  <Label className="flex items-center gap-2">
+                    <Paperclip className="h-4 w-4" />
+                    파일 첨부
+                    <span className="text-xs text-muted-foreground">(최대 5개, 각 10MB 이하)</span>
+                  </Label>
+
+                  {/* 파일 선택 버튼 */}
+                  <div className="flex items-center gap-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      multiple
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.rtf,.csv,.zip,.rar,.7z,.jpg,.jpeg,.png,.gif,.webp,.bmp,.hwp,.hwpx"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading || attachments.length >= 5}
+                    >
+                      {uploading ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Upload className="h-4 w-4 mr-2" />
+                      )}
+                      파일 선택
+                    </Button>
+                    <span className="text-xs text-muted-foreground">
+                      {attachments.length}/5개
+                    </span>
+                  </div>
+
+                  {/* 첨부된 파일 목록 */}
+                  {attachments.length > 0 && (
+                    <div className="border rounded-lg divide-y">
+                      {attachments.map((file, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between px-3 py-2 hover:bg-muted/50"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="text-lg">{getFileIcon(file.mimeType)}</span>
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium truncate">{file.filename}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {formatFileSize(file.fileSize)}
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveFile(index)}
+                            className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {board.useSecret && (
                 <div className="flex items-center gap-2">

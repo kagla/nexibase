@@ -153,6 +153,7 @@ model Post {
   author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   comments    Comment[]
   reactions   Reaction[]
+  attachments PostAttachment[]
 
   @@index([boardId])
   @@index([authorId])
@@ -160,6 +161,28 @@ model Post {
   @@index([createdAt])
   @@fulltext([title, content])
   @@map("posts")
+}
+
+// 게시글 첨부파일 테이블
+model PostAttachment {
+  id          Int      @id @default(autoincrement())
+  postId      Int
+
+  filename    String   @db.VarChar(255)   // 원본 파일명
+  storedName  String   @db.VarChar(255)   // 저장된 파일명
+  filePath    String   @db.VarChar(500)   // 파일 경로 (URL)
+  fileSize    Int                          // 파일 크기 (bytes)
+  mimeType    String   @db.VarChar(100)   // MIME 타입
+
+  downloadCount Int    @default(0)        // 다운로드 횟수
+
+  createdAt   DateTime @default(now())
+
+  // 관계
+  post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@map("post_attachments")
 }
 
 // 댓글 테이블

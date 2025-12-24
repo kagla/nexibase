@@ -127,6 +127,15 @@ export async function GET(
   }
 }
 
+// 첨부파일 인터페이스
+interface AttachmentFile {
+  filename: string
+  storedName: string
+  filePath: string
+  fileSize: number
+  mimeType: string
+}
+
 // 게시글 작성
 export async function POST(
   request: NextRequest,
@@ -135,7 +144,7 @@ export async function POST(
   try {
     const { slug } = await params
     const body = await request.json()
-    const { title, content, isNotice, isSecret } = body
+    const { title, content, isNotice, isSecret, attachments } = body
 
     // 게시판 정보 조회
     const board = await prisma.board.findUnique({
@@ -195,28 +204,47 @@ export async function POST(
                request.headers.get('x-real-ip') ||
                'unknown'
 
-    // 게시글 생성
-    const post = await prisma.post.create({
-      data: {
-        boardId: board.id,
-        authorId: user.id,
-        title: title.trim(),
-        content: content.trim(),
-        isNotice: isNotice && user.role === 'admin', // 관리자만 공지 가능
-        isSecret: isSecret && board.useSecret,
-        ip
-      },
-      select: {
-        id: true,
-        title: true,
-        createdAt: true
-      }
-    })
+    // 게시글 생성 + 첨부파일을 트랜잭션으로 처리
+    const post = await prisma.$transaction(async (tx) => {
+      // 게시글 생성
+      const newPost = await tx.post.create({
+        data: {
+          boardId: board.id,
+          authorId: user.id,
+          title: title.trim(),
+          content: content.trim(),
+          isNotice: isNotice && user.role === 'admin', // 관리자만 공지 가능
+          isSecret: isSecret && board.useSecret,
+          ip
+        },
+        select: {
+          id: true,
+          title: true,
+          createdAt: true
+        }
+      })
 
-    // 게시판 글 수 업데이트
-    await prisma.board.update({
-      where: { id: board.id },
-      data: { postCount: { increment: 1 } }
+      // 첨부파일이 있으면 저장
+      if (attachments && Array.isArray(attachments) && attachments.length > 0 && board.useFile) {
+        await tx.postAttachment.createMany({
+          data: (attachments as AttachmentFile[]).map(file => ({
+            postId: newPost.id,
+            filename: file.filename,
+            storedName: file.storedName,
+            filePath: file.filePath,
+            fileSize: file.fileSize,
+            mimeType: file.mimeType
+          }))
+        })
+      }
+
+      // 게시판 글 수 업데이트
+      await tx.board.update({
+        where: { id: board.id },
+        data: { postCount: { increment: 1 } }
+      })
+
+      return newPost
     })
 
     return NextResponse.json({

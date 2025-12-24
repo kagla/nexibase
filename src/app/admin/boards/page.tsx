@@ -384,59 +384,58 @@ function BoardModal({
 }
 
 // 통계 카드
-function StatCard({ icon: Icon, label, value, color, href, scrollTo }: {
+function StatCard({ icon: Icon, label, value, color, href, onClick, isActive }: {
   icon: React.ElementType
   label: string
   value: number
   color: string
   href?: string
-  scrollTo?: string
+  onClick?: () => void
+  isActive?: boolean
 }) {
-  const handleClick = () => {
-    if (scrollTo) {
-      const element = document.getElementById(scrollTo)
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      }
-    }
-  }
+  const cardContent = (
+    <CardContent className="p-4">
+      <div className="flex items-center space-x-3">
+        <div className={`p-2 rounded-lg ${color}`}>
+          <Icon className="h-5 w-5" />
+        </div>
+        <div className="text-left">
+          <p className="text-sm text-muted-foreground">{label}</p>
+          <p className="text-2xl font-bold">{value.toLocaleString()}</p>
+        </div>
+      </div>
+    </CardContent>
+  )
 
   if (href) {
     return (
       <a href={href} target="_blank" rel="noopener noreferrer">
         <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-3">
-              <div className={`p-2 rounded-lg ${color}`}>
-                <Icon className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">{label}</p>
-                <p className="text-2xl font-bold">{value.toLocaleString()}</p>
-              </div>
-            </div>
-          </CardContent>
+          {cardContent}
         </Card>
       </a>
     )
   }
 
+  if (onClick) {
+    return (
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={onClick}
+        onKeyDown={(e) => e.key === 'Enter' && onClick()}
+        className="cursor-pointer"
+      >
+        <Card className={`hover:bg-muted/50 transition-colors ${isActive ? 'ring-2 ring-primary' : ''}`}>
+          {cardContent}
+        </Card>
+      </div>
+    )
+  }
+
   return (
-    <Card
-      className={(scrollTo) ? "cursor-pointer hover:bg-muted/50 transition-colors" : ""}
-      onClick={scrollTo ? handleClick : undefined}
-    >
-      <CardContent className="p-4">
-        <div className="flex items-center space-x-3">
-          <div className={`p-2 rounded-lg ${color}`}>
-            <Icon className="h-5 w-5" />
-          </div>
-          <div>
-            <p className="text-sm text-muted-foreground">{label}</p>
-            <p className="text-2xl font-bold">{value.toLocaleString()}</p>
-          </div>
-        </div>
-      </CardContent>
+    <Card>
+      {cardContent}
     </Card>
   )
 }
@@ -453,6 +452,7 @@ export default function BoardsPage() {
   const [editingBoard, setEditingBoard] = useState<Board | null>(null)
   const [selectedAll, setSelectedAll] = useState(false)
   const [seedingBoards, setSeedingBoards] = useState(false)
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active'>('all')
 
   // 기본 게시판 생성
   const handleSeedBoards = async () => {
@@ -617,6 +617,11 @@ export default function BoardsPage() {
     fetchBoards()
   }
 
+  // 필터링된 게시판 목록
+  const filteredBoards = statusFilter === 'active'
+    ? boards.filter(b => b.isActive)
+    : boards
+
   return (
     <div className="min-h-screen bg-background">
       <div className="flex">
@@ -638,14 +643,16 @@ export default function BoardsPage() {
               label="전체 게시판"
               value={stats.totalBoards}
               color="bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400"
-              scrollTo="board-list"
+              onClick={() => setStatusFilter('all')}
+              isActive={statusFilter === 'all'}
             />
             <StatCard
               icon={Check}
               label="활성 게시판"
               value={stats.activeBoards}
               color="bg-green-500/10 text-green-600 dark:bg-green-500/20 dark:text-green-400"
-              scrollTo="board-list"
+              onClick={() => setStatusFilter('active')}
+              isActive={statusFilter === 'active'}
             />
             <StatCard
               icon={FileText}
@@ -692,7 +699,19 @@ export default function BoardsPage() {
           {/* 게시판 목록 */}
           <Card id="board-list">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg">게시판 목록</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg">
+                  게시판 목록
+                  {statusFilter === 'active' && (
+                    <span className="ml-2 text-sm font-normal text-muted-foreground">(활성만)</span>
+                  )}
+                </CardTitle>
+                {statusFilter !== 'all' && (
+                  <Button variant="ghost" size="sm" onClick={() => setStatusFilter('all')}>
+                    필터 초기화
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               {loading ? (
@@ -713,6 +732,10 @@ export default function BoardsPage() {
                   <p className="text-sm text-muted-foreground mt-2">
                     자유게시판, 공지사항, 문의게시판이 생성됩니다
                   </p>
+                </div>
+              ) : filteredBoards.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground">필터 조건에 맞는 게시판이 없습니다.</p>
                 </div>
               ) : (
                 <>
@@ -738,7 +761,7 @@ export default function BoardsPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        {boards.map((board) => (
+                        {filteredBoards.map((board) => (
                           <tr key={board.id} className="border-b hover:bg-muted/50 transition-colors">
                             <td className="p-3">
                               <input

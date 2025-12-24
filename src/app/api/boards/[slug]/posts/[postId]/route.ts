@@ -43,6 +43,16 @@ export async function GET(
             image: true
           }
         },
+        attachments: board.useFile ? {
+          select: {
+            id: true,
+            filename: true,
+            filePath: true,
+            fileSize: true,
+            mimeType: true,
+            downloadCount: true
+          }
+        } : false,
         comments: board.useComment ? {
           where: { status: 'published', parentId: null },
           orderBy: { createdAt: 'asc' },
@@ -152,6 +162,7 @@ export async function GET(
         name: board.name,
         useComment: board.useComment,
         useReaction: board.useReaction,
+        useFile: board.useFile,
         commentMemberOnly: board.commentMemberOnly
       },
       post: {
