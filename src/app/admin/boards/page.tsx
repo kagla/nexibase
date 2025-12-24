@@ -396,13 +396,36 @@ function StatCard({ icon: Icon, label, value, color, href, scrollTo }: {
     if (scrollTo) {
       const element = document.getElementById(scrollTo)
       if (element) {
-        element.scrollIntoView({ behavior: 'smooth' })
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' })
       }
     }
   }
 
-  const content = (
-    <Card className={(href || scrollTo) ? "cursor-pointer hover:bg-muted/50 transition-colors" : ""}>
+  if (href) {
+    return (
+      <a href={href} target="_blank" rel="noopener noreferrer">
+        <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-3">
+              <div className={`p-2 rounded-lg ${color}`}>
+                <Icon className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">{label}</p>
+                <p className="text-2xl font-bold">{value.toLocaleString()}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </a>
+    )
+  }
+
+  return (
+    <Card
+      className={(scrollTo) ? "cursor-pointer hover:bg-muted/50 transition-colors" : ""}
+      onClick={scrollTo ? handleClick : undefined}
+    >
       <CardContent className="p-4">
         <div className="flex items-center space-x-3">
           <div className={`p-2 rounded-lg ${color}`}>
@@ -416,14 +439,6 @@ function StatCard({ icon: Icon, label, value, color, href, scrollTo }: {
       </CardContent>
     </Card>
   )
-
-  if (href) {
-    return <a href={href} target="_blank" rel="noopener noreferrer">{content}</a>
-  }
-  if (scrollTo) {
-    return <div onClick={handleClick}>{content}</div>
-  }
-  return content
 }
 
 export default function BoardsPage() {
