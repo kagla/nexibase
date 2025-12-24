@@ -63,17 +63,17 @@ interface UserStats {
 
 // Provider 배지
 function ProviderBadge({ provider }: { provider: string }) {
-  const config: Record<string, { bg: string; text: string }> = {
-    google: { bg: 'bg-red-50', text: 'text-red-600' },
-    kakao: { bg: 'bg-yellow-50', text: 'text-yellow-700' },
-    naver: { bg: 'bg-green-50', text: 'text-green-600' },
-    github: { bg: 'bg-neutral-100', text: 'text-neutral-700' },
+  const config: Record<string, { bg: string; text: string; border: string; label: string }> = {
+    google: { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-200', label: 'Google' },
+    kakao: { bg: 'bg-yellow-100', text: 'text-yellow-800', border: 'border-yellow-300', label: 'Kakao' },
+    naver: { bg: 'bg-green-100', text: 'text-green-700', border: 'border-green-200', label: 'Naver' },
+    github: { bg: 'bg-neutral-200', text: 'text-neutral-800', border: 'border-neutral-300', label: 'GitHub' },
   }
-  const { bg, text } = config[provider] || { bg: 'bg-blue-50', text: 'text-blue-600' }
+  const { bg, text, border, label } = config[provider] || { bg: 'bg-blue-100', text: 'text-blue-700', border: 'border-blue-200', label: provider }
 
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${bg} ${text}`}>
-      {provider}
+    <span className={`inline-flex items-center px-2 py-0.5 rounded border text-xs font-semibold ${bg} ${text} ${border}`}>
+      {label}
     </span>
   )
 }
