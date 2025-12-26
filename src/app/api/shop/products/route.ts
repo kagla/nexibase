@@ -63,6 +63,9 @@ export async function GET(request: NextRequest) {
           options: {
             where: { isActive: true },
             select: { price: true, stock: true }
+          },
+          _count: {
+            select: { reviews: { where: { isActive: true } } }
           }
         },
         orderBy: [{ sortOrder: 'asc' }, orderBy],
@@ -104,6 +107,7 @@ export async function GET(request: NextRequest) {
         category: product.category,
         isSoldOut: product.isSoldOut || totalStock <= 0,
         soldCount: product.soldCount,
+        reviewCount: product._count.reviews,
         hasOptions: product.options.length > 0
       }
     })

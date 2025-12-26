@@ -23,6 +23,7 @@ import {
   ChevronRight,
   Package,
   X,
+  MessageSquare,
 } from "lucide-react"
 
 interface Product {
@@ -38,6 +39,7 @@ interface Product {
   category: { id: number; name: string; slug: string } | null
   isSoldOut: boolean
   soldCount: number
+  reviewCount: number
   hasOptions: boolean
 }
 
@@ -332,16 +334,24 @@ function ShopContent() {
                       <h3 className="font-medium text-sm line-clamp-2 mb-2 group-hover:text-primary transition-colors">
                         {product.name}
                       </h3>
-                      <div className="flex items-end gap-2">
-                        <span className="font-bold text-lg">
-                          {product.hasOptions && product.minPrice !== product.maxPrice
-                            ? `${formatPrice(product.minPrice)} ~`
-                            : formatPrice(product.price)
-                          }
-                        </span>
-                        {product.originPrice && product.originPrice > product.price && (
-                          <span className="text-sm text-muted-foreground line-through">
-                            {formatPrice(product.originPrice)}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-end gap-2">
+                          <span className="font-bold text-lg">
+                            {product.hasOptions && product.minPrice !== product.maxPrice
+                              ? `${formatPrice(product.minPrice)} ~`
+                              : formatPrice(product.price)
+                            }
+                          </span>
+                          {product.originPrice && product.originPrice > product.price && (
+                            <span className="text-sm text-muted-foreground line-through">
+                              {formatPrice(product.originPrice)}
+                            </span>
+                          )}
+                        </div>
+                        {product.reviewCount > 0 && (
+                          <span className="flex items-center gap-0.5 text-xs text-muted-foreground">
+                            <MessageSquare className="h-3 w-3" />
+                            {product.reviewCount}
                           </span>
                         )}
                       </div>
