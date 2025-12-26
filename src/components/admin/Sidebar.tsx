@@ -60,22 +60,32 @@ export function Sidebar({ activeMenu, onMenuChange }: SidebarProps) {
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
 
-  // 마운트 시 한 번만 사용자 정보 가져오기 (캐시 우선)
+  // 마운트 시 사용자 정보 가져오기
   useEffect(() => {
     setMounted(true)
-    // 캐시가 없거나 오래된 경우에만 API 호출
+
+    // 캐시 확인 및 state 업데이트
     const cached = sessionStorage.getItem('admin_user')
-    if (!cached) {
-      fetch('/api/me')
-        .then(res => res.ok ? res.json() : null)
-        .then(data => {
-          if (data?.user) {
-            setUser(data.user)
-            sessionStorage.setItem('admin_user', JSON.stringify(data.user))
-          }
-        })
-        .catch(() => {})
+    if (cached) {
+      try {
+        const parsedUser = JSON.parse(cached)
+        setUser(parsedUser)
+        return // 캐시가 있으면 API 호출 생략
+      } catch {
+        sessionStorage.removeItem('admin_user')
+      }
     }
+
+    // 캐시가 없거나 파싱 실패 시 API 호출
+    fetch('/api/me')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data?.user) {
+          setUser(data.user)
+          sessionStorage.setItem('admin_user', JSON.stringify(data.user))
+        }
+      })
+      .catch(() => {})
   }, [])
 
   // 쇼핑몰 관련 경로면 쇼핑몰 메뉴 열기
