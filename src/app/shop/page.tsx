@@ -22,6 +22,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Package,
+  X,
 } from "lucide-react"
 
 interface Product {
@@ -227,10 +228,26 @@ function ShopContent() {
                 <SelectContent>
                   <SelectItem value="latest">최신순</SelectItem>
                   <SelectItem value="popular">인기순</SelectItem>
+                  <SelectItem value="review">후기많은순</SelectItem>
                   <SelectItem value="price_asc">낮은가격</SelectItem>
                   <SelectItem value="price_desc">높은가격</SelectItem>
                 </SelectContent>
               </Select>
+
+              {/* 검색 초기화 */}
+              {searchQuery && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => {
+                    setSearch('')
+                    router.push('/shop')
+                  }}
+                  title="검색 초기화"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
             </div>
           </div>
 

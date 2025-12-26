@@ -44,6 +44,9 @@ export async function GET(request: NextRequest) {
       case 'popular':
         orderBy = { soldCount: 'desc' }
         break
+      case 'review':
+        orderBy = { reviewCount: 'desc' }
+        break
       case 'price_asc':
         orderBy = { price: 'asc' }
         break
