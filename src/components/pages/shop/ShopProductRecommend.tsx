@@ -274,7 +274,6 @@ function InfiniteProductSlider({
   products: Product[]
 }) {
   const scrollRef = useRef<HTMLDivElement>(null)
-  const isScrolling = useRef(false)
 
   const formatPrice = (price: number) => price.toLocaleString() + '원'
 
@@ -290,7 +289,25 @@ function InfiniteProductSlider({
     return (containerWidth - gap * (itemsPerView - 1)) / itemsPerView + gap
   }, [])
 
-  // 중간 위치로 초기화 (products 길이만큼 offset)
+  // 중간 세트로 위치 재조정 (즉시, 애니메이션 없이)
+  const resetToMiddle = useCallback(() => {
+    if (!scrollRef.current || products.length === 0) return
+
+    const itemWidth = getItemWidth()
+    const singleSetWidth = products.length * itemWidth
+    const currentScroll = scrollRef.current.scrollLeft
+
+    // 첫 번째 세트에 있으면 중간 세트로 점프
+    if (currentScroll < singleSetWidth) {
+      scrollRef.current.scrollLeft = currentScroll + singleSetWidth
+    }
+    // 세 번째 세트에 있으면 중간 세트로 점프
+    else if (currentScroll >= singleSetWidth * 2) {
+      scrollRef.current.scrollLeft = currentScroll - singleSetWidth
+    }
+  }, [products.length, getItemWidth])
+
+  // 중간 위치로 초기화
   useEffect(() => {
     if (!scrollRef.current || products.length === 0) return
     const itemWidth = getItemWidth()
@@ -298,35 +315,19 @@ function InfiniteProductSlider({
     scrollRef.current.scrollLeft = middleOffset
   }, [products.length, getItemWidth])
 
-  // 스크롤 위치 감시 및 무한 루프 처리
+  // 스크롤 종료 시 위치 재조정
   useEffect(() => {
     const container = scrollRef.current
     if (!container || products.length === 0) return
 
-    const handleScroll = () => {
-      if (isScrolling.current) return
-
-      const itemWidth = getItemWidth()
-      const singleSetWidth = products.length * itemWidth
-      const currentScroll = container.scrollLeft
-
-      // 첫 번째 세트 시작 부분에 도달하면 중간으로 점프
-      if (currentScroll < singleSetWidth * 0.3) {
-        isScrolling.current = true
-        container.scrollLeft = currentScroll + singleSetWidth
-        setTimeout(() => { isScrolling.current = false }, 50)
-      }
-      // 세 번째 세트 끝 부분에 도달하면 중간으로 점프
-      else if (currentScroll > singleSetWidth * 2.3) {
-        isScrolling.current = true
-        container.scrollLeft = currentScroll - singleSetWidth
-        setTimeout(() => { isScrolling.current = false }, 50)
-      }
+    // scrollend 이벤트 사용 (스크롤 애니메이션 완료 후 발생)
+    const handleScrollEnd = () => {
+      resetToMiddle()
     }
 
-    container.addEventListener('scroll', handleScroll)
-    return () => container.removeEventListener('scroll', handleScroll)
-  }, [products.length, getItemWidth])
+    container.addEventListener('scrollend', handleScrollEnd)
+    return () => container.removeEventListener('scrollend', handleScrollEnd)
+  }, [products.length, resetToMiddle])
 
   const handlePrev = () => {
     if (!scrollRef.current) return
