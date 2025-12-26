@@ -219,27 +219,8 @@ function InfiniteProductSlider({
   products: Product[]
 }) {
   const scrollRef = useRef<HTMLDivElement>(null)
-  const [canScrollLeft, setCanScrollLeft] = useState(false)
-  const [canScrollRight, setCanScrollRight] = useState(true)
 
   const formatPrice = (price: number) => price.toLocaleString() + '원'
-
-  // 스크롤 상태 확인
-  const checkScrollState = useCallback(() => {
-    if (!scrollRef.current) return
-    const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current
-    setCanScrollLeft(scrollLeft > 0)
-    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10)
-  }, [])
-
-  useEffect(() => {
-    checkScrollState()
-    const ref = scrollRef.current
-    if (ref) {
-      ref.addEventListener('scroll', checkScrollState)
-      return () => ref.removeEventListener('scroll', checkScrollState)
-    }
-  }, [checkScrollState])
 
   // 상품 카드 너비 계산 (gap 포함)
   const getItemWidth = () => {
@@ -254,12 +235,22 @@ function InfiniteProductSlider({
     if (!scrollRef.current) return
     const itemWidth = getItemWidth()
     const currentScroll = scrollRef.current.scrollLeft
-    // 정확한 상품 위치로 스냅
-    const targetIndex = Math.floor(currentScroll / itemWidth) - 1
-    scrollRef.current.scrollTo({
-      left: Math.max(0, targetIndex * itemWidth),
-      behavior: 'smooth'
-    })
+    const maxScroll = scrollRef.current.scrollWidth - scrollRef.current.clientWidth
+
+    if (currentScroll <= 0) {
+      // 처음이면 끝으로 이동 (무한 롤링)
+      scrollRef.current.scrollTo({
+        left: maxScroll,
+        behavior: 'smooth'
+      })
+    } else {
+      // 정확한 상품 위치로 스냅
+      const targetIndex = Math.floor(currentScroll / itemWidth) - 1
+      scrollRef.current.scrollTo({
+        left: Math.max(0, targetIndex * itemWidth),
+        behavior: 'smooth'
+      })
+    }
   }
 
   const handleNext = () => {
@@ -267,12 +258,21 @@ function InfiniteProductSlider({
     const itemWidth = getItemWidth()
     const currentScroll = scrollRef.current.scrollLeft
     const maxScroll = scrollRef.current.scrollWidth - scrollRef.current.clientWidth
-    // 정확한 상품 위치로 스냅
-    const targetIndex = Math.ceil(currentScroll / itemWidth) + 1
-    scrollRef.current.scrollTo({
-      left: Math.min(maxScroll, targetIndex * itemWidth),
-      behavior: 'smooth'
-    })
+
+    if (currentScroll >= maxScroll - 10) {
+      // 끝이면 처음으로 이동 (무한 롤링)
+      scrollRef.current.scrollTo({
+        left: 0,
+        behavior: 'smooth'
+      })
+    } else {
+      // 정확한 상품 위치로 스냅
+      const targetIndex = Math.ceil(currentScroll / itemWidth) + 1
+      scrollRef.current.scrollTo({
+        left: Math.min(maxScroll, targetIndex * itemWidth),
+        behavior: 'smooth'
+      })
+    }
   }
 
   return (
@@ -288,7 +288,6 @@ function InfiniteProductSlider({
             size="icon"
             className="h-10 w-10 rounded-full"
             onClick={handlePrev}
-            disabled={!canScrollLeft}
           >
             <ChevronLeft className="h-6 w-6" />
           </Button>
@@ -297,7 +296,6 @@ function InfiniteProductSlider({
             size="icon"
             className="h-10 w-10 rounded-full"
             onClick={handleNext}
-            disabled={!canScrollRight}
           >
             <ChevronRight className="h-6 w-6" />
           </Button>
