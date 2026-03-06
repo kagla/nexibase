@@ -63,5 +63,8 @@ next-env.d.ts
 .claude/
 CLAUDE.md
 
+# logs
+/logs
+
 # 이니시스 샘플 코드 (참고용)
 /general_pc/
