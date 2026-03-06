@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getAdminUser } from '@/lib/auth'
 
 // 게시판 목록 조회
 export async function GET(request: NextRequest) {
   try {
+    const admin = await getAdminUser()
+    if (!admin) {
+      return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 401 })
+    }
+
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '20')
@@ -58,6 +64,11 @@ export async function GET(request: NextRequest) {
 // 게시판 생성
 export async function POST(request: NextRequest) {
   try {
+    const admin = await getAdminUser()
+    if (!admin) {
+      return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 401 })
+    }
+
     const body = await request.json()
     const {
       slug,
@@ -148,6 +159,11 @@ export async function POST(request: NextRequest) {
 // 게시판 일괄 삭제
 export async function DELETE(request: NextRequest) {
   try {
+    const admin = await getAdminUser()
+    if (!admin) {
+      return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 401 })
+    }
+
     const body = await request.json()
     const { ids } = body
 

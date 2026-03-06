@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getAdminUser } from '@/lib/auth'
 
 // 기본 콘텐츠 데이터
 const DEFAULT_CONTENTS = [
@@ -49,6 +50,11 @@ const DEFAULT_CONTENTS = [
 // 기본 콘텐츠 생성
 export async function POST() {
   try {
+    const admin = await getAdminUser()
+    if (!admin) {
+      return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 401 })
+    }
+
     // 이미 존재하는 콘텐츠 slug 확인
     const existingSlugs = await prisma.content.findMany({
       where: {

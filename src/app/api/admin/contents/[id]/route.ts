@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getAdminUser } from '@/lib/auth'
 
 // 콘텐츠 상세 조회
 export async function GET(
@@ -7,6 +8,11 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const admin = await getAdminUser()
+    if (!admin) {
+      return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 401 })
+    }
+
     const { id } = await params
     const contentId = parseInt(id)
 
@@ -47,6 +53,11 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const admin = await getAdminUser()
+    if (!admin) {
+      return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 401 })
+    }
+
     const { id } = await params
     const contentId = parseInt(id)
 
@@ -108,6 +119,11 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const admin = await getAdminUser()
+    if (!admin) {
+      return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 401 })
+    }
+
     const { id } = await params
     const contentId = parseInt(id)
 

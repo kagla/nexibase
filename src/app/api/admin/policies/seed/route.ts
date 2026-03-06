@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getAdminUser } from '@/lib/auth'
 
 // 기본 약관 데이터
 const DEFAULT_POLICIES = [
@@ -95,6 +96,11 @@ const DEFAULT_POLICIES = [
 // 기본 약관 생성
 export async function POST() {
   try {
+    const admin = await getAdminUser()
+    if (!admin) {
+      return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 401 })
+    }
+
     // 이미 존재하는 약관 확인 (slug + version 조합)
     const existingPolicies = await prisma.policy.findMany({
       where: {

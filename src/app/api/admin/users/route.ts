@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+import { getAdminUser } from '@/lib/auth'
 
 // 사용자 목록 조회
 export async function GET(request: NextRequest) {
   try {
+    const admin = await getAdminUser()
+    if (!admin) {
+      return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 401 })
+    }
+
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '10')
@@ -105,6 +111,11 @@ export async function GET(request: NextRequest) {
 // 사용자 생성
 export async function POST(request: NextRequest) {
   try {
+    const admin = await getAdminUser()
+    if (!admin) {
+      return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 401 })
+    }
+
     const body = await request.json()
     const { email, nickname, password, role, status, adminNote } = body
 
@@ -151,6 +162,11 @@ export async function POST(request: NextRequest) {
 // 사용자 일괄 삭제 (소프트 삭제)
 export async function DELETE(request: NextRequest) {
   try {
+    const admin = await getAdminUser()
+    if (!admin) {
+      return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 401 })
+    }
+
     const { searchParams } = new URL(request.url)
     const idsParam = searchParams.get('ids')?.split(',') || []
     const ids = idsParam.map(id => parseInt(id)).filter(id => !isNaN(id))

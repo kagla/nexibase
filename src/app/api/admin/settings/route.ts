@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getAdminUser } from '@/lib/auth'
 
 // 설정 조회
 export async function GET() {
   try {
+    const admin = await getAdminUser()
+    if (!admin) {
+      return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 401 })
+    }
+
     const settings = await prisma.setting.findMany()
 
     // key-value 객체로 변환
@@ -25,6 +31,11 @@ export async function GET() {
 // 설정 저장 (upsert)
 export async function POST(request: NextRequest) {
   try {
+    const admin = await getAdminUser()
+    if (!admin) {
+      return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 401 })
+    }
+
     const body = await request.json()
     const { settings } = body as { settings: Record<string, string> }
 

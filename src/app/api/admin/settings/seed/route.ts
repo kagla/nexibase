@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getAdminUser } from '@/lib/auth'
 
 // 기본 설정 데이터
 const DEFAULT_SETTINGS = [
@@ -23,6 +24,11 @@ const DEFAULT_SETTINGS = [
 // 기본 설정 생성
 export async function POST() {
   try {
+    const admin = await getAdminUser()
+    if (!admin) {
+      return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 401 })
+    }
+
     // 이미 존재하는 설정 키 확인
     const existingKeys = await prisma.setting.findMany({
       where: {

@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getAdminUser } from '@/lib/auth'
 
 // 약관 목록 조회 (슬러그별 그룹핑)
 export async function GET(request: NextRequest) {
   try {
+    const admin = await getAdminUser()
+    if (!admin) {
+      return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 401 })
+    }
+
     const { searchParams } = new URL(request.url)
     const slug = searchParams.get('slug')
     const page = parseInt(searchParams.get('page') || '1')
@@ -67,6 +73,11 @@ export async function GET(request: NextRequest) {
 // 약관 생성 (새 버전)
 export async function POST(request: NextRequest) {
   try {
+    const admin = await getAdminUser()
+    if (!admin) {
+      return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 401 })
+    }
+
     const body = await request.json()
     const { slug, version, title, content } = body
 
@@ -138,6 +149,11 @@ export async function POST(request: NextRequest) {
 // 약관 일괄 삭제
 export async function DELETE(request: NextRequest) {
   try {
+    const admin = await getAdminUser()
+    if (!admin) {
+      return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 401 })
+    }
+
     const body = await request.json()
     const { ids } = body
 
