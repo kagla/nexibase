@@ -341,7 +341,7 @@ export default function AuctionPayPage() {
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">결제 기한</span>
               <span className="px-2 py-0.5 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 rounded text-xs font-mono">
-                <AuctionTimer endsAt={auction.paymentDeadline} status="active" />
+                <AuctionTimer endsAt={auction.paymentDeadline} status="active" showFull />
               </span>
             </div>
           )}
@@ -385,7 +385,20 @@ export default function AuctionPayPage() {
               <input
                 type="tel"
                 value={recipientPhone}
-                onChange={(e) => setRecipientPhone(e.target.value)}
+                onChange={(e) => {
+                  const nums = e.target.value.replace(/[^0-9]/g, "")
+                  let formatted = nums
+                  if (nums.startsWith("02")) {
+                    if (nums.length <= 2) formatted = nums
+                    else if (nums.length <= 6) formatted = `${nums.slice(0,2)}-${nums.slice(2)}`
+                    else formatted = `${nums.slice(0,2)}-${nums.slice(2,6)}-${nums.slice(6,10)}`
+                  } else {
+                    if (nums.length <= 3) formatted = nums
+                    else if (nums.length <= 7) formatted = `${nums.slice(0,3)}-${nums.slice(3)}`
+                    else formatted = `${nums.slice(0,3)}-${nums.slice(3,7)}-${nums.slice(7,11)}`
+                  }
+                  setRecipientPhone(formatted)
+                }}
                 className="w-full px-3 py-2 border border-border rounded-md bg-background text-sm"
                 placeholder="010-0000-0000"
               />

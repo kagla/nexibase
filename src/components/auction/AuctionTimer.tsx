@@ -6,9 +6,10 @@ interface AuctionTimerProps {
   endsAt: string
   status: string
   onExpired?: () => void
+  showFull?: boolean // 항상 시:분:초 표시
 }
 
-export function AuctionTimer({ endsAt, status, onExpired }: AuctionTimerProps) {
+export function AuctionTimer({ endsAt, status, onExpired, showFull }: AuctionTimerProps) {
   const [timeLeft, setTimeLeft] = useState("")
   const [isUrgent, setIsUrgent] = useState(false)
 
@@ -36,7 +37,12 @@ export function AuctionTimer({ endsAt, status, onExpired }: AuctionTimerProps) {
 
       setIsUrgent(diff < 5 * 60 * 1000) // 5분 미만
 
-      if (days > 0) {
+      if (showFull) {
+        const hh = String(hours).padStart(2, "0")
+        const mm = String(minutes).padStart(2, "0")
+        const ss = String(seconds).padStart(2, "0")
+        setTimeLeft(days > 0 ? `${days}일 ${hh}:${mm}:${ss}` : `${hh}:${mm}:${ss}`)
+      } else if (days > 0) {
         setTimeLeft(`${days}일 ${hours}시간`)
       } else if (hours > 0) {
         setTimeLeft(`${hours}시간 ${minutes}분`)
