@@ -135,6 +135,10 @@ export default function AuctionDetailPage() {
           winner: data.winnerNickname
             ? { id: data.winnerId, nickname: data.winnerNickname }
             : null,
+          paymentStatus: data.winnerId ? "pending" : null,
+          paymentDeadline: data.winnerId
+            ? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+            : null,
         }
       })
     })
