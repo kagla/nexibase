@@ -79,8 +79,9 @@ export default function LoginPage() {
           }
         }
 
-        // 로그인 성공
-        router.push("/");
+        // 로그인 성공 — callbackUrl이 있으면 해당 페이지로 이동
+        const callbackUrl = searchParams.get("callbackUrl") || "/";
+        router.push(callbackUrl);
         router.refresh();
       } else {
         // 로그인 실패
@@ -99,7 +100,8 @@ export default function LoginPage() {
     try {
       // 소셜 로그인은 리다이렉트 방식이므로, 로그인 플래그를 미리 설정
       markJustLoggedIn();
-      await signIn(provider, { callbackUrl: "/" });
+      const callbackUrl = searchParams.get("callbackUrl") || "/";
+      await signIn(provider, { callbackUrl });
     } catch (error) {
       console.error(`${provider} 로그인 에러:`, error);
       alert('소셜 로그인에 실패했습니다.');
