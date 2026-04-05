@@ -53,10 +53,6 @@ export function BidForm({
     }
   }
 
-  const quickBid = (add: number) => {
-    setAmount(currentPrice + bidIncrement + add)
-  }
-
   // currentPrice 변경 시 최소 금액 업데이트
   if (amount < minBid) {
     setAmount(minBid)
@@ -78,22 +74,6 @@ export function BidForm({
           />
           <span className="flex items-center text-sm text-muted-foreground">원</span>
         </div>
-      </div>
-
-      <div className="flex gap-2">
-        {[1, 2, 5, 10].map((multiplier) => (
-          <button
-            key={multiplier}
-            type="button"
-            onClick={() => quickBid(bidIncrement * (multiplier - 1))}
-            disabled={disabled}
-            className="flex-1 px-2 py-1.5 text-xs border border-border rounded-md hover:bg-muted disabled:opacity-50"
-          >
-            {multiplier === 1
-              ? "최소"
-              : `+${(bidIncrement * multiplier).toLocaleString()}원`}
-          </button>
-        ))}
       </div>
 
       {error && (
