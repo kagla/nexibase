@@ -57,9 +57,18 @@ export default function AuctionDetailPage() {
   const [currentUserId, setCurrentUserId] = useState<number | null>(null)
   const [buyNowLoading, setBuyNowLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<TabType>(initialTab)
-  const [paymentError, setPaymentError] = useState<string | null>(
-    searchParams.get("error") ? decodeURIComponent(searchParams.get("message") || "결제에 실패했습니다.") : null
-  )
+  const [paymentError] = useState<string | null>(() => {
+    const error = searchParams.get("error")
+    if (!error) return null
+    const errorMessages: Record<string, string> = {
+      payment_failed: "결제가 취소되었거나 실패했습니다. 다시 시도해주세요.",
+      approval_failed: "결제 승인에 실패했습니다. 다시 시도해주세요.",
+      amount_mismatch: "결제 금액이 일치하지 않습니다. 다시 시도해주세요.",
+      order_not_found: "주문 정보를 찾을 수 없습니다. 다시 시도해주세요.",
+      server_error: "결제 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
+    }
+    return errorMessages[error] || "결제에 실패했습니다. 다시 시도해주세요."
+  })
 
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab)
