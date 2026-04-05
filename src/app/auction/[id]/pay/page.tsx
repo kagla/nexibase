@@ -29,6 +29,11 @@ export default function AuctionPayPage() {
   const [currentUserId, setCurrentUserId] = useState<number | null>(null)
 
   // Shipping fields
+  const [savedAddresses, setSavedAddresses] = useState<Array<{
+    id: number; name: string; recipientName: string; recipientPhone: string
+    zipCode: string; address: string; addressDetail: string | null; isDefault: boolean
+  }>>([])
+  const [selectedAddressId, setSelectedAddressId] = useState<string>("") // "" = 새 주소
   const [recipientName, setRecipientName] = useState("")
   const [recipientPhone, setRecipientPhone] = useState("")
   const [zipCode, setZipCode] = useState("")
@@ -61,18 +66,22 @@ export default function AuctionPayPage() {
           setAuction(data.auction)
         }
 
-        // 기본 배송지 가져오기
+        // 저장된 배송지 목록 가져오기
         try {
           const addrRes = await fetch("/api/shop/addresses")
           if (addrRes.ok) {
             const addrData = await addrRes.json()
-            const defaultAddr = addrData.addresses?.find((a: { isDefault: boolean }) => a.isDefault) || addrData.addresses?.[0]
+            const addrs = addrData.addresses || []
+            setSavedAddresses(addrs)
+            // 기본 배송지 자동 선택
+            const defaultAddr = addrs.find((a: { isDefault: boolean }) => a.isDefault) || addrs[0]
             if (defaultAddr) {
-              if (defaultAddr.recipientName) setRecipientName(defaultAddr.recipientName)
-              if (defaultAddr.recipientPhone) setRecipientPhone(defaultAddr.recipientPhone)
-              if (defaultAddr.zipCode) setZipCode(defaultAddr.zipCode)
-              if (defaultAddr.address) setAddress(defaultAddr.address)
-              if (defaultAddr.addressDetail) setAddressDetail(defaultAddr.addressDetail)
+              setSelectedAddressId(String(defaultAddr.id))
+              setRecipientName(defaultAddr.recipientName || "")
+              setRecipientPhone(defaultAddr.recipientPhone || "")
+              setZipCode(defaultAddr.zipCode || "")
+              setAddress(defaultAddr.address || "")
+              setAddressDetail(defaultAddr.addressDetail || "")
             }
           }
         } catch {
@@ -86,6 +95,28 @@ export default function AuctionPayPage() {
     }
     init()
   }, [auctionId])
+
+  // 배송지 선택 변경
+  const handleAddressChange = (value: string) => {
+    setSelectedAddressId(value)
+    if (value === "") {
+      // 새 주소 입력
+      setRecipientName("")
+      setRecipientPhone("")
+      setZipCode("")
+      setAddress("")
+      setAddressDetail("")
+    } else {
+      const addr = savedAddresses.find((a) => String(a.id) === value)
+      if (addr) {
+        setRecipientName(addr.recipientName || "")
+        setRecipientPhone(addr.recipientPhone || "")
+        setZipCode(addr.zipCode || "")
+        setAddress(addr.address || "")
+        setAddressDetail(addr.addressDetail || "")
+      }
+    }
+  }
 
   // Calculate delivery fee when zipCode changes
   useEffect(() => {
@@ -319,7 +350,24 @@ export default function AuctionPayPage() {
         {/* 배송 정보 (배송 상품만) */}
         {auction.requiresShipping && (
           <div className="border border-border rounded-lg p-4 mb-6 space-y-4">
-            <h2 className="font-medium text-sm">배송 정보</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="font-medium text-sm">배송 정보</h2>
+              {savedAddresses.length > 0 && (
+                <select
+                  value={selectedAddressId}
+                  onChange={(e) => handleAddressChange(e.target.value)}
+                  className="px-2 py-1 border border-border rounded-md bg-background text-xs"
+                >
+                  {savedAddresses.map((addr) => (
+                    <option key={addr.id} value={String(addr.id)}>
+                      {addr.recipientName} — {addr.address.slice(0, 20)}...
+                      {addr.isDefault ? " (기본)" : ""}
+                    </option>
+                  ))}
+                  <option value="">+ 새 주소 입력</option>
+                </select>
+              )}
+            </div>
 
             <div>
               <label className="block text-sm text-muted-foreground mb-1">수령자 <span className="text-red-500">*</span></label>
