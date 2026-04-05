@@ -168,7 +168,10 @@ async function main() {
     const item = AUCTION_ITEMS[i]
     const status = statuses[i]
     const increment = bidIncrement
-    const imageUrl = `https://picsum.photos/seed/auction${i + 1}/800/600`
+    const imageCount = rand(2, 4)
+    const imageUrls = Array.from({ length: imageCount }, (_, j) =>
+      `https://picsum.photos/seed/auction${i + 1}-${j + 1}/800/600`
+    )
 
     // 날짜 설정
     let startsAt: Date
@@ -195,7 +198,7 @@ async function main() {
         sellerId: seller.id,
         title: item.title,
         description: `${item.title}을(를) 경매에 올립니다. 상태 양호하며 직거래 또는 택배 거래 가능합니다. 문의 환영합니다.`,
-        image: imageUrl,
+        images: JSON.stringify(imageUrls),
         startingPrice,
         currentPrice: startingPrice,
         buyNowPrice,

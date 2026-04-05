@@ -15,7 +15,7 @@ interface Auction {
   sellerId: number
   title: string
   description: string
-  image: string | null
+  images: string[] | string | null
   startingPrice: number
   currentPrice: number
   buyNowPrice: number | null
@@ -49,6 +49,7 @@ export default function AuctionDetailPage() {
   const [auction, setAuction] = useState<Auction | null>(null)
   const [viewerCount, setViewerCount] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [selectedImage, setSelectedImage] = useState(0)
   const [currentUserId, setCurrentUserId] = useState<number | null>(null)
   const [buyNowLoading, setBuyNowLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<TabType>(initialTab)
@@ -215,19 +216,46 @@ export default function AuctionDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* 왼쪽: 이미지 */}
           <div>
-            <div className="aspect-[4/3] bg-muted rounded-lg overflow-hidden">
-              {auction.image ? (
-                <img
-                  src={auction.image}
-                  alt={auction.title}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <Gavel className="w-16 h-16 text-muted-foreground/30" />
-                </div>
-              )}
-            </div>
+            {(() => {
+              const images = Array.isArray(auction.images)
+                ? auction.images
+                : typeof auction.images === "string"
+                ? (() => { try { return JSON.parse(auction.images as string) } catch { return [] } })()
+                : []
+              return (
+                <>
+                  <div className="aspect-[4/3] bg-muted rounded-lg overflow-hidden">
+                    {images.length > 0 ? (
+                      <img
+                        src={images[selectedImage]}
+                        alt={auction.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Gavel className="w-16 h-16 text-muted-foreground/30" />
+                      </div>
+                    )}
+                  </div>
+                  {images.length > 1 && (
+                    <div className="flex gap-2 mt-3">
+                      {images.map((img: string, i: number) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => setSelectedImage(i)}
+                          className={`w-16 h-16 rounded-md overflow-hidden border-2 ${
+                            selectedImage === i ? "border-primary" : "border-transparent"
+                          }`}
+                        >
+                          <img src={img} alt="" className="w-full h-full object-cover" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )
+            })()}
           </div>
 
           {/* 오른쪽: 경매 정보 */}

@@ -9,7 +9,7 @@ interface AuctionCardProps {
   auction: {
     id: number
     title: string
-    image: string | null
+    images: string | string[] | null
     currentPrice: number
     startingPrice: number
     bidCount: number
@@ -20,15 +20,22 @@ interface AuctionCardProps {
 }
 
 export function AuctionCard({ auction }: AuctionCardProps) {
+  const images: string[] = Array.isArray(auction.images)
+    ? auction.images
+    : typeof auction.images === "string"
+    ? (() => { try { return JSON.parse(auction.images as string) } catch { return [] } })()
+    : []
+  const firstImage = images[0] || null
+
   return (
     <Link
       href={`/auction/${auction.id}`}
       className="block border border-border rounded-lg overflow-hidden hover:shadow-md transition-shadow bg-card"
     >
       <div className="aspect-[4/3] bg-muted relative">
-        {auction.image ? (
+        {firstImage ? (
           <img
-            src={auction.image}
+            src={firstImage}
             alt={auction.title}
             className="w-full h-full object-cover"
           />

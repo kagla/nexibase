@@ -492,7 +492,7 @@ model Auction {
   sellerId      Int
   title         String    @db.VarChar(255)
   description   String    @db.Text
-  image         String?   @db.VarChar(500)
+  images        String?   @db.Text
   startingPrice Int
   currentPrice  Int
   buyNowPrice   Int?

@@ -7,14 +7,16 @@ import { UserLayout } from "@/components/layout/UserLayout"
 
 export default function AuctionCreatePage() {
   const router = useRouter()
+  const MAX_IMAGES = 5
+
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
-  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [imagePreviews, setImagePreviews] = useState<string[]>([])
 
   const [form, setForm] = useState({
     title: "",
     description: "",
-    image: "",
+    images: [] as string[],
     startingPrice: "",
     buyNowPrice: "",
     bidIncrement: "1000",
@@ -23,28 +25,41 @@ export default function AuctionCreatePage() {
   })
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const files = Array.from(e.target.files || [])
+    if (!files.length) return
 
-    const formData = new FormData()
-    formData.append("file", file)
+    const remaining = MAX_IMAGES - form.images.length
+    const toUpload = files.slice(0, remaining)
 
-    try {
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      })
+    for (const file of toUpload) {
+      const formData = new FormData()
+      formData.append("file", file)
 
-      const data = await res.json()
-      if (res.ok) {
-        setForm((prev) => ({ ...prev, image: data.url }))
-        setImagePreview(data.url)
-      } else {
-        setError(data.error || `이미지 업로드 실패 (${res.status})`)
+      try {
+        const res = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        })
+
+        const data = await res.json()
+        if (res.ok) {
+          setForm((prev) => ({ ...prev, images: [...prev.images, data.url] }))
+          setImagePreviews((prev) => [...prev, data.url])
+        } else {
+          setError(data.error || `이미지 업로드 실패 (${res.status})`)
+        }
+      } catch {
+        setError("이미지 업로드 중 네트워크 오류가 발생했습니다.")
       }
-    } catch {
-      setError("이미지 업로드 중 네트워크 오류가 발생했습니다.")
     }
+
+    // reset input so same file can be re-selected
+    e.target.value = ""
+  }
+
+  const handleRemoveImage = (index: number) => {
+    setForm((prev) => ({ ...prev, images: prev.images.filter((_, i) => i !== index) }))
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -123,41 +138,44 @@ export default function AuctionCreatePage() {
 
         {/* 이미지 */}
         <div>
-          <label className="block text-sm font-medium mb-1">대표 이미지</label>
-          {imagePreview ? (
-            <div className="relative inline-block">
-              <img
-                src={imagePreview}
-                alt="미리보기"
-                className="w-48 h-36 object-cover rounded-md border border-border"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  setImagePreview(null)
-                  setForm((prev) => ({ ...prev, image: "" }))
-                }}
-                className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </div>
-          ) : (
-            <label className="flex items-center justify-center w-48 h-36 border-2 border-dashed border-border rounded-md cursor-pointer hover:border-primary">
-              <div className="text-center">
-                <Upload className="w-6 h-6 mx-auto text-muted-foreground" />
-                <span className="text-xs text-muted-foreground mt-1">
-                  이미지 업로드
-                </span>
+          <label className="block text-sm font-medium mb-1">
+            이미지 <span className="text-muted-foreground text-xs">(최대 {MAX_IMAGES}장)</span>
+          </label>
+          <div className="flex flex-wrap gap-3">
+            {imagePreviews.map((src, i) => (
+              <div key={i} className="relative">
+                <img
+                  src={src}
+                  alt={`미리보기 ${i + 1}`}
+                  className="w-24 h-24 object-cover rounded-md border border-border"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleRemoveImage(i)}
+                  className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full"
+                >
+                  <X className="w-3 h-3" />
+                </button>
               </div>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="hidden"
-              />
-            </label>
-          )}
+            ))}
+            {imagePreviews.length < MAX_IMAGES && (
+              <label className="flex items-center justify-center w-24 h-24 border-2 border-dashed border-border rounded-md cursor-pointer hover:border-primary">
+                <div className="text-center">
+                  <Upload className="w-5 h-5 mx-auto text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground mt-1 block">
+                    업로드
+                  </span>
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+              </label>
+            )}
+          </div>
         </div>
 
         {/* 가격 */}

@@ -9,7 +9,7 @@ import { UserLayout } from "@/components/layout/UserLayout"
 interface Auction {
   id: number
   title: string
-  image: string | null
+  images: string | string[] | null
   currentPrice: number
   startingPrice: number
   bidCount: number

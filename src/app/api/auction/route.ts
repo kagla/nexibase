@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
     const {
       title,
       description,
-      image,
+      images,
       startingPrice,
       buyNowPrice,
       bidIncrement,
@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
         sellerId: user.id,
         title,
         description,
-        image: image || null,
+        images: Array.isArray(images) && images.length > 0 ? JSON.stringify(images) : null,
         startingPrice: parsedStartingPrice,
         currentPrice: parsedStartingPrice,
         buyNowPrice: parsedBuyNowPrice,

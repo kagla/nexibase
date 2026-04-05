@@ -41,9 +41,16 @@ export async function GET(
 
     const viewerCount = getViewerCount(auctionId)
 
+    const auctionData = {
+      ...auction,
+      images: typeof auction.images === "string"
+        ? (() => { try { return JSON.parse(auction.images as string) } catch { return [] } })()
+        : (auction.images ?? []),
+    }
+
     return NextResponse.json({
       success: true,
-      auction,
+      auction: auctionData,
       viewerCount,
     })
   } catch (error) {
