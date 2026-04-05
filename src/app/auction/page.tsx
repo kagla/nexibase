@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { AuctionCard } from "@/components/auction/AuctionCard"
 import { Gavel, ChevronLeft, ChevronRight } from "lucide-react"
+import { UserLayout } from "@/components/layout/UserLayout"
 
 interface Auction {
   id: number
@@ -62,6 +63,7 @@ export default function AuctionListPage() {
   }
 
   return (
+    <UserLayout>
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
@@ -142,5 +144,6 @@ export default function AuctionListPage() {
         </div>
       )}
     </div>
+    </UserLayout>
   )
 }

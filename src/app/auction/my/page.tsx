@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { AuctionStatusBadge } from "@/components/auction/AuctionStatusBadge"
 import { Gavel, ShoppingBag } from "lucide-react"
+import { UserLayout } from "@/components/layout/UserLayout"
 
 interface MyBid {
   id: number
@@ -75,6 +76,7 @@ export default function MyAuctionPage() {
 
   if (loading) {
     return (
+      <UserLayout>
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-muted rounded w-1/4" />
@@ -82,10 +84,12 @@ export default function MyAuctionPage() {
           <div className="h-16 bg-muted rounded" />
         </div>
       </div>
+      </UserLayout>
     )
   }
 
   return (
+    <UserLayout>
     <div className="max-w-4xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">내 경매</h1>
 
@@ -151,5 +155,6 @@ export default function MyAuctionPage() {
         </p>
       )}
     </div>
+    </UserLayout>
   )
 }

@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { ArrowLeft, Upload, X } from "lucide-react"
+import { UserLayout } from "@/components/layout/UserLayout"
 
 export default function AuctionCreatePage() {
   const router = useRouter()
@@ -77,6 +78,7 @@ export default function AuctionCreatePage() {
   }
 
   return (
+    <UserLayout>
     <div className="max-w-2xl mx-auto px-4 py-8">
       <button
         onClick={() => router.back()}
@@ -244,5 +246,6 @@ export default function AuctionCreatePage() {
         </button>
       </form>
     </div>
+    </UserLayout>
   )
 }

@@ -9,6 +9,7 @@ import { BidHistory } from "@/components/auction/BidHistory"
 import { AutoBidForm } from "@/components/auction/AutoBidForm"
 import { Gavel, Users, ArrowLeft } from "lucide-react"
 import Link from "next/link"
+import { UserLayout } from "@/components/layout/UserLayout"
 
 interface Auction {
   id: number
@@ -161,6 +162,7 @@ export default function AuctionDetailPage() {
 
   if (loading) {
     return (
+      <UserLayout>
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-muted rounded w-1/3" />
@@ -168,17 +170,20 @@ export default function AuctionDetailPage() {
           <div className="h-32 bg-muted rounded" />
         </div>
       </div>
+      </UserLayout>
     )
   }
 
   if (!auction) {
     return (
+      <UserLayout>
       <div className="max-w-4xl mx-auto px-4 py-8 text-center">
         <p className="text-muted-foreground">경매를 찾을 수 없습니다.</p>
         <Link href="/auction" className="text-primary mt-4 inline-block">
           목록으로 돌아가기
         </Link>
       </div>
+      </UserLayout>
     )
   }
 
@@ -188,6 +193,7 @@ export default function AuctionDetailPage() {
     currentUserId !== null && highestBidder?.id === currentUserId
 
   return (
+    <UserLayout>
     <div className="max-w-4xl mx-auto px-4 py-8">
       <Link
         href="/auction"
@@ -360,5 +366,6 @@ export default function AuctionDetailPage() {
         </div>
       </div>
     </div>
+    </UserLayout>
   )
 }
