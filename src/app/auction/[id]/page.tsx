@@ -112,7 +112,7 @@ export default function AuctionDetailPage() {
           bidCount: prev.bidCount + 1,
           bids: [
             {
-              id: Date.now(),
+              id: Date.now() + Math.random(),
               amount: data.amount,
               isAutoBid: data.isAutoBid,
               createdAt: data.time,
