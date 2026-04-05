@@ -41,6 +41,8 @@ model User {
   auctionsWon     Auction[] @relation("AuctionWinner")
   bids            Bid[]
   autoBids        AutoBid[]
+  auctionPenaltyCount Int       @default(0)
+  auctionBannedUntil  DateTime?
 
   @@index([email])
   @@index([status])
@@ -342,6 +344,7 @@ model Order {
   items           OrderItem[]
   user            User            @relation(fields: [userId], references: [id])
   reviews         ProductReview[]
+  auction         Auction?
 
   @@index([userId])
   @@index([status])
@@ -501,12 +504,17 @@ model Auction {
   startsAt      DateTime
   endsAt        DateTime
   status        String    @default("pending") @db.VarChar(20)
-  winnerId      Int?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  winnerId          Int?
+  requiresShipping  Boolean   @default(true)
+  paymentDeadline   DateTime?
+  paymentStatus     String?   @db.VarChar(20)
+  orderId           Int?      @unique
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   seller   User      @relation("AuctionSeller", fields: [sellerId], references: [id])
   winner   User?     @relation("AuctionWinner", fields: [winnerId], references: [id])
+  order    Order?    @relation(fields: [orderId], references: [id])
   bids     Bid[]
   autoBids AutoBid[]
 
