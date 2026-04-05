@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { getAuthUser } from "@/lib/auth"
 
@@ -10,41 +11,52 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "12")
     const skip = (page - 1) * limit
 
-    const where: Record<string, unknown> = {}
-    if (status && ["pending", "active", "ended"].includes(status)) {
-      where.status = status
-    }
+    const statusFilter = status && ["pending", "active", "ended"].includes(status) ? status : null
+    const whereClause = statusFilter
+      ? Prisma.sql`WHERE a.status = ${statusFilter}`
+      : Prisma.sql`WHERE 1=1`
 
-    // 상태 우선순위: active → pending → ended, 같은 상태 내에서는 마감 임박순
-    const statusOrder = { active: 0, pending: 1, ended: 2 } as Record<string, number>
-
-    const [rawAuctions, total] = await Promise.all([
-      prisma.auction.findMany({
-        where,
-        include: {
-          seller: { select: { id: true, nickname: true, image: true } },
-        },
-        orderBy: [{ endsAt: "asc" }],
-        skip,
-        take: limit,
-      }),
-      prisma.auction.count({ where }),
+    const [auctions, totalResult] = await Promise.all([
+      prisma.$queryRaw<Array<Record<string, unknown>>>`
+        SELECT
+          a.*,
+          JSON_OBJECT('id', u.id, 'nickname', u.nickname, 'image', u.image) as seller
+        FROM auctions a
+        JOIN users u ON a.sellerId = u.id
+        ${whereClause}
+        ORDER BY FIELD(a.status, 'active', 'pending', 'ended'),
+          CASE
+            WHEN a.status = 'active' THEN a.endsAt
+            WHEN a.status = 'pending' THEN a.startsAt
+            ELSE NULL
+          END ASC,
+          CASE
+            WHEN a.status = 'ended' THEN a.endsAt
+            ELSE NULL
+          END DESC
+        LIMIT ${limit} OFFSET ${skip}
+      `,
+      prisma.$queryRaw<[{ cnt: bigint }]>`
+        SELECT COUNT(*) as cnt FROM auctions a
+        ${whereClause}
+      `,
     ])
 
-    // 특정 상태 필터가 없을 때만 상태 우선순위 정렬 적용
-    const auctions = status
-      ? rawAuctions
-      : [...rawAuctions].sort((a: typeof rawAuctions[number], b: typeof rawAuctions[number]) => {
-          const orderDiff = (statusOrder[a.status] ?? 9) - (statusOrder[b.status] ?? 9)
-          if (orderDiff !== 0) return orderDiff
-          // 같은 상태면: active는 마감 임박순, pending은 시작 빠른순, ended는 최근 종료순
-          if (a.status === "ended") return new Date(b.endsAt).getTime() - new Date(a.endsAt).getTime()
-          return new Date(a.endsAt).getTime() - new Date(b.endsAt).getTime()
-        })
+    const total = Number(totalResult[0].cnt)
+
+    // seller JSON 파싱 + BigInt 변환
+    const parsed = auctions.map((a) => {
+      const obj: Record<string, unknown> = {}
+      for (const [key, val] of Object.entries(a)) {
+        obj[key] = typeof val === "bigint" ? Number(val) : val
+      }
+      obj.seller = typeof obj.seller === "string" ? JSON.parse(obj.seller as string) : obj.seller
+      return obj
+    })
 
     return NextResponse.json({
       success: true,
-      auctions,
+      auctions: parsed,
       pagination: {
         page,
         limit,
