@@ -28,6 +28,7 @@ interface Auction {
   paymentStatus: string | null
   paymentDeadline: string | null
   orderId: number | null
+  order: { orderNo: string } | null
   requiresShipping: boolean
   seller: { id: number; nickname: string; image: string | null }
   winner: { id: number; nickname: string } | null
@@ -369,6 +370,14 @@ export default function AuctionDetailPage() {
                   <>
                     <p className="text-sm font-medium text-green-600 dark:text-green-400">결제 완료</p>
                     <p className="font-bold">{auction.currentPrice.toLocaleString()}원</p>
+                    {auction.order?.orderNo && (
+                      <a
+                        href={`/shop/orders/${auction.order.orderNo}`}
+                        className="inline-block mt-1 text-sm text-primary hover:underline"
+                      >
+                        주문 상세 보기
+                      </a>
+                    )}
                   </>
                 )}
 

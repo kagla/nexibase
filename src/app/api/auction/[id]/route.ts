@@ -22,6 +22,7 @@ export async function GET(
       include: {
         seller: { select: { id: true, nickname: true, image: true } },
         winner: { select: { id: true, nickname: true } },
+        order: { select: { orderNo: true } },
         bids: {
           include: {
             user: { select: { id: true, nickname: true } },
