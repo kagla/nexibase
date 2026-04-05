@@ -35,15 +35,15 @@ export default function AuctionCreatePage() {
         body: formData,
       })
 
+      const data = await res.json()
       if (res.ok) {
-        const data = await res.json()
         setForm((prev) => ({ ...prev, image: data.url }))
         setImagePreview(data.url)
       } else {
-        setError("이미지 업로드에 실패했습니다.")
+        setError(data.error || `이미지 업로드 실패 (${res.status})`)
       }
     } catch {
-      setError("이미지 업로드 중 오류가 발생했습니다.")
+      setError("이미지 업로드 중 네트워크 오류가 발생했습니다.")
     }
   }
 
