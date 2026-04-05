@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { AuctionCard } from "@/components/auction/AuctionCard"
 import { Gavel, ChevronLeft, ChevronRight } from "lucide-react"
 import { UserLayout } from "@/components/layout/UserLayout"
@@ -25,11 +26,23 @@ const STATUS_TABS = [
 ]
 
 export default function AuctionListPage() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
   const [auctions, setAuctions] = useState<Auction[]>([])
   const [loading, setLoading] = useState(true)
-  const [status, setStatus] = useState("")
-  const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+
+  const page = parseInt(searchParams.get("page") || "1")
+  const status = searchParams.get("status") || ""
+
+  const updateURL = useCallback((newPage: number, newStatus: string) => {
+    const params = new URLSearchParams()
+    if (newPage > 1) params.set("page", String(newPage))
+    if (newStatus) params.set("status", newStatus)
+    const qs = params.toString()
+    router.push(`/auction${qs ? `?${qs}` : ""}`)
+  }, [router])
 
   const fetchAuctions = useCallback(async () => {
     setLoading(true)
@@ -58,8 +71,7 @@ export default function AuctionListPage() {
   }, [fetchAuctions])
 
   const handleStatusChange = (newStatus: string) => {
-    setStatus(newStatus)
-    setPage(1)
+    updateURL(1, newStatus)
   }
 
   return (
@@ -125,7 +137,7 @@ export default function AuctionListPage() {
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-2 mt-8">
           <button
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            onClick={() => updateURL(Math.max(1, page - 1), status)}
             disabled={page === 1}
             className="p-2 border border-border rounded-md hover:bg-muted disabled:opacity-50"
           >
@@ -135,7 +147,7 @@ export default function AuctionListPage() {
             {page} / {totalPages}
           </span>
           <button
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            onClick={() => updateURL(Math.min(totalPages, page + 1), status)}
             disabled={page === totalPages}
             className="p-2 border border-border rounded-md hover:bg-muted disabled:opacity-50"
           >
