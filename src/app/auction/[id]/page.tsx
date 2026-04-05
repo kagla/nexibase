@@ -303,9 +303,9 @@ export default function AuctionDetailPage() {
             </div>
 
             {/* 남은 시간 */}
-            <div className="py-3 border-t border-border">
-              <p className="text-sm text-muted-foreground mb-1.5">남은 시간</p>
-              <span className="inline-block px-3 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 rounded text-sm font-mono font-medium">
+            <div className="flex items-center justify-between py-3 border-t border-border">
+              <span className="text-sm text-muted-foreground">남은 시간</span>
+              <span className="px-3 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 rounded text-sm font-mono font-medium">
                 <AuctionTimer
                   endsAt={auction.endsAt}
                   status={auction.status}
