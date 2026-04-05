@@ -7,7 +7,7 @@ import { AuctionTimer } from "@/components/auction/AuctionTimer"
 import { BidForm } from "@/components/auction/BidForm"
 import { BidHistory } from "@/components/auction/BidHistory"
 import { AutoBidForm } from "@/components/auction/AutoBidForm"
-import { Gavel, Users, ArrowLeft } from "lucide-react"
+import { Gavel, Users, ArrowLeft, MessageCircle } from "lucide-react"
 import Link from "next/link"
 import { UserLayout } from "@/components/layout/UserLayout"
 
@@ -46,6 +46,7 @@ export default function AuctionDetailPage() {
   const [loading, setLoading] = useState(true)
   const [currentUserId, setCurrentUserId] = useState<number | null>(null)
   const [buyNowLoading, setBuyNowLoading] = useState(false)
+  const [activeTab, setActiveTab] = useState<"bids" | "description" | "qna">("bids")
   const eventSourceRef = useRef<EventSource | null>(null)
 
   const fetchAuction = useCallback(async () => {
@@ -220,20 +221,89 @@ export default function AuctionDetailPage() {
             )}
           </div>
 
-          {/* 상품 설명 */}
+          {/* 탭 메뉴 */}
           <div>
-            <h2 className="text-sm font-medium text-muted-foreground mb-2">
-              상품 설명
-            </h2>
-            <p className="text-sm whitespace-pre-wrap">{auction.description}</p>
-          </div>
+            <div className="flex border-b border-border">
+              {[
+                { key: "bids" as const, label: "입찰 히스토리" },
+                { key: "description" as const, label: "상품 설명" },
+                { key: "qna" as const, label: "Q&A" },
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`px-6 py-3 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                    activeTab === tab.key
+                      ? "border-primary text-primary"
+                      : "border-transparent text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
 
-          {/* 입찰 내역 */}
-          <div>
-            <h2 className="text-sm font-medium text-muted-foreground mb-2">
-              입찰 내역
-            </h2>
-            <BidHistory bids={auction.bids} />
+            <div className="py-4">
+              {/* 입찰 히스토리 탭 */}
+              {activeTab === "bids" && (
+                <div className="divide-y divide-border">
+                  {auction.bids.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-8">
+                      아직 입찰이 없습니다.
+                    </p>
+                  ) : (
+                    auction.bids.map((bid) => (
+                      <div
+                        key={bid.id}
+                        className="flex items-center justify-between py-4 px-2"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="font-bold text-sm">{bid.user.nickname}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(bid.createdAt).toLocaleString("ko-KR", {
+                              year: "numeric",
+                              month: "2-digit",
+                              day: "2-digit",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              second: "2-digit",
+                              hour12: false,
+                            })}
+                          </span>
+                          {bid.isAutoBid && (
+                            <span className="text-xs px-1.5 py-0.5 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 rounded">
+                              자동
+                            </span>
+                          )}
+                        </div>
+                        <span className="font-bold text-red-500 text-sm">
+                          {bid.amount.toLocaleString()}원
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+
+              {/* 상품 설명 탭 */}
+              {activeTab === "description" && (
+                <div className="px-2">
+                  <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                    {auction.description}
+                  </p>
+                </div>
+              )}
+
+              {/* Q&A 탭 */}
+              {activeTab === "qna" && (
+                <div className="text-center py-8">
+                  <MessageCircle className="w-10 h-10 mx-auto text-muted-foreground/30 mb-2" />
+                  <p className="text-sm text-muted-foreground">
+                    등록된 문의가 없습니다.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
