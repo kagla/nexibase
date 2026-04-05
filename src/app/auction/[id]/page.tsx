@@ -25,6 +25,10 @@ interface Auction {
   endsAt: string
   status: string
   winnerId: number | null
+  paymentStatus: string | null
+  paymentDeadline: string | null
+  orderId: number | null
+  requiresShipping: boolean
   seller: { id: number; nickname: string; image: string | null }
   winner: { id: number; nickname: string } | null
   bids: {
@@ -314,17 +318,61 @@ export default function AuctionDetailPage() {
               </span>
             </div>
 
-            {/* 종료된 경매 */}
+            {/* 종료된 경매 — 결제 상태별 UI */}
             {auction.status === "ended" && (
-              <div className="py-4 border-t border-border text-center">
-                {auction.winner ? (
+              <div className="py-4 border-t border-border text-center space-y-2">
+                {/* 낙찰자 본인 + 결제 대기 */}
+                {auction.winnerId === currentUserId && auction.paymentStatus === "pending" && (
+                  <>
+                    <p className="text-sm font-medium">축하합니다! 낙찰되었습니다</p>
+                    <p className="text-2xl font-bold text-red-500">
+                      {auction.currentPrice.toLocaleString()}원
+                    </p>
+                    {auction.paymentDeadline && (
+                      <p className="text-xs text-muted-foreground">
+                        결제 기한:{" "}
+                        <AuctionTimer endsAt={auction.paymentDeadline} status="active" />
+                      </p>
+                    )}
+                    <a
+                      href={`/auction/${auction.id}/pay`}
+                      className="inline-block mt-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90"
+                    >
+                      결제하기
+                    </a>
+                  </>
+                )}
+
+                {/* 결제 완료 */}
+                {auction.paymentStatus === "paid" && auction.winnerId === currentUserId && (
+                  <>
+                    <p className="text-sm font-medium text-green-600 dark:text-green-400">결제 완료</p>
+                    <p className="font-bold">{auction.currentPrice.toLocaleString()}원</p>
+                  </>
+                )}
+
+                {/* 미결제 만료 (낙찰자 본인) */}
+                {auction.paymentStatus === "expired" && auction.winnerId === currentUserId && (
+                  <>
+                    <p className="text-sm">결제 기한이 만료되었습니다</p>
+                    <p className="text-xs text-muted-foreground">
+                      동일 조건으로 재경매가 자동 등록되었습니다.
+                    </p>
+                  </>
+                )}
+
+                {/* 제3자 */}
+                {auction.winnerId !== currentUserId && auction.winner && (
                   <p className="text-sm">
                     <span className="font-bold">{auction.winner.nickname}</span>
                     <span className="text-muted-foreground">님이 </span>
                     <span className="font-bold text-red-500">{auction.currentPrice.toLocaleString()}원</span>
                     <span className="text-muted-foreground">에 낙찰</span>
                   </p>
-                ) : (
+                )}
+
+                {/* 유찰 */}
+                {!auction.winnerId && (
                   <p className="text-sm text-muted-foreground">유찰되었습니다.</p>
                 )}
               </div>
