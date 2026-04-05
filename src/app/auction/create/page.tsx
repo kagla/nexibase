@@ -22,6 +22,7 @@ export default function AuctionCreatePage() {
     bidIncrement: "1000",
     startsAt: "",
     endsAt: "",
+    requiresShipping: true,
   })
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -221,6 +222,20 @@ export default function AuctionCreatePage() {
             min={100}
             className="w-full px-3 py-2 border border-border rounded-md bg-background text-sm"
           />
+        </div>
+
+        {/* 배송 옵션 */}
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="requiresShipping"
+            checked={form.requiresShipping}
+            onChange={(e) => setForm((prev) => ({ ...prev, requiresShipping: e.target.checked }))}
+            className="w-4 h-4 rounded border-border"
+          />
+          <label htmlFor="requiresShipping" className="text-sm">
+            배송이 필요한 상품 <span className="text-muted-foreground">(체크 해제 시 디지털/무형 상품)</span>
+          </label>
         </div>
 
         {/* 시간 */}

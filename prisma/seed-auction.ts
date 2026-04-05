@@ -208,6 +208,7 @@ async function main() {
         endsAt,
         status,
         winnerId: null,
+        requiresShipping: rand(0, 4) > 0,  // 80% 배송, 20% 디지털
       },
     })
 
