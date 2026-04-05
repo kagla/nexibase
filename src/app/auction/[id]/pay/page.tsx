@@ -210,6 +210,22 @@ export default function AuctionPayPage() {
 
     setSubmitting(true)
 
+    // 배송지 자동 저장 (중복 무시)
+    if (auction?.requiresShipping && recipientName && zipCode) {
+      fetch("/api/shop/addresses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          recipientName,
+          recipientPhone,
+          zipCode,
+          address,
+          addressDetail: addressDetail || null,
+          skipDuplicate: true,
+        }),
+      }).catch(() => {})
+    }
+
     try {
       const res = await fetch(`/api/auction/${auctionId}/pay`, {
         method: "POST",
