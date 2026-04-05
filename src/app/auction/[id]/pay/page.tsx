@@ -48,12 +48,35 @@ export default function AuctionPayPage() {
 
         if (meRes.ok) {
           const meData = await meRes.json()
-          if (meData.user) setCurrentUserId(meData.user.id)
+          if (meData.user) {
+            setCurrentUserId(meData.user.id)
+            // 기본 수령자 정보
+            if (meData.user.name) setRecipientName(meData.user.name)
+            if (meData.user.phone) setRecipientPhone(meData.user.phone)
+          }
         }
 
         if (auctionRes.ok) {
           const data = await auctionRes.json()
           setAuction(data.auction)
+        }
+
+        // 기본 배송지 가져오기
+        try {
+          const addrRes = await fetch("/api/shop/addresses")
+          if (addrRes.ok) {
+            const addrData = await addrRes.json()
+            const defaultAddr = addrData.addresses?.find((a: { isDefault: boolean }) => a.isDefault) || addrData.addresses?.[0]
+            if (defaultAddr) {
+              if (defaultAddr.recipientName) setRecipientName(defaultAddr.recipientName)
+              if (defaultAddr.recipientPhone) setRecipientPhone(defaultAddr.recipientPhone)
+              if (defaultAddr.zipCode) setZipCode(defaultAddr.zipCode)
+              if (defaultAddr.address) setAddress(defaultAddr.address)
+              if (defaultAddr.addressDetail) setAddressDetail(defaultAddr.addressDetail)
+            }
+          }
+        } catch {
+          // 주소 로드 실패해도 무시
         }
       } catch {
         setError("데이터를 불러오는데 실패했습니다.")
