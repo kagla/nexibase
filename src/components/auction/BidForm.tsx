@@ -81,38 +81,19 @@ export function BidForm({
       </div>
 
       <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={() => quickBid(0)}
-          disabled={disabled}
-          className="flex-1 px-2 py-1.5 text-xs border border-border rounded-md hover:bg-muted disabled:opacity-50"
-        >
-          최소
-        </button>
-        <button
-          type="button"
-          onClick={() => quickBid(10000)}
-          disabled={disabled}
-          className="flex-1 px-2 py-1.5 text-xs border border-border rounded-md hover:bg-muted disabled:opacity-50"
-        >
-          +1만
-        </button>
-        <button
-          type="button"
-          onClick={() => quickBid(50000)}
-          disabled={disabled}
-          className="flex-1 px-2 py-1.5 text-xs border border-border rounded-md hover:bg-muted disabled:opacity-50"
-        >
-          +5만
-        </button>
-        <button
-          type="button"
-          onClick={() => quickBid(100000)}
-          disabled={disabled}
-          className="flex-1 px-2 py-1.5 text-xs border border-border rounded-md hover:bg-muted disabled:opacity-50"
-        >
-          +10만
-        </button>
+        {[1, 2, 5, 10].map((multiplier) => (
+          <button
+            key={multiplier}
+            type="button"
+            onClick={() => quickBid(bidIncrement * (multiplier - 1))}
+            disabled={disabled}
+            className="flex-1 px-2 py-1.5 text-xs border border-border rounded-md hover:bg-muted disabled:opacity-50"
+          >
+            {multiplier === 1
+              ? "최소"
+              : `+${(bidIncrement * multiplier).toLocaleString()}원`}
+          </button>
+        ))}
       </div>
 
       {error && (
