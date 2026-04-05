@@ -111,10 +111,98 @@ export async function POST(request: NextRequest) {
       data: { status: "active" },
     })
 
+    // 미결제 만료 처리
+    const expiredPayments = await prisma.auction.findMany({
+      where: {
+        paymentStatus: "pending",
+        paymentDeadline: { lte: new Date() },
+      },
+      include: {
+        seller: { select: { id: true } },
+      },
+    })
+
+    let expiredPaymentCount = 0
+    let reAuctionCount = 0
+
+    for (const auction of expiredPayments) {
+      // 1. 결제 상태를 expired로 변경
+      await prisma.auction.update({
+        where: { id: auction.id },
+        data: { paymentStatus: "expired" },
+      })
+
+      // 2. 낙찰자 페널티 누적
+      if (auction.winnerId) {
+        const user = await prisma.user.findUnique({
+          where: { id: auction.winnerId },
+          select: { auctionPenaltyCount: true },
+        })
+
+        const newCount = (user?.auctionPenaltyCount || 0) + 1
+        let banDays = 3
+        if (newCount >= 3) banDays = 30
+        else if (newCount >= 2) banDays = 10
+
+        await prisma.user.update({
+          where: { id: auction.winnerId },
+          data: {
+            auctionPenaltyCount: newCount,
+            auctionBannedUntil: new Date(Date.now() + banDays * 24 * 60 * 60 * 1000),
+          },
+        })
+
+        // 낙찰자 알림
+        createNotification({
+          userId: auction.winnerId,
+          type: "system",
+          title: "경매 미결제 제재",
+          message: `미결제로 경매 이용이 ${banDays}일간 제한됩니다.`,
+          link: `/auction/${auction.id}`,
+        }).catch(() => {})
+      }
+
+      // 3. 동일 조건으로 자동 재등록
+      const originalDuration = auction.endsAt.getTime() - auction.startsAt.getTime()
+      const now = new Date()
+
+      await prisma.auction.create({
+        data: {
+          sellerId: auction.sellerId,
+          title: auction.title,
+          description: auction.description,
+          images: auction.images,
+          startingPrice: auction.startingPrice,
+          currentPrice: auction.startingPrice,
+          buyNowPrice: auction.buyNowPrice,
+          bidIncrement: auction.bidIncrement,
+          bidCount: 0,
+          startsAt: now,
+          endsAt: new Date(now.getTime() + originalDuration),
+          status: "active",
+          requiresShipping: auction.requiresShipping,
+        },
+      })
+      reAuctionCount++
+
+      // 판매자 알림
+      createNotification({
+        userId: auction.sellerId,
+        type: "system",
+        title: "미결제 재경매 등록",
+        message: `"${auction.title}" 낙찰자 미결제로 동일 조건으로 재경매가 등록되었습니다.`,
+        link: `/auction/${auction.id}`,
+      }).catch(() => {})
+
+      expiredPaymentCount++
+    }
+
     return NextResponse.json({
       success: true,
       closedCount,
       activatedCount: activatedCount.count,
+      expiredPaymentCount,
+      reAuctionCount,
     })
   } catch (error) {
     console.error("경매 자동 종료 에러:", error)
