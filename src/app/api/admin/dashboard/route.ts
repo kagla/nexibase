@@ -5,6 +5,7 @@ import { isPluginEnabled } from "@/lib/plugins"
 export async function GET() {
   try {
     // 플러그인 활성화 상태 확인
+    const boardsEnabled = await isPluginEnabled('boards')
     const shopEnabled = await isPluginEnabled('shop')
     const auctionEnabled = await isPluginEnabled('auction')
 
@@ -16,41 +17,17 @@ export async function GET() {
     const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate())
     const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
 
-    // 커뮤니티 기본 통계 조회
+    // === Core stats (항상 조회) ===
     const [
       totalUsers,
       lastMonthUsers,
-      totalPosts,
-      lastWeekPosts,
       todayActiveUsers,
       yesterdayActiveUsers,
       recentUsers,
-      recentPosts,
-      popularPosts,
       dailyUsers
     ] = await Promise.all([
-      // 총 회원수
-      prisma.user.count({
-        where: { deletedAt: null }
-      }),
-      // 지난달 회원수
-      prisma.user.count({
-        where: {
-          deletedAt: null,
-          createdAt: { lt: lastMonthStart }
-        }
-      }),
-      // 총 게시글 수
-      prisma.post.count({
-        where: { status: { not: "deleted" } }
-      }),
-      // 지난주 게시글 수
-      prisma.post.count({
-        where: {
-          status: { not: "deleted" },
-          createdAt: { lt: lastWeekStart }
-        }
-      }),
+      prisma.user.count({ where: { deletedAt: null } }),
+      prisma.user.count({ where: { deletedAt: null, createdAt: { lt: lastMonthStart } } }),
       // 오늘 활성 사용자 (로그인한 사용자)
       prisma.user.count({
         where: {
@@ -81,41 +58,6 @@ export async function GET() {
           createdAt: true
         }
       }),
-      // 최근 게시글 5개
-      prisma.post.findMany({
-        where: { status: { not: "deleted" } },
-        orderBy: { createdAt: "desc" },
-        take: 5,
-        select: {
-          id: true,
-          title: true,
-          createdAt: true,
-          author: {
-            select: {
-              nickname: true
-            }
-          },
-          board: {
-            select: {
-              slug: true
-            }
-          }
-        }
-      }),
-      // 인기 게시글 5개
-      prisma.post.findMany({
-        where: { status: { not: "deleted" } },
-        orderBy: [{ viewCount: 'desc' }, { likeCount: 'desc' }],
-        take: 5,
-        select: {
-          id: true,
-          title: true,
-          viewCount: true,
-          likeCount: true,
-          commentCount: true,
-          board: { select: { slug: true, name: true } }
-        }
-      }),
       // 최근 7일 신규 가입자 추이
       prisma.$queryRaw`
         SELECT DATE(createdAt) as date, COUNT(*) as count
@@ -126,7 +68,69 @@ export async function GET() {
       `
     ])
 
-    // 쇼핑몰 통계 (플러그인 활성화 시에만 조회)
+    // === Boards stats (boards 플러그인 활성화 시에만) ===
+    let totalPosts = 0
+    let lastWeekPosts = 0
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let recentPosts: any[] = []
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let popularPosts: any[] = []
+
+    if (boardsEnabled) {
+      const boardsResults = await Promise.all([
+        // 총 게시글 수
+        prisma.post.count({ where: { status: { not: "deleted" } } }),
+        // 지난주 게시글 수
+        prisma.post.count({
+          where: {
+            status: { not: "deleted" },
+            createdAt: { lt: lastWeekStart }
+          }
+        }),
+        // 최근 게시글 5개
+        prisma.post.findMany({
+          where: { status: { not: "deleted" } },
+          orderBy: { createdAt: "desc" },
+          take: 5,
+          select: {
+            id: true,
+            title: true,
+            createdAt: true,
+            author: {
+              select: {
+                nickname: true
+              }
+            },
+            board: {
+              select: {
+                slug: true
+              }
+            }
+          }
+        }),
+        // 인기 게시글 5개
+        prisma.post.findMany({
+          where: { status: { not: "deleted" } },
+          orderBy: [{ viewCount: 'desc' }, { likeCount: 'desc' }],
+          take: 5,
+          select: {
+            id: true,
+            title: true,
+            viewCount: true,
+            likeCount: true,
+            commentCount: true,
+            board: { select: { slug: true, name: true } }
+          }
+        })
+      ])
+
+      totalPosts = boardsResults[0]
+      lastWeekPosts = boardsResults[1]
+      recentPosts = boardsResults[2]
+      popularPosts = boardsResults[3]
+    }
+
+    // === Shop stats (shop 플러그인 활성화 시에만) ===
     let totalOrders = 0
     let thisMonthOrders = 0
     let lastMonthOrders = 0
@@ -244,7 +248,7 @@ export async function GET() {
       dailyOrders = shopResults[10] as any[]
     }
 
-    // 증감률 계산
+    // === 증감률 계산 ===
     const userGrowth = lastMonthUsers > 0
       ? ((totalUsers - lastMonthUsers) / lastMonthUsers * 100).toFixed(1)
       : "0"
@@ -257,7 +261,7 @@ export async function GET() {
       ? ((todayActiveUsers - yesterdayActiveUsers) / yesterdayActiveUsers * 100).toFixed(1)
       : "0"
 
-    // 최근 7일 추이 데이터 정리 (빈 날짜 채우기)
+    // === 최근 7일 추이 데이터 정리 (빈 날짜 채우기) ===
     const last7Days = []
     for (let i = 6; i >= 0; i--) {
       const date = new Date(todayStart.getTime() - i * 24 * 60 * 60 * 1000)
@@ -275,18 +279,22 @@ export async function GET() {
       count: userTrendMap.get(date) || 0
     }))
 
-    // 쇼핑몰 추이 데이터 (플러그인 활성화 시에만)
-    let orderTrend: { date: string; orders: number; revenue: number }[] = []
+    // === 추이 데이터 ===
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const trends: any = { users: userTrend }
+
+    // === Shop 추이 및 증감률 ===
+    let orderGrowth = "0"
+    let revenueGrowth = "0"
+    let thisMonthRevenueValue = 0
     if (shopEnabled) {
-      // 주문 증감률
-      const orderGrowth = lastMonthOrders > 0
+      orderGrowth = lastMonthOrders > 0
         ? ((thisMonthOrders - lastMonthOrders) / lastMonthOrders * 100).toFixed(1)
         : "0"
 
-      // 매출 증감률
-      const thisMonthRevenueValue = thisMonthRevenue._sum.finalPrice || 0
+      thisMonthRevenueValue = thisMonthRevenue._sum.finalPrice || 0
       const lastMonthRevenueValue = lastMonthRevenue._sum.finalPrice || 0
-      const revenueGrowth = lastMonthRevenueValue > 0
+      revenueGrowth = lastMonthRevenueValue > 0
         ? ((thisMonthRevenueValue - lastMonthRevenueValue) / lastMonthRevenueValue * 100).toFixed(1)
         : "0"
 
@@ -296,53 +304,17 @@ export async function GET() {
         { count: Number(d.count), revenue: Number(d.revenue) }
       ]))
 
-      orderTrend = last7Days.map(date => ({
+      trends.orders = last7Days.map(date => ({
         date,
         orders: orderTrendMap.get(date)?.count || 0,
         revenue: orderTrendMap.get(date)?.revenue || 0
       }))
-
-      return NextResponse.json({
-        pluginStatus: {
-          shop: shopEnabled,
-          auction: auctionEnabled
-        },
-        stats: {
-          totalUsers,
-          userGrowth: parseFloat(userGrowth),
-          totalPosts,
-          postGrowth: parseFloat(postGrowth),
-          activeUsers: todayActiveUsers,
-          activeUserGrowth: parseFloat(activeUserGrowth)
-        },
-        shopStats: {
-          totalOrders,
-          thisMonthOrders,
-          orderGrowth: parseFloat(orderGrowth),
-          totalRevenue: totalRevenue._sum.finalPrice || 0,
-          thisMonthRevenue: thisMonthRevenueValue,
-          revenueGrowth: parseFloat(revenueGrowth),
-          totalProducts,
-          pendingOrders
-        },
-        recentUsers,
-        recentPosts,
-        recentOrders,
-        popularProducts: popularProducts.map(p => ({
-          ...p,
-          image: p.images ? JSON.parse(p.images)[0] : null
-        })),
-        popularPosts,
-        trends: {
-          orders: orderTrend,
-          users: userTrend
-        }
-      })
     }
 
-    // 쇼핑몰 비활성화 시 응답
+    // === 통합 응답 ===
     return NextResponse.json({
       pluginStatus: {
+        boards: boardsEnabled,
         shop: shopEnabled,
         auction: auctionEnabled
       },
@@ -354,12 +326,29 @@ export async function GET() {
         activeUsers: todayActiveUsers,
         activeUserGrowth: parseFloat(activeUserGrowth)
       },
+      ...(shopEnabled ? {
+        shopStats: {
+          totalOrders,
+          thisMonthOrders,
+          orderGrowth: parseFloat(orderGrowth),
+          totalRevenue: totalRevenue._sum.finalPrice || 0,
+          thisMonthRevenue: thisMonthRevenueValue,
+          revenueGrowth: parseFloat(revenueGrowth),
+          totalProducts,
+          pendingOrders
+        }
+      } : {}),
       recentUsers,
-      recentPosts,
-      popularPosts,
-      trends: {
-        users: userTrend
-      }
+      ...(boardsEnabled ? { recentPosts } : {}),
+      ...(shopEnabled ? {
+        recentOrders,
+        popularProducts: popularProducts.map(p => ({
+          ...p,
+          image: p.images ? JSON.parse(p.images)[0] : null
+        }))
+      } : {}),
+      ...(boardsEnabled ? { popularPosts } : {}),
+      trends
     })
   } catch (error) {
     console.error("Dashboard API error:", error)

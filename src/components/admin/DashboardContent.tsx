@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge"
 
 interface DashboardData {
   pluginStatus?: {
+    boards?: boolean
     shop?: boolean
     auction?: boolean
   }
@@ -42,7 +43,7 @@ interface DashboardData {
     image: string | null
     createdAt: string
   }[]
-  recentPosts: {
+  recentPosts?: {
     id: number
     title: string
     createdAt: string
@@ -66,7 +67,7 @@ interface DashboardData {
     viewCount: number
     image: string | null
   }[]
-  popularPosts: {
+  popularPosts?: {
     id: number
     title: string
     viewCount: number
@@ -173,22 +174,24 @@ export function DashboardContent() {
           </Card>
         </Link>
 
-        <Link href="/admin/boards">
-          <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">총 게시글</CardTitle>
-              <MessageSquare className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{data.stats.totalPosts.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">
-                <span className={data.stats.postGrowth >= 0 ? "text-green-600" : "text-red-600"}>
-                  {formatGrowth(data.stats.postGrowth)}
-                </span> 지난주 대비
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
+        {data.pluginStatus?.boards && (
+          <Link href="/admin/boards">
+            <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">총 게시글</CardTitle>
+                <MessageSquare className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{data.stats.totalPosts.toLocaleString()}</div>
+                <p className="text-xs text-muted-foreground">
+                  <span className={data.stats.postGrowth >= 0 ? "text-green-600" : "text-red-600"}>
+                    {formatGrowth(data.stats.postGrowth)}
+                  </span> 지난주 대비
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+        )}
 
         <Link href="/admin/users">
           <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
@@ -513,7 +516,7 @@ export function DashboardContent() {
         )}
 
         {/* 인기 게시글 */}
-        {data.popularPosts && (
+        {data.pluginStatus?.boards && data.popularPosts && (
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="flex items-center gap-2">
