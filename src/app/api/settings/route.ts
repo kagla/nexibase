@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { pluginManifest } from '@/plugins/_generated'
 
 // 공개 설정 조회 (인증 불필요)
 export async function GET() {
@@ -12,7 +13,17 @@ export async function GET() {
       settingsMap[s.key] = s.value
     })
 
-    return NextResponse.json({ settings: settingsMap })
+    // 활성 플러그인 목록
+    const enabledPlugins: string[] = []
+    for (const [folder, meta] of Object.entries(pluginManifest)) {
+      const setting = settingsMap[`plugin_${folder}_enabled`]
+      const enabled = setting ? setting === 'true' : meta.defaultEnabled
+      if (enabled) {
+        enabledPlugins.push(folder)
+      }
+    }
+
+    return NextResponse.json({ settings: settingsMap, enabledPlugins })
   } catch (error) {
     console.error('설정 조회 에러:', error)
     return NextResponse.json(

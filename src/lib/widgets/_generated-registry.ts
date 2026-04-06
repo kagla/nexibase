@@ -6,7 +6,7 @@ export interface WidgetDefinition {
   component: React.ComponentType<{ settings?: Record<string, any> }>
   label: string
   description: string
-  defaultZone: 'hero' | 'main' | 'sidebar' | 'bottom'
+  defaultZone: string
   defaultColSpan: number
   defaultRowSpan: number
   settingsSchema: Record<string, unknown> | null
@@ -49,7 +49,7 @@ export const widgetRegistry: Record<string, WidgetDefinition> = {
     defaultRowSpan: 2,
     settingsSchema: null,
   },
-  'auction-auction-live': {
+  'auction-live': {
     component: auction_AuctionLive,
     label: '진행중 경매',
     description: '',
@@ -58,7 +58,7 @@ export const widgetRegistry: Record<string, WidgetDefinition> = {
     defaultRowSpan: 1,
     settingsSchema: { limit: 4 },
   },
-  'boards-board-cards': {
+  'board-cards': {
     component: boards_BoardCards,
     label: '게시판 카드',
     description: '',
@@ -67,7 +67,7 @@ export const widgetRegistry: Record<string, WidgetDefinition> = {
     defaultRowSpan: 1,
     settingsSchema: { limit: 4 },
   },
-  'boards-latest-posts': {
+  'latest-posts': {
     component: boards_LatestPosts,
     label: '최근 게시글',
     description: '',
@@ -76,7 +76,7 @@ export const widgetRegistry: Record<string, WidgetDefinition> = {
     defaultRowSpan: 2,
     settingsSchema: { limit: 6 },
   },
-  'boards-popular-boards': {
+  'popular-boards': {
     component: boards_PopularBoards,
     label: '인기 게시판',
     description: '',
@@ -85,7 +85,7 @@ export const widgetRegistry: Record<string, WidgetDefinition> = {
     defaultRowSpan: 2,
     settingsSchema: { limit: 5 },
   },
-  'shop-shop-shortcut': {
+  'shop-shortcut': {
     component: shop_ShopShortcut,
     label: '쇼핑몰 바로가기',
     description: '',

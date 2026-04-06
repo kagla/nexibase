@@ -55,22 +55,20 @@ export default function PluginsAdminPage() {
     setTimeout(() => setMessage(''), 3000)
   }
 
-  const handleToggle = async (folder: string, enabled: boolean) => {
-    setSaving(folder)
+  const handleToggle = async (plugin: PluginInfo, enabled: boolean) => {
+    setSaving(plugin.folder)
     try {
-      const res = await fetch(`/api/admin/plugins/${folder}`, {
+      const res = await fetch(`/api/admin/plugins/${plugin.folder}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ enabled }),
       })
       if (res.ok) {
-        // If enabling, trigger activation to seed menus/widgets
         if (enabled) {
-          await fetch(`/api/admin/plugins/${folder}/activate`, { method: 'POST' })
+          await fetch(`/api/admin/plugins/${plugin.folder}/activate`, { method: 'POST' })
         }
         showMessage(`${enabled ? '활성화' : '비활성화'} 되었습니다.`)
         await fetchPlugins()
-        // 사이드바 실시간 반영
         window.dispatchEvent(new Event('pluginStatusChanged'))
       } else {
         const data = await res.json()
@@ -109,6 +107,103 @@ export default function PluginsAdminPage() {
     }
   }
 
+  const renderPluginCard = (plugin: PluginInfo) => (
+    <Card key={plugin.folder}>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-lg flex items-center gap-2">
+              {plugin.name}
+              <Badge variant="outline" className="text-xs">v{plugin.version}</Badge>
+              {plugin.enabled ? (
+                <Badge className="text-xs bg-green-500">활성</Badge>
+              ) : (
+                <Badge variant="secondary" className="text-xs">비활성</Badge>
+              )}
+            </CardTitle>
+            <CardDescription className="mt-1">{plugin.description}</CardDescription>
+          </div>
+          <Switch
+            checked={plugin.enabled}
+            onCheckedChange={(checked) => handleToggle(plugin, checked)}
+            disabled={saving === plugin.folder}
+          />
+        </div>
+        {plugin.defaultEnabled && !plugin.enabled && (
+          <p className="text-xs text-amber-500 mt-2 flex items-center gap-1">
+            <AlertTriangle className="h-3 w-3" />
+            이 기능을 비활성화하면 관련 페이지와 메뉴가 숨겨집니다
+          </p>
+        )}
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <span className="text-muted-foreground">작성자:</span>{' '}
+            <span>{plugin.author}</span>
+            {plugin.authorDomain && (
+              <a href={plugin.authorDomain} target="_blank" rel="noopener noreferrer" className="ml-1 inline-flex items-center text-primary hover:underline">
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            )}
+          </div>
+          {plugin.repository && (
+            <div>
+              <span className="text-muted-foreground">저장소:</span>{' '}
+              <a href={plugin.repository} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                GitHub <ExternalLink className="h-3 w-3 inline" />
+              </a>
+            </div>
+          )}
+          <div>
+            <span className="text-muted-foreground">기능:</span>{' '}
+            {plugin.hasRoutes && <Badge variant="outline" className="text-xs mr-1">페이지</Badge>}
+            {plugin.hasApi && <Badge variant="outline" className="text-xs mr-1">API</Badge>}
+            {plugin.hasAdmin && <Badge variant="outline" className="text-xs mr-1">관리자</Badge>}
+            {plugin.hasWidgets && <Badge variant="outline" className="text-xs mr-1">위젯</Badge>}
+            {plugin.hasMenus && <Badge variant="outline" className="text-xs mr-1">메뉴</Badge>}
+          </div>
+          <div>
+            <span className="text-muted-foreground">URL 경로:</span>{' '}
+            <code className="text-xs bg-muted px-1 rounded">/{plugin.currentSlug}</code>
+          </div>
+        </div>
+
+        <div className="mt-4 pt-4 border-t">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">URL 경로 변경:</span>
+            <Input
+              className="w-48 h-8 text-sm"
+              value={editingSlugs[plugin.folder] ?? plugin.currentSlug}
+              onChange={(e) => setEditingSlugs(prev => ({ ...prev, [plugin.folder]: e.target.value }))}
+              placeholder={plugin.slug}
+            />
+            {editingSlugs[plugin.folder] && editingSlugs[plugin.folder] !== plugin.currentSlug && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handleSlugSave(plugin.folder)}
+                disabled={saving === plugin.folder}
+              >
+                <Save className="h-3 w-3 mr-1" />
+                저장
+              </Button>
+            )}
+          </div>
+          {editingSlugs[plugin.folder] && editingSlugs[plugin.folder] !== plugin.currentSlug && (
+            <p className="text-xs text-amber-500 mt-1 flex items-center gap-1">
+              <AlertTriangle className="h-3 w-3" />
+              slug 변경 후 서버 재시작이 필요합니다
+            </p>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  )
+
+  const defaultPlugins = plugins.filter(p => p.defaultEnabled)
+  const extraPlugins = plugins.filter(p => !p.defaultEnabled)
+
   return (
     <div className="flex h-screen bg-background">
       <Sidebar />
@@ -132,94 +227,24 @@ export default function PluginsAdminPage() {
             </div>
           )}
 
-          <div className="space-y-4">
-            {plugins.map((plugin) => (
-              <Card key={plugin.folder}>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        {plugin.name}
-                        <Badge variant="outline" className="text-xs">v{plugin.version}</Badge>
-                        {plugin.enabled ? (
-                          <Badge className="text-xs bg-green-500">활성</Badge>
-                        ) : (
-                          <Badge variant="secondary" className="text-xs">비활성</Badge>
-                        )}
-                      </CardTitle>
-                      <CardDescription className="mt-1">{plugin.description}</CardDescription>
-                    </div>
-                    <Switch
-                      checked={plugin.enabled}
-                      onCheckedChange={(checked) => handleToggle(plugin.folder, checked)}
-                      disabled={saving === plugin.folder}
-                    />
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">작성자:</span>{' '}
-                      <span>{plugin.author}</span>
-                      {plugin.authorDomain && (
-                        <a href={plugin.authorDomain} target="_blank" rel="noopener noreferrer" className="ml-1 inline-flex items-center text-primary hover:underline">
-                          <ExternalLink className="h-3 w-3" />
-                        </a>
-                      )}
-                    </div>
-                    {plugin.repository && (
-                      <div>
-                        <span className="text-muted-foreground">저장소:</span>{' '}
-                        <a href={plugin.repository} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                          GitHub <ExternalLink className="h-3 w-3 inline" />
-                        </a>
-                      </div>
-                    )}
-                    <div>
-                      <span className="text-muted-foreground">기능:</span>{' '}
-                      {plugin.hasRoutes && <Badge variant="outline" className="text-xs mr-1">페이지</Badge>}
-                      {plugin.hasApi && <Badge variant="outline" className="text-xs mr-1">API</Badge>}
-                      {plugin.hasAdmin && <Badge variant="outline" className="text-xs mr-1">관리자</Badge>}
-                      {plugin.hasWidgets && <Badge variant="outline" className="text-xs mr-1">위젯</Badge>}
-                      {plugin.hasMenus && <Badge variant="outline" className="text-xs mr-1">메뉴</Badge>}
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">URL 경로:</span>{' '}
-                      <code className="text-xs bg-muted px-1 rounded">/{plugin.currentSlug}</code>
-                    </div>
-                  </div>
+          <div className="space-y-6">
+            {defaultPlugins.length > 0 && (
+              <div>
+                <h2 className="text-sm font-semibold text-muted-foreground mb-3">기본 제공</h2>
+                <div className="space-y-4">
+                  {defaultPlugins.map(renderPluginCard)}
+                </div>
+              </div>
+            )}
 
-                  <div className="mt-4 pt-4 border-t">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">URL 경로 변경:</span>
-                      <Input
-                        className="w-48 h-8 text-sm"
-                        value={editingSlugs[plugin.folder] ?? plugin.currentSlug}
-                        onChange={(e) => setEditingSlugs(prev => ({ ...prev, [plugin.folder]: e.target.value }))}
-                        placeholder={plugin.slug}
-                      />
-                      {editingSlugs[plugin.folder] && editingSlugs[plugin.folder] !== plugin.currentSlug && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleSlugSave(plugin.folder)}
-                          disabled={saving === plugin.folder}
-                        >
-                          <Save className="h-3 w-3 mr-1" />
-                          저장
-                        </Button>
-                      )}
-                    </div>
-                    {editingSlugs[plugin.folder] && editingSlugs[plugin.folder] !== plugin.currentSlug && (
-                      <p className="text-xs text-amber-500 mt-1 flex items-center gap-1">
-                        <AlertTriangle className="h-3 w-3" />
-                        slug 변경 후 서버 재시작이 필요합니다
-                      </p>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+            {extraPlugins.length > 0 && (
+              <div>
+                <h2 className="text-sm font-semibold text-muted-foreground mb-3">추가 플러그인</h2>
+                <div className="space-y-4">
+                  {extraPlugins.map(renderPluginCard)}
+                </div>
+              </div>
+            )}
 
             {plugins.length === 0 && (
               <div className="py-12 text-center text-muted-foreground">

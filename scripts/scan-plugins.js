@@ -97,7 +97,7 @@ function scanPlugins() {
       const widgetFiles = fs.readdirSync(widgetsDir).filter(f => f.endsWith('.meta.ts'))
       for (const wf of widgetFiles) {
         const widgetBaseName = wf.replace('.meta.ts', '')
-        const kebabKey = `${folder}-${widgetBaseName.replace(/([A-Z])/g, '-$1').toLowerCase().replace(/^-/, '')}`
+        const kebabKey = `${widgetBaseName.replace(/([A-Z])/g, '-$1').toLowerCase().replace(/^-/, '')}`
         const wContent = fs.readFileSync(path.join(widgetsDir, wf), 'utf-8')
         const wTitle = (wContent.match(/title:\s*['"]([^'"]+)['"]/) || [])[1] || widgetBaseName
         const wZone = (wContent.match(/defaultZone:\s*['"]([^'"]+)['"]/) || [])[1] || 'main'
@@ -192,7 +192,7 @@ function generateWidgetRegistry(plugins) {
     const metaFiles = fs.readdirSync(widgetsDir).filter(f => f.endsWith('.meta.ts'))
     for (const mf of metaFiles) {
       const baseName = mf.replace('.meta.ts', '')
-      const kebabKey = `${p.folder}-${baseName.replace(/([A-Z])/g, '-$1').toLowerCase().replace(/^-/, '')}`
+      const kebabKey = `${baseName.replace(/([A-Z])/g, '-$1').toLowerCase().replace(/^-/, '')}`
       const mContent = fs.readFileSync(path.join(widgetsDir, mf), 'utf-8')
       const title = (mContent.match(/title:\s*['"]([^'"]+)['"]/) || [])[1] || baseName
       const description = (mContent.match(/description:\s*['"]([^'"]+)['"]/) || [])[1] || ''
@@ -244,7 +244,7 @@ export interface WidgetDefinition {
   component: React.ComponentType<{ settings?: Record<string, any> }>
   label: string
   description: string
-  defaultZone: 'hero' | 'main' | 'sidebar' | 'bottom'
+  defaultZone: string
   defaultColSpan: number
   defaultRowSpan: number
   settingsSchema: Record<string, unknown> | null
