@@ -11,6 +11,14 @@
 - **빌드 타임 자동 스캔** — `scripts/scan-plugins.js`가 모든 것을 자동 생성
 - **활성화/비활성화** — DB 기반. 비활성 시 라우트 차단, 메뉴/위젯 숨김. 데이터는 보존
 - **slug 커스터마이징** — 관리자가 URL 경로를 변경 가능 (서버 재시작 필요)
+- **독립 위젯** — 플러그인에 속하지 않는 위젯은 `src/widgets/`에서 관리 (항상 사용 가능)
+
+## 네이밍 규칙
+
+프로젝트 전체에서 **폴더명은 복수형**으로 통일:
+
+- `components/`, `providers/`, `editors/`, `widgets/`, `plugins/`, `layouts/`, `hooks/`, `types/`, `utils/`
+- 플러그인 내부도 동일: `routes/`, `components/`, `widgets/`, `menus/`
 
 ---
 
@@ -256,12 +264,41 @@ export default {
 }
 ```
 
+### 독립 위젯
+
+플러그인에 속하지 않는 범용 위젯은 `src/widgets/`에서 관리:
+
+```
+src/widgets/                        ← 독립 위젯 (항상 사용 가능, 플러그인 무관)
+  WelcomeBanner.tsx
+  WelcomeBanner.meta.ts
+  SiteStats.tsx
+  SiteStats.meta.ts
+  CommunityGuide.tsx
+  CommunityGuide.meta.ts
+
+src/plugins/auction/widgets/        ← 플러그인 위젯 (플러그인 비활성 시 숨김)
+  AuctionLive.tsx
+  AuctionLive.meta.ts
+src/plugins/boards/widgets/
+  LatestPosts.tsx
+  LatestPosts.meta.ts
+  PopularBoards.tsx
+  PopularBoards.meta.ts
+  BoardCards.tsx
+  BoardCards.meta.ts
+src/plugins/shop/widgets/
+  ShopShortcut.tsx
+  ShopShortcut.meta.ts
+```
+
 ### 등록 흐름
 
 1. 플러그인 활성화 시 `menus/` 폴더의 정의를 읽어 Menu DB에 INSERT
 2. `widgets/` 폴더의 정의를 읽어 HomeWidget DB에 INSERT
 3. 이미 존재하는 레코드는 건너뜀 (관리자가 수정한 내용 보존)
 4. 렌더링 시 플러그인 활성 상태를 체크하여 비활성 플러그인의 메뉴/위젯은 숨김
+5. 독립 위젯 (`src/widgets/`)은 항상 표시 (플러그인 상태와 무관)
 
 ---
 
@@ -353,7 +390,10 @@ export default [
 | 관리자 기본 | `src/app/admin/page.tsx` (대시보드), `settings/`, `users/`, `plugins/` |
 | 공통 UI | `src/components/ui/` (ShadCN), `src/components/layout/` |
 | 공통 lib | `src/lib/prisma.ts`, `src/lib/email.ts`, `src/lib/sanitize.ts`, `src/lib/notification.ts` |
+| 공통 providers | `src/components/providers/` |
+| 공통 editors | `src/components/editors/` |
 | 레이아웃 | `src/layouts/` |
+| 독립 위젯 | `src/widgets/` (WelcomeBanner, SiteStats, CommunityGuide) |
 | 메뉴/위젯 인프라 | `src/lib/widgets/`, 메뉴/위젯 API |
 | 홈/검색/인기 | `src/app/page.tsx`, `src/app/search/`, `src/app/popular/`, `src/app/latest/` |
 | Prisma 기본 | `prisma/schema.base.prisma` (User, Setting, Menu, HomeWidget, Account, Notification, ...) |
