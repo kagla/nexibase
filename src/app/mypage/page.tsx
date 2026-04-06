@@ -4,45 +4,48 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { MyPageLayout } from "@/components/layout/MyPageLayout"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import {
-  LogOut,
-  ClipboardList, Heart, MapPin, Gavel, Bell, Pencil, User,
-  type LucideIcon,
+  LogOut, MessageSquare, FileText, Eye, ThumbsUp, Clock,
 } from "lucide-react"
 
-const iconMap: Record<string, LucideIcon> = {
-  ClipboardList, Heart, MapPin, Gavel, Bell, Pencil, User,
+interface MyPost {
+  id: number
+  title: string
+  viewCount: number
+  likeCount: number
+  commentCount: number
+  createdAt: string
+  board: { slug: string, name: string }
 }
 
-interface PluginWithMenus {
-  folder: string
-  currentSlug: string
-  enabled: boolean
-  myPageMenus: { label: string, icon: string, subPath: string }[]
+interface MyComment {
+  id: number
+  content: string
+  createdAt: string
+  post: {
+    id: number
+    title: string
+    board: { slug: string }
+  }
 }
 
 export default function MyPage() {
   const router = useRouter()
-  const [pluginMenus, setPluginMenus] = useState<{ label: string, icon: string, path: string }[]>([])
+  const [myPosts, setMyPosts] = useState<MyPost[]>([])
+  const [myComments, setMyComments] = useState<MyComment[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/admin/plugins')
-      .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        if (data?.plugins) {
-          const menus: { label: string, icon: string, path: string }[] = []
-          for (const p of data.plugins as PluginWithMenus[]) {
-            if (p.enabled && p.myPageMenus?.length > 0) {
-              for (const m of p.myPageMenus) {
-                menus.push({ label: m.label, icon: m.icon, path: `/${p.currentSlug}${m.subPath}` })
-              }
-            }
-          }
-          setPluginMenus(menus)
-        }
-      })
-      .catch(() => {})
+    Promise.all([
+      fetch('/api/me/posts?limit=5').then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('/api/me/comments?limit=5').then(r => r.ok ? r.json() : null).catch(() => null),
+    ]).then(([postsData, commentsData]) => {
+      if (postsData?.posts) setMyPosts(postsData.posts)
+      if (commentsData?.comments) setMyComments(commentsData.comments)
+    }).finally(() => setLoading(false))
   }, [])
 
   const handleLogout = async () => {
@@ -51,29 +54,92 @@ export default function MyPage() {
     router.refresh()
   }
 
+  const formatTimeAgo = (dateStr: string) => {
+    const diff = Date.now() - new Date(dateStr).getTime()
+    const mins = Math.floor(diff / 60000)
+    if (mins < 60) return `${mins}분 전`
+    const hours = Math.floor(mins / 60)
+    if (hours < 24) return `${hours}시간 전`
+    const days = Math.floor(hours / 24)
+    if (days < 7) return `${days}일 전`
+    return new Date(dateStr).toLocaleDateString('ko-KR')
+  }
+
   return (
     <MyPageLayout>
       <div className="space-y-6">
-        {/* 바로가기 */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Link href="/mypage/profile/edit" className="flex flex-col items-center gap-2 p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-            <Pencil className="h-5 w-5 text-muted-foreground" />
-            <span className="text-xs">프로필 수정</span>
-          </Link>
-          {pluginMenus.map((menu, idx) => {
-            const Icon = iconMap[menu.icon] || User
-            return (
-              <a key={idx} href={menu.path} className="flex flex-col items-center gap-2 p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                <Icon className="h-5 w-5 text-muted-foreground" />
-                <span className="text-xs">{menu.label}</span>
-              </a>
-            )
-          })}
-          <Link href="/mypage/notifications" className="flex flex-col items-center gap-2 p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-            <Bell className="h-5 w-5 text-muted-foreground" />
-            <span className="text-xs">알림</span>
-          </Link>
-        </div>
+        {loading ? (
+          <div className="py-12 text-center text-muted-foreground">로딩 중...</div>
+        ) : (
+          <>
+            {/* 내가 쓴 글 */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  내가 쓴 글
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {myPosts.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-4 text-center">작성한 글이 없습니다.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {myPosts.map(post => (
+                      <Link key={post.id} href={`/boards/${post.board.slug}/${post.id}`} className="block hover:bg-muted/50 rounded-lg p-2 -mx-2 transition-colors">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{post.title}</p>
+                            <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                              <Badge variant="outline" className="text-xs">{post.board.name}</Badge>
+                              <span className="flex items-center gap-1"><Eye className="h-3 w-3" />{post.viewCount}</span>
+                              <span className="flex items-center gap-1"><ThumbsUp className="h-3 w-3" />{post.likeCount}</span>
+                              <span className="flex items-center gap-1"><MessageSquare className="h-3 w-3" />{post.commentCount}</span>
+                            </div>
+                          </div>
+                          <span className="text-xs text-muted-foreground ml-2 flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {formatTimeAgo(post.createdAt)}
+                          </span>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* 내가 쓴 댓글 */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4" />
+                  내가 쓴 댓글
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {myComments.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-4 text-center">작성한 댓글이 없습니다.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {myComments.map(comment => (
+                      <Link key={comment.id} href={`/boards/${comment.post.board.slug}/${comment.post.id}`} className="block hover:bg-muted/50 rounded-lg p-2 -mx-2 transition-colors">
+                        <p className="text-sm line-clamp-2">{comment.content.replace(/<[^>]*>/g, '')}</p>
+                        <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                          <span className="truncate">{comment.post.title}</span>
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {formatTimeAgo(comment.createdAt)}
+                          </span>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </>
+        )}
 
         {/* 로그아웃 */}
         <Button variant="outline" onClick={handleLogout} className="w-full text-red-500">
