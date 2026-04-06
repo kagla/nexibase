@@ -146,6 +146,19 @@ export default function MenusAdminPage() {
     }
   }
 
+  const handleToggleActive = async (menu: MenuItem) => {
+    try {
+      await fetch(`/api/admin/menus/${menu.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isActive: !menu.isActive }),
+      })
+      await fetchMenus()
+    } catch {
+      showMessage('변경 실패')
+    }
+  }
+
   const handleMoveUp = async (menu: MenuItem, list: MenuItem[]) => {
     const idx = list.findIndex(m => m.id === menu.id)
     if (idx <= 0) return
@@ -283,6 +296,9 @@ export default function MenusAdminPage() {
                 }}
               >
                 <Pencil className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleToggleActive(menu)} title={menu.isActive ? '숨기기' : '보이기'}>
+                {menu.isActive ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4 text-muted-foreground" />}
               </Button>
               <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500" onClick={() => handleDelete(menu.id)}>
                 <Trash2 className="h-4 w-4" />
