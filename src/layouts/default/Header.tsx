@@ -418,7 +418,7 @@ export default function Header() {
                       </div>
                       <div className="border-t px-4 py-2">
                         <Link
-                          href="/shop/mypage?tab=notifications"
+                          href="/mypage"
                           onClick={() => setNotificationOpen(false)}
                           className="text-xs text-primary hover:underline"
                         >
@@ -437,7 +437,7 @@ export default function Header() {
                     {user ? (
                       <>
                         {/* 마이페이지 */}
-                        <Link href="/shop/mypage">
+                        <Link href="/mypage">
                           <Button variant="ghost" size="icon" className="relative">
                             <User className="h-5 w-5" />
                           </Button>
@@ -743,7 +743,7 @@ export default function Header() {
                 )}
               </Link>
               {user && (
-                <Link href="/shop/mypage" className={`block px-3 py-2 text-sm rounded-md ${pathname?.startsWith('/shop/mypage') ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}`} onClick={() => setMobileMenuOpen(false)}>마이페이지</Link>
+                <Link href="/mypage" className={`block px-3 py-2 text-sm rounded-md ${pathname?.startsWith('/mypage') ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}`} onClick={() => setMobileMenuOpen(false)}>마이페이지</Link>
               )}
               {user?.role === 'admin' && (
                 <>
