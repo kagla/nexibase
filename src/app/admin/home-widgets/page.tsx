@@ -253,11 +253,12 @@ export default function HomeWidgetsAdminPage() {
           )}
         </div>
         {!isPluginDisabled && (
-          <div className="flex items-center gap-2 mt-1" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center gap-2 mt-1">
             <Badge variant="outline" className="text-xs">{widget.colSpan}x{widget.rowSpan}</Badge>
             <select
               className="text-xs border rounded px-1 py-0.5 bg-background"
               value={widget.zone}
+              onClick={(e) => e.stopPropagation()}
               onChange={(e) => { e.stopPropagation(); handleChangeZone(widget, e.target.value) }}
             >
               {ZONES.map(z => <option key={z} value={z}>{ZONE_LABELS[z]}</option>)}
