@@ -22,6 +22,7 @@ interface UserInfo {
 interface SiteSettings {
   site_name: string
   site_logo: string
+  signup_enabled: string
 }
 
 interface Board {
@@ -58,7 +59,8 @@ export default function Header() {
   const [mounted, setMounted] = useState(false)
   const [settings, setSettings] = useState<SiteSettings>({
     site_name: 'NexiBase',
-    site_logo: ''
+    site_logo: '',
+    signup_enabled: 'true'
   })
   const [boards, setBoards] = useState<Board[]>([])
   const [headerMenus, setHeaderMenus] = useState<MenuItem[]>([])
@@ -192,7 +194,8 @@ export default function Header() {
           const settingsData = await settingsResponse.json()
           setSettings({
             site_name: settingsData.settings.site_name || 'NexiBase',
-            site_logo: settingsData.settings.site_logo || ''
+            site_logo: settingsData.settings.site_logo || '',
+            signup_enabled: settingsData.settings.signup_enabled ?? 'true'
           })
         }
 
@@ -467,9 +470,11 @@ export default function Header() {
                         <Link href={`/login?callbackUrl=${encodeURIComponent(pathname)}`}>
                           <Button variant="ghost" size="sm">로그인</Button>
                         </Link>
-                        <Link href="/signup">
-                          <Button size="sm">회원가입</Button>
-                        </Link>
+                        {settings.signup_enabled === 'true' && (
+                          <Link href="/signup">
+                            <Button size="sm">회원가입</Button>
+                          </Link>
+                        )}
                       </>
                     )}
                   </>
