@@ -39,6 +39,15 @@ interface SettingsData {
   // 푸터 설정
   footer_copyright: string
   footer_links: string
+
+  // 레이아웃 설정
+  layout_folder: string
+}
+
+interface LayoutInfo {
+  folder: string
+  name: string
+  files: { Header: boolean; HomePage: boolean; Footer: boolean }
 }
 
 const DEFAULT_SETTINGS: SettingsData = {
@@ -48,7 +57,8 @@ const DEFAULT_SETTINGS: SettingsData = {
   signup_enabled: 'true',
   email_verification_required: 'false',
   footer_copyright: '',
-  footer_links: '[]'
+  footer_links: '[]',
+  layout_folder: 'default'
 }
 
 export default function SettingsPage() {
@@ -58,6 +68,7 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false)
   const [seeding, setSeeding] = useState(false)
   const [hasSettings, setHasSettings] = useState(false)
+  const [layouts, setLayouts] = useState<LayoutInfo[]>([])
 
   // JSON 문자열을 FooterLink 배열로 파싱
   const parseFooterLinks = (jsonStr: string): FooterLink[] => {
@@ -97,6 +108,13 @@ export default function SettingsPage() {
 
   useEffect(() => {
     fetchSettings()
+    // Fetch available layouts
+    fetch('/api/admin/layouts')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data?.layouts) setLayouts(data.layouts)
+      })
+      .catch(() => {})
   }, [fetchSettings])
 
   // 설정 저장
@@ -397,6 +415,71 @@ export default function SettingsPage() {
                     </div>
                   )}
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* 레이아웃 설정 */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Globe className="h-5 w-5" />
+                  레이아웃 설정
+                </CardTitle>
+                <CardDescription>
+                  사이트 레이아웃(Header, 홈페이지, Footer)을 선택합니다
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="layout_folder">레이아웃 선택</Label>
+                  <select
+                    id="layout_folder"
+                    className="w-full h-10 px-3 border rounded-md bg-background text-sm"
+                    value={settings.layout_folder}
+                    onChange={(e) => handleChange('layout_folder', e.target.value)}
+                  >
+                    {layouts.map((layout) => (
+                      <option key={layout.folder} value={layout.folder}>
+                        {layout.folder === 'default' ? '기본 레이아웃' : layout.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* 파일 존재 여부 표시 */}
+                {layouts.length > 0 && (
+                  <div className="space-y-3">
+                    <Label>레이아웃별 파일 구성</Label>
+                    <div className="border rounded-md divide-y">
+                      {layouts.map((layout) => (
+                        <div key={layout.folder} className={`px-4 py-3 ${settings.layout_folder === layout.folder ? 'bg-primary/5' : ''}`}>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium">
+                              {layout.folder === 'default' ? '기본 레이아웃' : layout.name}
+                              {settings.layout_folder === layout.folder && (
+                                <span className="ml-2 text-xs text-primary">(사용중)</span>
+                              )}
+                            </span>
+                            <div className="flex gap-3 text-xs">
+                              <span>Header {layout.files.Header ? '✅' : '❌'}</span>
+                              <span>홈페이지 {layout.files.HomePage ? '✅' : '❌'}</span>
+                              <span>Footer {layout.files.Footer ? '✅' : '❌'}</span>
+                            </div>
+                          </div>
+                          {layout.folder !== 'default' && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {!layout.files.Header && !layout.files.Footer && layout.files.HomePage
+                                ? '홈페이지만 커스텀, Header/Footer는 기본 사용'
+                                : Object.entries(layout.files).filter(([, v]) => !v).length > 0
+                                ? `${Object.entries(layout.files).filter(([, v]) => !v).map(([k]) => k === 'HomePage' ? '홈페이지' : k).join(', ')}는 기본 레이아웃 사용`
+                                : '전체 커스텀'}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
