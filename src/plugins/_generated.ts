@@ -48,6 +48,13 @@ export interface PluginMeta {
   footerMenus: PluginFooterMenu[]
   widgetMetas: PluginWidgetMeta[]
   adminMenus: PluginAdminMenuItem[]
+  myPageMenus: PluginMyPageMenu[]
+}
+
+export interface PluginMyPageMenu {
+  label: string
+  icon: string
+  subPath: string
 }
 
 export const pluginManifest: Record<string, PluginMeta> = {
@@ -70,6 +77,7 @@ export const pluginManifest: Record<string, PluginMeta> = {
     footerMenus: [],
     widgetMetas: [{"widgetKey":"auction-live","title":"진행중 경매","defaultZone":"center","defaultColSpan":2,"defaultRowSpan":1,"settingsSchema":{"limit":4}}],
     adminMenus: [{"label":"경매관리","icon":"Gavel","path":"/admin/auction"}],
+    myPageMenus: [{"label":"내 경매","icon":"Gavel","subPath":"/my"}],
   },
   'boards': {
     name: '게시판',
@@ -90,6 +98,7 @@ export const pluginManifest: Record<string, PluginMeta> = {
     footerMenus: [{"groupName":"커뮤니티","label":"전체게시판","sortOrder":2}],
     widgetMetas: [{"widgetKey":"board-cards","title":"게시판 카드","defaultZone":"bottom","defaultColSpan":4,"defaultRowSpan":1,"settingsSchema":{"limit":4}},{"widgetKey":"latest-posts","title":"최근 게시글","defaultZone":"center","defaultColSpan":2,"defaultRowSpan":2,"settingsSchema":{"limit":6}},{"widgetKey":"popular-boards","title":"인기 게시판","defaultZone":"right","defaultColSpan":1,"defaultRowSpan":2,"settingsSchema":{"limit":5}}],
     adminMenus: [{"label":"게시판관리","icon":"MessageSquare","path":"/admin/boards"}],
+    myPageMenus: [],
   },
   'contents': {
     name: '콘텐츠',
@@ -110,6 +119,7 @@ export const pluginManifest: Record<string, PluginMeta> = {
     footerMenus: [{"groupName":"정보","label":"회사소개","sortOrder":0},{"groupName":"정보","label":"자주 묻는 질문","sortOrder":1},{"groupName":"정보","label":"문의하기","sortOrder":2}],
     widgetMetas: [],
     adminMenus: [{"label":"콘텐츠관리","icon":"FileText","path":"/admin/contents"}],
+    myPageMenus: [],
   },
   'policies': {
     name: '약관',
@@ -130,6 +140,7 @@ export const pluginManifest: Record<string, PluginMeta> = {
     footerMenus: [{"groupName":"정책","label":"이용약관","sortOrder":0},{"groupName":"정책","label":"개인정보처리방침","sortOrder":1}],
     widgetMetas: [],
     adminMenus: [{"label":"약관관리","icon":"ScrollText","path":"/admin/policies"}],
+    myPageMenus: [],
   },
   'shop': {
     name: '쇼핑몰',
@@ -150,6 +161,7 @@ export const pluginManifest: Record<string, PluginMeta> = {
     footerMenus: [{"groupName":"정책","label":"취소/반품 정책","sortOrder":2}],
     widgetMetas: [{"widgetKey":"shop-shortcut","title":"쇼핑몰 바로가기","defaultZone":"center","defaultColSpan":1,"defaultRowSpan":1,"settingsSchema":null}],
     adminMenus: [{"label":"쇼핑몰","icon":"ShoppingBag","isGroup":true,"children":[{"label":"대시보드","icon":"BarChart3","path":"/admin/shop"},{"label":"상품관리","icon":"Package","path":"/admin/shop/products"},{"label":"카테고리","icon":"ShoppingBag","path":"/admin/shop/categories"},{"label":"주문관리","icon":"ClipboardList","path":"/admin/shop/orders"},{"label":"매출관리","icon":"TrendingUp","path":"/admin/shop/sales"},{"label":"리뷰관리","icon":"Star","path":"/admin/shop/reviews"},{"label":"Q&A관리","icon":"MessageSquare","path":"/admin/shop/qna"},{"label":"배송비정책","icon":"Truck","path":"/admin/shop/delivery"},{"label":"쇼핑몰설정","icon":"Settings","path":"/admin/shop/settings"}]}],
+    myPageMenus: [{"label":"주문내역","icon":"ClipboardList","subPath":"/mypage?tab=orders"},{"label":"찜 목록","icon":"Heart","subPath":"/mypage?tab=wishlist"},{"label":"배송지","icon":"MapPin","subPath":"/mypage?tab=addresses"}],
   }
 }
 

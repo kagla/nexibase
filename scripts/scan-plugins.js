@@ -132,11 +132,21 @@ function scanPlugins() {
       }
     }
 
+    // Parse myPageMenus from plugin.ts
+    let myPageMenus = []
+    const myPageMatch = content.match(/myPageMenus:\s*\[([\s\S]*?)\],/)
+    if (myPageMatch) {
+      const itemMatches = myPageMatch[1].matchAll(/\{\s*label:\s*['"]([^'"]+)['"]\s*,\s*icon:\s*['"]([^'"]+)['"]\s*,\s*subPath:\s*['"]([^'"]+)['"]\s*\}/g)
+      for (const m of itemMatches) {
+        myPageMenus.push({ label: m[1], icon: m[2], subPath: m[3] })
+      }
+    }
+
     plugins.push({
       folder, name, slug, version, author, authorDomain, repository,
       description, defaultEnabled, hasRoutes, hasApi, hasAdmin,
       hasWidgets, hasMenus, hasSchema,
-      headerMenus, footerMenus, widgetMetas, adminMenus,
+      headerMenus, footerMenus, widgetMetas, adminMenus, myPageMenus,
     })
   }
 
@@ -286,6 +296,7 @@ function generateManifest(plugins) {
     footerMenus: ${JSON.stringify(p.footerMenus)},
     widgetMetas: ${JSON.stringify(p.widgetMetas)},
     adminMenus: ${JSON.stringify(p.adminMenus)},
+    myPageMenus: ${JSON.stringify(p.myPageMenus)},
   }`
   })
 
@@ -339,6 +350,13 @@ export interface PluginMeta {
   footerMenus: PluginFooterMenu[]
   widgetMetas: PluginWidgetMeta[]
   adminMenus: PluginAdminMenuItem[]
+  myPageMenus: PluginMyPageMenu[]
+}
+
+export interface PluginMyPageMenu {
+  label: string
+  icon: string
+  subPath: string
 }
 
 export const pluginManifest: Record<string, PluginMeta> = {
