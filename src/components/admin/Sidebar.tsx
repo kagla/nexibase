@@ -179,6 +179,14 @@ export function Sidebar({ activeMenu, onMenuChange }: SidebarProps) {
     }
 
     fetchPlugins()
+
+    // 플러그인 상태 변경 이벤트 리스너
+    const handlePluginChange = () => {
+      sessionStorage.removeItem('admin_plugins')
+      fetchPlugins()
+    }
+    window.addEventListener('pluginStatusChanged', handlePluginChange)
+    return () => window.removeEventListener('pluginStatusChanged', handlePluginChange)
   }, [fetchPlugins])
 
   // Auto-open group menus based on current path

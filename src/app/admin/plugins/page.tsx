@@ -70,6 +70,8 @@ export default function PluginsAdminPage() {
         }
         showMessage(`${enabled ? '활성화' : '비활성화'} 되었습니다.`)
         await fetchPlugins()
+        // 사이드바 실시간 반영
+        window.dispatchEvent(new Event('pluginStatusChanged'))
       } else {
         const data = await res.json()
         showMessage(data.error || '저장 실패')
