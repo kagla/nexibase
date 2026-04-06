@@ -2876,7 +2876,7 @@ export default function AuctionDetailPage() {
       })
       const data = await res.json()
       if (!res.ok) {
-        alert(data.error || "즉시구매에 실패���습니다.")
+        alert(data.error || "즉시구매에 실패했습니다.")
       }
     } catch {
       alert("네트워크 오류가 발생했습니다.")
