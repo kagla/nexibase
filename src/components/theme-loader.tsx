@@ -1,23 +1,23 @@
-"use client"
+import { prisma } from '@/lib/prisma'
+import { unstable_noStore as noStore } from 'next/cache'
 
-import { useState, useEffect } from 'react'
+export default async function ThemeLoader() {
+  noStore() // 정적 캐시 방지 — 항상 DB에서 최신 값 읽기
 
-export default function ThemeLoader() {
-  const [themeFolder, setThemeFolder] = useState<string | null>(null)
+  let themeFolder = 'default'
 
-  useEffect(() => {
-    fetch('/api/settings')
-      .then(res => res.ok ? res.json() : null)
-      .then(data => {
-        const folder = data?.settings?.theme_folder
-        if (folder && folder !== 'default') {
-          setThemeFolder(folder)
-        }
-      })
-      .catch(() => {})
-  }, [])
+  try {
+    const setting = await prisma.setting.findUnique({
+      where: { key: 'theme_folder' }
+    })
+    if (setting?.value && setting.value !== 'default') {
+      themeFolder = setting.value
+    }
+  } catch {
+    // fallback to default
+  }
 
-  if (!themeFolder) return null
+  if (themeFolder === 'default') return null
 
   return (
     <link
