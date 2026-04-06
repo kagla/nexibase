@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { UserLayout } from "@/components/layout/UserLayout"
+import { MyPageLayout } from "@/components/layout/MyPageLayout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -71,16 +71,16 @@ export default function EditProfilePage() {
 
   if (loading) {
     return (
-      <UserLayout>
+      <MyPageLayout>
         <div className="py-12 text-center text-muted-foreground">로딩 중...</div>
-      </UserLayout>
+      </MyPageLayout>
     )
   }
 
   if (!user) return null
 
   return (
-    <UserLayout>
+    <MyPageLayout>
       <div className="max-w-lg mx-auto space-y-6">
         <div className="flex items-center gap-3">
           <Link href="/mypage">
@@ -135,6 +135,6 @@ export default function EditProfilePage() {
           </CardContent>
         </Card>
       </div>
-    </UserLayout>
+    </MyPageLayout>
   )
 }
