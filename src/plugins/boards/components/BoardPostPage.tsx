@@ -30,7 +30,7 @@ import {
   ZoomOut,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { CommentReactions } from "@/components/comment/CommentReactions"
+import { CommentReactions } from "@/plugins/boards/components/CommentReactions"
 
 // 이모지 리액션 컴포넌트
 const EmojiIcon = ({ emoji, className }: { emoji: string; className?: string }) => (

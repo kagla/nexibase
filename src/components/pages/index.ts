@@ -2,12 +2,6 @@
 export { default as LoginPage } from './auth/LoginPage'
 export { default as SignupPage } from './auth/SignupPage'
 
-// Board
-export { default as BoardListPage } from './board/BoardListPage'
-export { default as BoardPostPage } from './board/BoardPostPage'
-export { default as BoardWritePage } from './board/BoardWritePage'
-export { default as BoardEditPage } from './board/BoardEditPage'
-
 // Search
 export { default as SearchPage } from './search/SearchPage'
 
@@ -30,5 +24,3 @@ export { default as HomePage } from './HomePage'
 export { default as PopularPage } from './PopularPage'
 export { default as LatestPage } from './LatestPage'
 
-// Boards
-export { default as BoardsPage } from './BoardsPage'

@@ -18,6 +18,22 @@ export interface PluginMeta {
 }
 
 export const pluginManifest: Record<string, PluginMeta> = {
+  'boards': {
+    name: '게시판',
+    slug: 'boards',
+    version: '1.0.0',
+    author: 'kagla',
+    authorDomain: 'https://kagla.com',
+    repository: '',
+    description: '커뮤니티 게시판 시스템',
+    defaultEnabled: true,
+    hasRoutes: true,
+    hasApi: true,
+    hasAdmin: true,
+    hasWidgets: false,
+    hasMenus: false,
+    hasSchema: false,
+  },
   'contents': {
     name: '콘텐츠',
     slug: 'contents',
