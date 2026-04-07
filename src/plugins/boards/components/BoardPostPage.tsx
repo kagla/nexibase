@@ -30,6 +30,7 @@ import {
   ZoomOut,
   Reply,
   MoreVertical,
+  ExternalLink,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -221,13 +222,24 @@ function ImageViewer({ images, initialIndex, onClose }: ImageViewerProps) {
           >
             <ZoomIn className="h-5 w-5" />
           </Button>
-          <a
-            href={currentImage.filePath}
-            download={currentImage.filename}
-            className="p-2 text-white hover:bg-white/20 rounded-md transition-colors"
-          >
-            <Download className="h-5 w-5" />
-          </a>
+          {currentImage.filePath.startsWith('/') ? (
+            <a
+              href={currentImage.filePath}
+              download={currentImage.filename}
+              className="p-2 text-white hover:bg-white/20 rounded-md transition-colors"
+            >
+              <Download className="h-5 w-5" />
+            </a>
+          ) : (
+            <a
+              href={currentImage.filePath}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2 text-white hover:bg-white/20 rounded-md transition-colors"
+            >
+              <ExternalLink className="h-5 w-5" />
+            </a>
+          )}
           <Button
             variant="ghost"
             size="icon"
