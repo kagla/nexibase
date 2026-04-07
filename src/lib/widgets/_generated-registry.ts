@@ -15,7 +15,6 @@ export interface WidgetDefinition {
 const CommunityGuide = dynamic(() => import('@/widgets/CommunityGuide'), { ssr: false })
 const SiteStats = dynamic(() => import('@/widgets/SiteStats'), { ssr: false })
 const WelcomeBanner = dynamic(() => import('@/widgets/WelcomeBanner'), { ssr: false })
-const auction_AuctionLive = dynamic(() => import('@/plugins/auction/widgets/AuctionLive'), { ssr: false })
 const boards_BoardCards = dynamic(() => import('@/plugins/boards/widgets/BoardCards'), { ssr: false })
 const boards_LatestPosts = dynamic(() => import('@/plugins/boards/widgets/LatestPosts'), { ssr: false })
 const boards_PopularBoards = dynamic(() => import('@/plugins/boards/widgets/PopularBoards'), { ssr: false })
@@ -48,15 +47,6 @@ export const widgetRegistry: Record<string, WidgetDefinition> = {
     defaultColSpan: 2,
     defaultRowSpan: 2,
     settingsSchema: null,
-  },
-  'auction-live': {
-    component: auction_AuctionLive,
-    label: '진행중 경매',
-    description: '',
-    defaultZone: 'center',
-    defaultColSpan: 2,
-    defaultRowSpan: 1,
-    settingsSchema: { limit: 4 },
   },
   'board-cards': {
     component: boards_BoardCards,

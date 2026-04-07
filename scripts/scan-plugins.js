@@ -63,6 +63,7 @@ function scanPlugins() {
     const hasWidgets = fs.existsSync(path.join(PLUGINS_DIR, folder, 'widgets'))
     const hasMenus = fs.existsSync(path.join(PLUGINS_DIR, folder, 'menus'))
     const hasSchema = fs.existsSync(path.join(PLUGINS_DIR, folder, 'schema.prisma'))
+    const hasUserSchema = fs.existsSync(path.join(PLUGINS_DIR, folder, 'schema.user.prisma'))
 
     // Parse header menus
     let headerMenus = []
@@ -145,7 +146,7 @@ function scanPlugins() {
     plugins.push({
       folder, name, slug, version, author, authorDomain, repository,
       description, defaultEnabled, hasRoutes, hasApi, hasAdmin,
-      hasWidgets, hasMenus, hasSchema,
+      hasWidgets, hasMenus, hasSchema, hasUserSchema,
       headerMenus, footerMenus, widgetMetas, adminMenus, myPageMenus,
     })
   }
@@ -218,7 +219,7 @@ function generateWidgetRegistry(plugins) {
       widgetEntries.push({
         key: kebabKey,
         importPath: `@/plugins/${p.folder}/widgets/${baseName}`,
-        varName: `${p.folder}_${baseName}`,
+        varName: `${p.folder.replace(/-/g, '_')}_${baseName}`,
         title,
         description,
         defaultZone,
@@ -456,6 +457,27 @@ function mergeSchemas(plugins) {
       fs.writeFileSync(SCHEMA_BASE, baseSchema, 'utf-8')
       console.log(`[scan-plugins] Created ${SCHEMA_BASE} from existing schema.prisma`)
     }
+  }
+
+  // 플러그인 schema.user.prisma에서 User 관계 수집
+  const userRelations = []
+  for (const p of plugins) {
+    if (p.hasUserSchema) {
+      const userSchemaPath = path.join(PLUGINS_DIR, p.folder, 'schema.user.prisma')
+      const content = fs.readFileSync(userSchemaPath, 'utf-8').trim()
+      if (content) {
+        userRelations.push(`  // plugin: ${p.folder}\n${content.split('\n').map(l => '  ' + l).join('\n')}`)
+      }
+    }
+  }
+
+  // User 모델의 @@index 블록 앞에 플러그인 관계 주입
+  if (userRelations.length > 0) {
+    const userRelationBlock = `\n${userRelations.join('\n')}\n\n`
+    baseSchema = baseSchema.replace(
+      /(\n  @@index\(\[email\]\))/,
+      `${userRelationBlock}$1`
+    )
   }
 
   const pluginSchemas = []

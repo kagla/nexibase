@@ -58,27 +58,6 @@ export interface PluginMyPageMenu {
 }
 
 export const pluginManifest: Record<string, PluginMeta> = {
-  'auction': {
-    name: '경매',
-    slug: 'auction',
-    version: '1.0.0',
-    author: 'nexibase',
-    authorDomain: 'https://nexibase.com',
-    repository: '',
-    description: '실시간 경매 시스템',
-    defaultEnabled: false,
-    hasRoutes: true,
-    hasApi: true,
-    hasAdmin: true,
-    hasWidgets: true,
-    hasMenus: true,
-    hasSchema: true,
-    headerMenus: [{"label":"경매","icon":"🔨","sortOrder":3}],
-    footerMenus: [],
-    widgetMetas: [{"widgetKey":"auction-live","title":"진행중 경매","defaultZone":"center","defaultColSpan":2,"defaultRowSpan":1,"settingsSchema":{"limit":4}}],
-    adminMenus: [{"label":"경매관리","icon":"Gavel","path":"/admin/auction"}],
-    myPageMenus: [{"label":"내 경매","icon":"Gavel","subPath":"/mypage"}],
-  },
   'boards': {
     name: '게시판',
     slug: 'boards',

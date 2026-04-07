@@ -32,21 +32,19 @@ model User {
   provider      String?         @db.VarChar(50)
   providerId    String?         @db.VarChar(255)
   accounts      Account[]
-  comments      Comment[]
   notifications Notification[]
-  orders        Order[]
-  posts         Post[]
-  qnas          ProductQna[]
-  reviews       ProductReview[]
-  reactions     Reaction[]
   addresses     UserAddress[]
-  wishlists     Wishlist[]
-  auctionsSelling Auction[] @relation("AuctionSeller")
-  auctionsWon     Auction[] @relation("AuctionWinner")
-  bids            Bid[]
-  autoBids        AutoBid[]
-  auctionPenaltyCount Int       @default(0)
-  auctionBannedUntil  DateTime?
+
+  // plugin: boards
+  posts     Post[]
+  comments  Comment[]
+  reactions Reaction[]
+  // plugin: shop
+  orders    Order[]
+  qnas      ProductQna[]
+  reviews   ProductReview[]
+  wishlists Wishlist[]
+
 
   @@index([email])
   @@index([status])
@@ -161,73 +159,6 @@ model HomeWidget {
 
   @@index([zone, sortOrder])
   @@map("home_widgets")
-}
-
-
-// ======= Plugin: auction =======
-model Auction {
-  id            Int       @id @default(autoincrement())
-  sellerId      Int
-  title         String    @db.VarChar(255)
-  description   String    @db.Text
-  images        String?   @db.Text
-  startingPrice Int
-  currentPrice  Int
-  buyNowPrice   Int?
-  bidIncrement  Int       @default(1000)
-  bidCount      Int       @default(0)
-  startsAt      DateTime
-  endsAt        DateTime
-  status        String    @default("pending") @db.VarChar(20)
-  winnerId          Int?
-  requiresShipping  Boolean   @default(true)
-  paymentDeadline   DateTime?
-  paymentStatus     String?   @db.VarChar(20)
-  orderId           Int?      @unique
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-
-  seller   User      @relation("AuctionSeller", fields: [sellerId], references: [id])
-  winner   User?     @relation("AuctionWinner", fields: [winnerId], references: [id])
-  order    Order?    @relation(fields: [orderId], references: [id])
-  bids     Bid[]
-  autoBids AutoBid[]
-
-  @@index([status, endsAt])
-  @@index([sellerId])
-  @@map("auctions")
-}
-
-model Bid {
-  id        Int      @id @default(autoincrement())
-  auctionId Int
-  userId    Int
-  amount    Int
-  isAutoBid Boolean  @default(false)
-  createdAt DateTime @default(now())
-
-  auction Auction @relation(fields: [auctionId], references: [id], onDelete: Cascade)
-  user    User    @relation(fields: [userId], references: [id])
-
-  @@index([auctionId, createdAt])
-  @@index([userId])
-  @@map("bids")
-}
-
-model AutoBid {
-  id        Int      @id @default(autoincrement())
-  auctionId Int
-  userId    Int
-  maxAmount Int
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  auction Auction @relation(fields: [auctionId], references: [id], onDelete: Cascade)
-  user    User    @relation(fields: [userId], references: [id])
-
-  @@unique([auctionId, userId])
-  @@map("auto_bids")
 }
 
 
@@ -500,7 +431,6 @@ model Order {
   items           OrderItem[]
   user            User            @relation(fields: [userId], references: [id])
   reviews         ProductReview[]
-  auction         Auction?
 
   @@index([userId])
   @@index([status])

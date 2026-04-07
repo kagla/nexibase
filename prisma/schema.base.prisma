@@ -28,21 +28,8 @@ model User {
   provider      String?         @db.VarChar(50)
   providerId    String?         @db.VarChar(255)
   accounts      Account[]
-  comments      Comment[]
   notifications Notification[]
-  orders        Order[]
-  posts         Post[]
-  qnas          ProductQna[]
-  reviews       ProductReview[]
-  reactions     Reaction[]
   addresses     UserAddress[]
-  wishlists     Wishlist[]
-  auctionsSelling Auction[] @relation("AuctionSeller")
-  auctionsWon     Auction[] @relation("AuctionWinner")
-  bids            Bid[]
-  autoBids        AutoBid[]
-  auctionPenaltyCount Int       @default(0)
-  auctionBannedUntil  DateTime?
 
   @@index([email])
   @@index([status])
