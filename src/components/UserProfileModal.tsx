@@ -61,7 +61,7 @@ export function UserProfileModal({ userId, onClose }: UserProfileModalProps) {
                 {profile.image ? (
                   <img src={profile.image} alt={profile.nickname} className="w-full h-full object-cover" />
                 ) : (
-                  <User className="h-8 w-8 text-primary" />
+                  <span className="text-2xl font-medium text-primary">{(profile.nickname || '?').charAt(0)}</span>
                 )}
               </div>
               <div className="text-center">

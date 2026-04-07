@@ -1,6 +1,5 @@
 "use client"
 
-import { User } from "lucide-react"
 
 interface UserNicknameProps {
   userId: number | string
@@ -38,11 +37,13 @@ export function UserNickname({
       className={`inline-flex items-center gap-1.5 hover:text-primary transition-colors ${className}`}
     >
       {showAvatar && (
-        <span className={`${sizeClass} rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0`}>
+        <span className={`${sizeClass} rounded-full bg-primary/10 flex items-center justify-center overflow-hidden shrink-0`}>
           {image ? (
             <img src={image} alt="" className="w-full h-full object-cover" />
           ) : (
-            <User className={iconSize + ' text-muted-foreground'} />
+            <span className={`${avatarSize === 'md' ? 'text-xs' : 'text-[10px]'} font-medium text-primary`}>
+              {(nickname || '?').charAt(0)}
+            </span>
           )}
         </span>
       )}
