@@ -862,13 +862,11 @@ export default function BoardsPage() {
                             </td>
                             <td className="p-3">
                               <div className="flex justify-center gap-1">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => { setEditingBoard(board); setModalOpen(true); }}
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
+                                <a href={`/admin/boards/${board.id}`}>
+                                  <Button variant="ghost" size="sm">
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                </a>
                                 <Button
                                   variant="ghost"
                                   size="sm"
