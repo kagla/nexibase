@@ -155,7 +155,8 @@ export default function BoardListPage() {
   }
 
   // 게시글 클릭
-  const handlePostClick = (post: Post) => {
+  const handlePostClick = (post: Post, e?: React.MouseEvent) => {
+    if (e && (e.target as HTMLElement).closest('[data-user-nickname]')) return
     if (post.isSecret && post.author.id !== user?.id && !isAdmin) {
       alert('비밀글입니다.')
       return
@@ -234,7 +235,7 @@ export default function BoardListPage() {
                 {notices.map((post) => (
                   <div
                     key={post.id}
-                    onClick={() => handlePostClick(post)}
+                    onClick={(e) => handlePostClick(post, e)}
                     className="flex items-center gap-3 px-4 py-3 hover:bg-muted/50 cursor-pointer border-b last:border-b-0 transition-colors"
                   >
                     <Badge variant="destructive" className="shrink-0">
@@ -264,7 +265,7 @@ export default function BoardListPage() {
                   {posts.map((post) => (
                     <div
                       key={post.id}
-                      onClick={() => handlePostClick(post)}
+                      onClick={(e) => handlePostClick(post, e)}
                       className="group cursor-pointer"
                     >
                       {/* 썸네일 */}
@@ -329,7 +330,7 @@ export default function BoardListPage() {
                 {posts.map((post) => (
                   <div
                     key={post.id}
-                    onClick={() => handlePostClick(post)}
+                    onClick={(e) => handlePostClick(post, e)}
                     className="flex items-center px-4 py-3 hover:bg-muted/50 cursor-pointer border-b last:border-b-0 transition-colors"
                   >
                     {/* 모바일: 기존 스택 레이아웃 */}
