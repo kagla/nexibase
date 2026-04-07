@@ -11,38 +11,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { useRouter, usePathname } from "next/navigation"
 import { headerWidgets } from "@/lib/widgets/_generated-header-widgets"
-
-interface UserInfo {
-  id: string
-  email: string
-  nickname: string
-  image: string | null
-  role: string
-}
-
-interface SiteSettings {
-  site_name: string
-  site_logo: string
-  signup_enabled: string
-}
-
-interface Board {
-  id: number
-  slug: string
-  name: string
-}
-
-interface MenuItem {
-  id: number
-  label: string
-  url: string
-  icon: string | null
-  target: string
-  visibility: string
-  isActive: boolean
-  sortOrder: number
-  children: MenuItem[]
-}
+import { useSite } from "@/lib/SiteContext"
 
 interface Notification {
   id: number
@@ -55,16 +24,8 @@ interface Notification {
 }
 
 export default function Header() {
-  const [user, setUser] = useState<UserInfo | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const { user, setUser, settings, boards, headerMenus, isLoading } = useSite()
   const [mounted, setMounted] = useState(false)
-  const [settings, setSettings] = useState<SiteSettings>({
-    site_name: 'NexiBase',
-    site_logo: '',
-    signup_enabled: 'true'
-  })
-  const [boards, setBoards] = useState<Board[]>([])
-  const [headerMenus, setHeaderMenus] = useState<MenuItem[]>([])
   const [moreMenuOpen, setMoreMenuOpen] = useState(false)
   const [openDropdownId, setOpenDropdownId] = useState<number | null>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -153,51 +114,6 @@ export default function Header() {
     setNotificationOpen(false)
   }
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [userResponse, settingsResponse, boardsResponse, menusResponse] = await Promise.all([
-          fetch('/api/me'),
-          fetch('/api/settings'),
-          fetch('/api/boards?limit=10'),
-          fetch('/api/menus?position=header')
-        ])
-
-        if (userResponse.ok) {
-          const userData = await userResponse.json()
-          setUser(userData.user)
-        } else {
-          setUser(null)
-        }
-
-        if (settingsResponse.ok) {
-          const settingsData = await settingsResponse.json()
-          setSettings({
-            site_name: settingsData.settings.site_name || 'NexiBase',
-            site_logo: settingsData.settings.site_logo || '',
-            signup_enabled: settingsData.settings.signup_enabled ?? 'true'
-          })
-        }
-
-        if (boardsResponse.ok) {
-          const boardsData = await boardsResponse.json()
-          setBoards(boardsData.boards || [])
-        }
-
-        if (menusResponse.ok) {
-          const menusData = await menusResponse.json()
-          setHeaderMenus(menusData.menus || [])
-        }
-      } catch (error) {
-        console.error('데이터 조회 에러:', error)
-        setUser(null)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchData()
-  }, [])
 
   const handleLogout = async () => {
     try {

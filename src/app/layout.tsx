@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SessionProvider } from "@/components/providers/SessionProvider";
 import ThemeLoader from "@/components/theme-loader";
+import { SiteProvider } from "@/lib/SiteContext";
 import "./globals.css";
 import "./custom.css";
 
@@ -41,9 +42,11 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <main>
-              {children}
-            </main>
+            <SiteProvider>
+              <main>
+                {children}
+              </main>
+            </SiteProvider>
           </ThemeProvider>
         </SessionProvider>
       </body>
