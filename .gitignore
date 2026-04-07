@@ -57,6 +57,38 @@ next-env.d.ts
 # 테마 index.ts (prebuild 스크립트로 자동 생성)
 /src/themes/index.ts
 
+# scan-plugins 자동 생성 파일 (플러그인 래퍼, 매니페스트, 머지 스키마)
+/prisma/schema.prisma
+/src/plugins/_generated.ts
+/src/lib/widgets/_generated-registry.ts
+
+# 플러그인 라우트 래퍼 (scan-plugins가 자동 생성)
+/src/app/boards/
+/src/app/api/boards/
+/src/app/admin/boards/
+/src/app/api/admin/boards/
+/src/app/shop/
+/src/app/api/shop/
+/src/app/admin/shop/
+/src/app/api/admin/shop/
+/src/app/contents/
+/src/app/api/content/
+/src/app/admin/contents/
+/src/app/api/admin/contents/
+/src/app/policies/
+/src/app/api/policy/
+/src/app/admin/policies/
+/src/app/api/admin/policies/
+/src/app/community/
+/src/app/auction/
+/src/app/api/auction/
+/src/app/admin/auction/
+/src/app/api/admin/auction/
+/src/app/photo-gallery/
+/src/app/api/photo-gallery/
+/src/app/admin/photo-gallery/
+/src/app/api/admin/photo-gallery/
+
 /public
 
 # Claude Code 관련 파일
