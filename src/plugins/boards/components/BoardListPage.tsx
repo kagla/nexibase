@@ -317,43 +317,56 @@ export default function BoardListPage() {
             ) : (
               /* 목록 뷰 */
               <div>
+                {/* 데스크톱 헤더 */}
+                <div className="hidden md:flex items-center px-4 py-2 border-b text-xs text-muted-foreground font-medium">
+                  <div className="flex-1">제목</div>
+                  <div className="w-24 text-center">작성자</div>
+                  <div className="w-24 text-center">날짜</div>
+                  <div className="w-16 text-center">조회</div>
+                  {board.useReaction && <div className="w-16 text-center">추천</div>}
+                </div>
                 {posts.map((post) => (
                   <div
                     key={post.id}
                     onClick={() => handlePostClick(post)}
-                    className="flex items-start gap-3 px-4 py-4 hover:bg-muted/50 cursor-pointer border-b last:border-b-0 transition-colors"
+                    className="flex items-center px-4 py-3 hover:bg-muted/50 cursor-pointer border-b last:border-b-0 transition-colors"
                   >
-                    <div className="flex-1 min-w-0">
+                    {/* 모바일: 기존 스택 레이아웃 */}
+                    <div className="flex-1 min-w-0 md:hidden">
                       <div className="flex items-center gap-2 mb-1">
-                        {post.isSecret && (
-                          <Lock className="h-4 w-4 text-yellow-500" />
-                        )}
-                        <span className="font-medium truncate">
-                          {post.title}
-                        </span>
+                        {post.isNotice && <Pin className="h-3.5 w-3.5 text-orange-500 shrink-0" />}
+                        {post.isSecret && <Lock className="h-3.5 w-3.5 text-yellow-500 shrink-0" />}
+                        <span className="font-medium text-sm truncate">{post.title}</span>
                         {post.commentCount > 0 && board.useComment && (
-                          <span className="text-sm text-primary">
-                            [{post.commentCount}]
-                          </span>
+                          <span className="text-xs text-primary">[{post.commentCount}]</span>
                         )}
                         {post._count && post._count.attachments > 0 && (
-                          <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />
+                          <Paperclip className="h-3 w-3 text-muted-foreground shrink-0" />
                         )}
                       </div>
-                      <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
                         <span>{post.author.nickname}</span>
                         <span>{formatDate(post.createdAt)}</span>
-                        <span className="flex items-center gap-1">
-                          <Eye className="h-3 w-3" />
-                          {post.viewCount}
-                        </span>
-                        {board.useReaction && (
-                          <span className="flex items-center gap-1">
-                            <ThumbsUp className="h-3 w-3" />
-                            {post.likeCount}
-                          </span>
+                        <span className="flex items-center gap-0.5"><Eye className="h-3 w-3" />{post.viewCount}</span>
+                      </div>
+                    </div>
+                    {/* 데스크톱: 테이블 레이아웃 */}
+                    <div className="hidden md:flex md:items-center md:flex-1 md:min-w-0">
+                      <div className="flex-1 min-w-0 flex items-center gap-2">
+                        {post.isNotice && <Badge variant="outline" className="shrink-0 text-xs px-1.5 py-0 text-orange-500 border-orange-500">공지</Badge>}
+                        {post.isSecret && <Lock className="h-3.5 w-3.5 text-yellow-500 shrink-0" />}
+                        <span className="font-medium text-sm truncate">{post.title}</span>
+                        {post.commentCount > 0 && board.useComment && (
+                          <span className="text-sm text-primary shrink-0">[{post.commentCount}]</span>
+                        )}
+                        {post._count && post._count.attachments > 0 && (
+                          <Paperclip className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                         )}
                       </div>
+                      <div className="w-24 text-center text-sm text-muted-foreground truncate">{post.author.nickname}</div>
+                      <div className="w-24 text-center text-xs text-muted-foreground">{formatDate(post.createdAt)}</div>
+                      <div className="w-16 text-center text-xs text-muted-foreground">{post.viewCount}</div>
+                      {board.useReaction && <div className="w-16 text-center text-xs text-muted-foreground">{post.likeCount}</div>}
                     </div>
                   </div>
                 ))}
