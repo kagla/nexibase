@@ -98,6 +98,9 @@ export async function GET(
               image: true
             }
           },
+          _count: {
+            select: { attachments: true }
+          },
           // 갤러리 형식이면 첫 번째 이미지를 썸네일로 사용
           ...(includeAttachments && {
             attachments: {

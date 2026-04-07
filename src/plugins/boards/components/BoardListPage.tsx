@@ -18,6 +18,7 @@ import {
   PenSquare,
   Home,
   ImageIcon,
+  Paperclip,
 } from "lucide-react"
 
 interface Board {
@@ -46,6 +47,7 @@ interface Post {
   isSecret: boolean
   createdAt: string
   thumbnail?: string | null
+  _count?: { attachments: number }
   author: {
     id: string
     nickname: string | null
@@ -290,6 +292,9 @@ export default function BoardListPage() {
                           {post.commentCount > 0 && board.useComment && (
                             <span className="text-primary ml-1">[{post.commentCount}]</span>
                           )}
+                          {post._count && post._count.attachments > 0 && (
+                            <Paperclip className="h-3 w-3 text-muted-foreground ml-1 inline" />
+                          )}
                         </h3>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <span className="truncate">{post.author.nickname}</span>
@@ -330,6 +335,9 @@ export default function BoardListPage() {
                           <span className="text-sm text-primary">
                             [{post.commentCount}]
                           </span>
+                        )}
+                        {post._count && post._count.attachments > 0 && (
+                          <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />
                         )}
                       </div>
                       <div className="flex items-center gap-3 text-sm text-muted-foreground">
