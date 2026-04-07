@@ -55,17 +55,6 @@ export function ImageLightbox() {
       className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center"
       onClick={(e) => { if (e.target === backdropRef.current) close() }}
     >
-      <div className="absolute top-4 right-4 flex items-center gap-2">
-        <button onClick={() => setScale(s => Math.min(s + 0.25, 3))} className="p-2 rounded-full bg-black/50 text-white hover:bg-black/70">
-          <ZoomIn className="h-5 w-5" />
-        </button>
-        <button onClick={() => setScale(s => Math.max(s - 0.25, 0.5))} className="p-2 rounded-full bg-black/50 text-white hover:bg-black/70">
-          <ZoomOut className="h-5 w-5" />
-        </button>
-        <button onClick={close} className="p-2 rounded-full bg-black/50 text-white hover:bg-black/70">
-          <X className="h-5 w-5" />
-        </button>
-      </div>
       <img
         src={src}
         alt=""
@@ -73,6 +62,17 @@ export function ImageLightbox() {
         style={{ transform: `scale(${scale})` }}
         onClick={(e) => e.stopPropagation()}
       />
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 z-[51]">
+        <button onClick={() => setScale(s => Math.min(s + 0.25, 3))} className="p-2.5 rounded-full bg-black/70 text-white hover:bg-black/90 backdrop-blur">
+          <ZoomIn className="h-5 w-5" />
+        </button>
+        <button onClick={() => setScale(s => Math.max(s - 0.25, 0.5))} className="p-2.5 rounded-full bg-black/70 text-white hover:bg-black/90 backdrop-blur">
+          <ZoomOut className="h-5 w-5" />
+        </button>
+        <button onClick={close} className="p-2.5 rounded-full bg-black/70 text-white hover:bg-black/90 backdrop-blur">
+          <X className="h-5 w-5" />
+        </button>
+      </div>
     </div>
   )
 }
