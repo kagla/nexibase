@@ -856,6 +856,7 @@ export default function BoardPostPage() {
                   return (
                     <Button
                       key={type}
+                      type="button"
                       variant={isActive ? "default" : "outline"}
                       size="sm"
                       onClick={() => handleReaction(type)}
