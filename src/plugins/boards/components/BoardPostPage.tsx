@@ -34,6 +34,7 @@ import {
 import { cn } from "@/lib/utils"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { CommentReactions } from "@/plugins/boards/components/CommentReactions"
+import { MiniEditor } from "@/components/editors/MiniEditor"
 
 // 이모지 리액션 컴포넌트
 const EmojiIcon = ({ emoji, className }: { emoji: string; className?: string }) => (
@@ -988,13 +989,15 @@ export default function BoardPostPage() {
                                 )}
                               </div>
                               {editingComment?.id === comment.id ? (
-                                <div className="flex gap-2">
-                                  <Input value={editText} onChange={e => setEditText(e.target.value)} className="flex-1 h-8 text-sm" autoFocus />
-                                  <Button size="sm" onClick={() => handleCommentEdit(comment.id)} disabled={!editText.trim()}>저장</Button>
-                                  <Button size="sm" variant="ghost" onClick={() => setEditingComment(null)}>취소</Button>
+                                <div>
+                                  <MiniEditor content={editText} onChange={setEditText} />
+                                  <div className="flex justify-end gap-2 mt-2">
+                                    <Button size="sm" variant="ghost" onClick={() => setEditingComment(null)}>취소</Button>
+                                    <Button size="sm" onClick={() => handleCommentEdit(comment.id)} disabled={!editText || editText === '<p></p>'}>저장</Button>
+                                  </div>
                                 </div>
                               ) : (
-                                <p className="text-sm whitespace-pre-wrap">{comment.content}</p>
+                                <div className="text-sm prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: comment.content }} />
                               )}
                               <div className="flex items-center gap-2 mt-1">
                                 {board.useReaction && (
@@ -1015,18 +1018,13 @@ export default function BoardPostPage() {
                                 <X className="h-3 w-3" />
                               </button>
                             </div>
-                            <form onSubmit={handleCommentSubmit} className="flex gap-2">
-                              <Input
-                                placeholder={`@${replyTo.nickname}에게 답글...`}
-                                value={commentText}
-                                onChange={(e) => setCommentText(e.target.value)}
-                                className="flex-1 h-8 text-sm"
-                                autoFocus
-                              />
-                              <Button type="submit" size="sm" disabled={submittingComment || !commentText.trim()}>
-                                {submittingComment ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                            <MiniEditor content={commentText} onChange={setCommentText} placeholder={`@${replyTo.nickname}에게 답글...`} />
+                            <div className="flex justify-end mt-2">
+                              <Button size="sm" onClick={(e) => handleCommentSubmit(e)} disabled={submittingComment || !commentText || commentText === '<p></p>'}>
+                                {submittingComment ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5 mr-1" />}
+                                답글
                               </Button>
-                            </form>
+                            </div>
                           </div>
                         )}
 
@@ -1081,12 +1079,12 @@ export default function BoardPostPage() {
                                       <Button size="sm" variant="ghost" onClick={() => setEditingComment(null)}>취소</Button>
                                     </div>
                                   ) : (
-                                    <p className="text-sm whitespace-pre-wrap">
+                                    <div className="text-sm">
                                       {reply.parent?.author?.nickname && (
                                         <span className="text-primary font-medium">@{reply.parent.author.nickname} </span>
                                       )}
-                                      {reply.content}
-                                    </p>
+                                      <span className="prose prose-sm dark:prose-invert max-w-none inline" dangerouslySetInnerHTML={{ __html: reply.content }} />
+                                    </div>
                                   )}
                                   <div className="flex items-center gap-2 mt-1">
                                     {board.useReaction && (
@@ -1107,18 +1105,13 @@ export default function BoardPostPage() {
                                     <X className="h-3 w-3" />
                                   </button>
                                 </div>
-                                <form onSubmit={handleCommentSubmit} className="flex gap-2">
-                                  <Input
-                                    placeholder={`@${replyTo.nickname}에게 답글...`}
-                                    value={commentText}
-                                    onChange={(e) => setCommentText(e.target.value)}
-                                    className="flex-1 h-8 text-sm"
-                                    autoFocus
-                                  />
-                                  <Button type="submit" size="sm" disabled={submittingComment || !commentText.trim()}>
-                                    {submittingComment ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                                <MiniEditor content={commentText} onChange={setCommentText} placeholder={`@${replyTo.nickname}에게 답글...`} />
+                                <div className="flex justify-end mt-2">
+                                  <Button size="sm" onClick={(e) => handleCommentSubmit(e)} disabled={submittingComment || !commentText || commentText === '<p></p>'}>
+                                    {submittingComment ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5 mr-1" />}
+                                    답글
                                   </Button>
-                                </form>
+                                </div>
                               </div>
                             )}
                           </div>
@@ -1134,23 +1127,16 @@ export default function BoardPostPage() {
               )}
 
               {/* 새 댓글 작성 */}
-              {canComment ? (
-                <form onSubmit={(e) => { setReplyTo(null); handleCommentSubmit(e) }} className="flex gap-2">
-                  <Input
-                    placeholder="댓글을 입력하세요"
-                    value={replyTo ? '' : commentText}
-                    onChange={(e) => { if (!replyTo) setCommentText(e.target.value) }}
-                    onFocus={() => setReplyTo(null)}
-                    className="flex-1"
-                  />
-                  <Button type="submit" disabled={submittingComment || (!commentText.trim() || !!replyTo)}>
-                    {submittingComment ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Send className="h-4 w-4" />
-                    )}
-                  </Button>
-                </form>
+              {canComment && !replyTo ? (
+                <div>
+                  <MiniEditor content={commentText} onChange={setCommentText} placeholder="댓글을 입력하세요..." />
+                  <div className="flex justify-end mt-2">
+                    <Button size="sm" onClick={(e) => { setReplyTo(null); handleCommentSubmit(e) }} disabled={submittingComment || !commentText || commentText === '<p></p>'}>
+                      {submittingComment ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Send className="h-4 w-4 mr-1" />}
+                      댓글 작성
+                    </Button>
+                  </div>
+                </div>
               ) : board.commentMemberOnly && !isLoggedIn ? (
                 <div className="text-center">
                   <Link href="/login" className="text-primary hover:underline text-sm">
