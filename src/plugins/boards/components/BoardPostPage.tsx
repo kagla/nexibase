@@ -29,8 +29,10 @@ import {
   ZoomIn,
   ZoomOut,
   Reply,
+  MoreHorizontal,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { CommentReactions } from "@/plugins/boards/components/CommentReactions"
 
 // 이모지 리액션 컴포넌트
@@ -332,6 +334,8 @@ export default function BoardPostPage() {
   const [commentText, setCommentText] = useState("")
   const [submittingComment, setSubmittingComment] = useState(false)
   const [replyTo, setReplyTo] = useState<{ id: string; nickname: string } | null>(null)
+  const [editingComment, setEditingComment] = useState<{ id: string; content: string } | null>(null)
+  const [editText, setEditText] = useState('')
   const [prevPost, setPrevPost] = useState<AdjacentPost | null>(null)
   const [nextPost, setNextPost] = useState<AdjacentPost | null>(null)
   const [imageViewerOpen, setImageViewerOpen] = useState(false)
@@ -506,6 +510,44 @@ export default function BoardPostPage() {
       alert('댓글 작성 중 오류가 발생했습니다.')
     } finally {
       setSubmittingComment(false)
+    }
+  }
+
+  const handleCommentEdit = async (commentId: string) => {
+    if (!editText.trim()) return
+    try {
+      const res = await fetch(`/api/boards/${slug}/posts/${postId}/comments/${commentId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: editText.trim() })
+      })
+      if (res.ok) {
+        setEditingComment(null)
+        setEditText('')
+        fetchPost()
+      } else {
+        const data = await res.json()
+        alert(data.error || '수정 실패')
+      }
+    } catch {
+      alert('수정 중 오류가 발생했습니다.')
+    }
+  }
+
+  const handleCommentDelete = async (commentId: string) => {
+    if (!confirm('댓글을 삭제하시겠습니까?')) return
+    try {
+      const res = await fetch(`/api/boards/${slug}/posts/${postId}/comments/${commentId}`, {
+        method: 'DELETE'
+      })
+      if (res.ok) {
+        fetchPost()
+      } else {
+        const data = await res.json()
+        alert(data.error || '삭제 실패')
+      }
+    } catch {
+      alert('삭제 중 오류가 발생했습니다.')
     }
   }
 
@@ -912,22 +954,51 @@ export default function BoardPostPage() {
                               </span>
                             </div>
                             <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="font-medium text-sm">{comment.author.nickname || '익명'}</span>
-                                <span className="text-xs text-muted-foreground">{formatDate(comment.createdAt)}</span>
+                              <div className="flex items-center justify-between mb-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium text-sm">{comment.author.nickname || '익명'}</span>
+                                  <span className="text-xs text-muted-foreground">{formatDate(comment.createdAt)}</span>
+                                </div>
+                                {user && (
+                                  <Popover>
+                                    <PopoverTrigger asChild>
+                                      <button className="text-muted-foreground hover:text-foreground p-1 rounded hover:bg-muted">
+                                        <MoreHorizontal className="h-4 w-4" />
+                                      </button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-32 p-1" align="end">
+                                      <button
+                                        onClick={() => { setReplyTo({ id: comment.id, nickname: comment.author.nickname || '익명' }); setCommentText('') }}
+                                        className="w-full text-left px-3 py-1.5 text-sm rounded hover:bg-muted"
+                                      >답글</button>
+                                      {(comment.author.id === user.id || user.role === 'admin') && (
+                                        <>
+                                          <button
+                                            onClick={() => { setEditingComment({ id: comment.id, content: comment.content }); setEditText(comment.content) }}
+                                            className="w-full text-left px-3 py-1.5 text-sm rounded hover:bg-muted"
+                                          >수정</button>
+                                          <button
+                                            onClick={() => handleCommentDelete(comment.id)}
+                                            className="w-full text-left px-3 py-1.5 text-sm rounded hover:bg-muted text-destructive"
+                                          >삭제</button>
+                                        </>
+                                      )}
+                                    </PopoverContent>
+                                  </Popover>
+                                )}
                               </div>
-                              <p className="text-sm whitespace-pre-wrap">{comment.content}</p>
+                              {editingComment?.id === comment.id ? (
+                                <div className="flex gap-2">
+                                  <Input value={editText} onChange={e => setEditText(e.target.value)} className="flex-1 h-8 text-sm" autoFocus />
+                                  <Button size="sm" onClick={() => handleCommentEdit(comment.id)} disabled={!editText.trim()}>저장</Button>
+                                  <Button size="sm" variant="ghost" onClick={() => setEditingComment(null)}>취소</Button>
+                                </div>
+                              ) : (
+                                <p className="text-sm whitespace-pre-wrap">{comment.content}</p>
+                              )}
                               <div className="flex items-center gap-2 mt-1">
                                 {board.useReaction && (
                                   <CommentReactions slug={slug} postId={postId} commentId={comment.id} isLoggedIn={!!user} />
-                                )}
-                                {canComment && (
-                                  <button
-                                    onClick={() => { setReplyTo({ id: comment.id, nickname: comment.author.nickname || '익명' }); setCommentText('') }}
-                                    className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
-                                  >
-                                    <Reply className="h-3 w-3" /> 답글
-                                  </button>
                                 )}
                               </div>
                             </div>
@@ -970,27 +1041,56 @@ export default function BoardPostPage() {
                                   </span>
                                 </div>
                                 <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <span className="font-medium text-xs">{reply.author.nickname || '익명'}</span>
-                                    <span className="text-xs text-muted-foreground">{formatDate(reply.createdAt)}</span>
-                                  </div>
-                                  <p className="text-sm whitespace-pre-wrap">
-                                    {reply.parent?.author?.nickname && (
-                                      <span className="text-primary font-medium">@{reply.parent.author.nickname} </span>
+                                  <div className="flex items-center justify-between mb-1">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-medium text-xs">{reply.author.nickname || '익명'}</span>
+                                      <span className="text-xs text-muted-foreground">{formatDate(reply.createdAt)}</span>
+                                    </div>
+                                    {user && (
+                                      <Popover>
+                                        <PopoverTrigger asChild>
+                                          <button className="text-muted-foreground hover:text-foreground p-0.5 rounded hover:bg-muted">
+                                            <MoreHorizontal className="h-3.5 w-3.5" />
+                                          </button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-32 p-1" align="end">
+                                          <button
+                                            onClick={() => { setReplyTo({ id: reply.id, nickname: reply.author.nickname || '익명' }); setCommentText('') }}
+                                            className="w-full text-left px-3 py-1.5 text-sm rounded hover:bg-muted"
+                                          >답글</button>
+                                          {(reply.author.id === user.id || user.role === 'admin') && (
+                                            <>
+                                              <button
+                                                onClick={() => { setEditingComment({ id: reply.id, content: reply.content }); setEditText(reply.content) }}
+                                                className="w-full text-left px-3 py-1.5 text-sm rounded hover:bg-muted"
+                                              >수정</button>
+                                              <button
+                                                onClick={() => handleCommentDelete(reply.id)}
+                                                className="w-full text-left px-3 py-1.5 text-sm rounded hover:bg-muted text-destructive"
+                                              >삭제</button>
+                                            </>
+                                          )}
+                                        </PopoverContent>
+                                      </Popover>
                                     )}
-                                    {reply.content}
-                                  </p>
+                                  </div>
+                                  {editingComment?.id === reply.id ? (
+                                    <div className="flex gap-2">
+                                      <Input value={editText} onChange={e => setEditText(e.target.value)} className="flex-1 h-8 text-sm" autoFocus />
+                                      <Button size="sm" onClick={() => handleCommentEdit(reply.id)} disabled={!editText.trim()}>저장</Button>
+                                      <Button size="sm" variant="ghost" onClick={() => setEditingComment(null)}>취소</Button>
+                                    </div>
+                                  ) : (
+                                    <p className="text-sm whitespace-pre-wrap">
+                                      {reply.parent?.author?.nickname && (
+                                        <span className="text-primary font-medium">@{reply.parent.author.nickname} </span>
+                                      )}
+                                      {reply.content}
+                                    </p>
+                                  )}
                                   <div className="flex items-center gap-2 mt-1">
                                     {board.useReaction && (
                                       <CommentReactions slug={slug} postId={postId} commentId={reply.id} isLoggedIn={!!user} />
-                                    )}
-                                    {canComment && (
-                                      <button
-                                        onClick={() => { setReplyTo({ id: reply.id, nickname: reply.author.nickname || '익명' }); setCommentText('') }}
-                                        className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
-                                      >
-                                        <Reply className="h-3 w-3" /> 답글
-                                      </button>
                                     )}
                                   </div>
                                 </div>
