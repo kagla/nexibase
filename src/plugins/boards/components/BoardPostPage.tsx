@@ -595,28 +595,29 @@ export default function BoardPostPage() {
 
   return (
     <UserLayout>
-      <div className="max-w-4xl mx-auto px-4 py-6">
+      <div className="max-w-4xl mx-auto sm:px-4 py-2 sm:py-6">
         {/* 게시판 네비게이션 */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between mb-4 sm:mb-6 px-2 sm:px-0">
+          <div className="flex items-center gap-2 min-w-0">
             <Link
               href={`/boards/${slug}`}
-              className="text-muted-foreground hover:text-foreground transition-colors"
+              className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
             >
               <ArrowLeft className="h-5 w-5" />
             </Link>
-            <h2 className="text-lg font-semibold">{board.name}</h2>
+            <h2 className="text-base sm:text-lg font-semibold truncate">{board.name}</h2>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             <Button
               variant="outline"
               size="sm"
               disabled={!nextPost}
               onClick={() => nextPost && router.push(`/boards/${slug}/${nextPost.id}`)}
               title={nextPost ? nextPost.title : '이전 글이 없습니다'}
+              className="px-2 sm:px-3"
             >
-              <ChevronLeft className="h-4 w-4 mr-1" />
-              이전글
+              <ChevronLeft className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">이전글</span>
             </Button>
             <Button
               variant="outline"
@@ -624,22 +625,23 @@ export default function BoardPostPage() {
               disabled={!prevPost}
               onClick={() => prevPost && router.push(`/boards/${slug}/${prevPost.id}`)}
               title={prevPost ? prevPost.title : '다음 글이 없습니다'}
+              className="px-2 sm:px-3"
             >
-              다음글
-              <ChevronRight className="h-4 w-4 ml-1" />
+              <span className="hidden sm:inline">다음글</span>
+              <ChevronRight className="h-4 w-4 sm:ml-1" />
             </Button>
             <Link href={`/boards/${slug}`}>
-              <Button variant="outline" size="sm">
-                <List className="h-4 w-4 mr-1" />
-                목록
+              <Button variant="outline" size="sm" className="px-2 sm:px-3">
+                <List className="h-4 w-4 sm:mr-1" />
+                <span className="hidden sm:inline">목록</span>
               </Button>
             </Link>
           </div>
         </div>
 
         {/* 게시글 */}
-        <Card className="mb-6">
-          <CardContent className="p-6">
+        <Card className="mb-4 sm:mb-6 rounded-none sm:rounded-lg">
+          <CardContent className="p-3 sm:p-6">
             {/* 제목 */}
             <div className="mb-4">
               <div className="flex items-center gap-2 mb-2">
@@ -707,7 +709,7 @@ export default function BoardPostPage() {
             {/* 본문 */}
             <div
               ref={contentRef}
-              className="tiptap prose dark:prose-invert max-w-none mb-6 [&_img]:cursor-zoom-in [&_img]:max-w-full [&_img]:h-auto"
+              className="tiptap prose dark:prose-invert max-w-none mb-6 overflow-x-auto break-words [&_img]:cursor-zoom-in [&_img]:max-w-full [&_img]:h-auto"
               dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.content) }}
               onClick={(e) => {
                 const target = e.target as HTMLElement
@@ -909,8 +911,8 @@ export default function BoardPostPage() {
 
         {/* 댓글 */}
         {board.useComment && (
-          <Card>
-            <CardContent className="p-6">
+          <Card className="rounded-none sm:rounded-lg">
+            <CardContent className="p-3 sm:p-6">
               <h3 className="font-semibold mb-4 flex items-center gap-2">
                 <MessageSquare className="h-5 w-5" />
                 댓글 {post.comments?.length || 0}
