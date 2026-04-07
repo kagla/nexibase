@@ -17,6 +17,9 @@
 - 비활성 플러그인 라우트 차단
 - slug 커스터마이징 (URL 경로 변경)
 - 플러그인별 Prisma 스키마 분리
+- `schema.user.prisma` — User 모델 관계 자동 주입 (코어 수정 불필요)
+- `header-widget.tsx` — Header에 커스텀 위젯 주입 (장바구니 등)
+- 자동 생성 파일 (`_generated.ts`, 라우트 래퍼, 머지 스키마) gitignore 처리
 
 ### 위젯 시스템
 - 홈페이지 위젯 배치 관리 (상단/중앙/하단)
@@ -246,8 +249,10 @@ src/
 1. `src/plugins/my-feature/plugin.ts` 작성
 2. 필요한 폴더 추가 (`routes/`, `api/`, `widgets/`, `menus/`)
 3. DB 모델이 필요하면 `schema.prisma` 작성
-4. `npm run dev` → 자동 인식
-5. 관리자 페이지에서 활성화
+4. User 관계가 필요하면 `schema.user.prisma` 작성 (User 모델에 자동 주입)
+5. Header에 아이콘/위젯이 필요하면 `header-widget.tsx` 작성
+6. `npm run dev` → 자동 인식
+7. 관리자 페이지에서 활성화
 
 자세한 내용은 [플러그인 개발 가이드](docs/superpowers/specs/2026-04-06-plugin-architecture-design.md)를 참고하세요.
 
