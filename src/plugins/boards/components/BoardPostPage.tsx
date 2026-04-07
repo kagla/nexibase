@@ -852,15 +852,45 @@ export default function BoardPostPage() {
                 댓글 {post.comments?.length || 0}
               </h3>
 
+              {/* 인라인 답글 입력폼 */}
+              {(() => {
+                const ReplyForm = ({ parentId, nickname, indent }: { parentId: string; nickname: string; indent: boolean }) => (
+                  replyTo?.id === parentId ? (
+                    <div className={indent ? "py-2 pl-11" : "py-2"}>
+                      <div className="flex items-center gap-2 mb-1.5 text-xs text-primary">
+                        <Reply className="h-3 w-3" />
+                        <span>@{nickname}에게 답글</span>
+                        <button onClick={() => setReplyTo(null)} className="text-muted-foreground hover:text-foreground">
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                      <form onSubmit={handleCommentSubmit} className="flex gap-2">
+                        <Input
+                          placeholder={`@${nickname}에게 답글...`}
+                          value={commentText}
+                          onChange={(e) => setCommentText(e.target.value)}
+                          className="flex-1 h-8 text-sm"
+                          autoFocus
+                        />
+                        <Button type="submit" size="sm" disabled={submittingComment || !commentText.trim()}>
+                          {submittingComment ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                        </Button>
+                      </form>
+                    </div>
+                  ) : null
+                )
+
+                return null
+              })()}
+
               {/* 댓글 목록 */}
               {post.comments && post.comments.length > 0 ? (
-                <div className="space-y-1 mb-6">
+                <div className="space-y-0 mb-6">
                   {(() => {
                     const rootComments = post.comments.filter(c => !c.parentId)
                     const replies = post.comments.filter(c => c.parentId)
                     const replyMap = new Map<string, Comment[]>()
                     for (const r of replies) {
-                      // 최상위 부모를 찾아서 그 아래에 배치
                       let rootId = r.parentId!
                       const findRoot = (id: string): string => {
                         const parent = post.comments!.find(c => c.id === id)
@@ -893,7 +923,7 @@ export default function BoardPostPage() {
                                 )}
                                 {canComment && (
                                   <button
-                                    onClick={() => setReplyTo({ id: comment.id, nickname: comment.author.nickname || '익명' })}
+                                    onClick={() => { setReplyTo({ id: comment.id, nickname: comment.author.nickname || '익명' }); setCommentText('') }}
                                     className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
                                   >
                                     <Reply className="h-3 w-3" /> 답글
@@ -904,41 +934,93 @@ export default function BoardPostPage() {
                           </div>
                         </div>
 
+                        {/* 원댓글 바로 아래 답글 입력폼 */}
+                        {replyTo?.id === comment.id && canComment && (
+                          <div className="py-2 pl-11 border-b">
+                            <div className="flex items-center gap-2 mb-1.5 text-xs text-primary">
+                              <Reply className="h-3 w-3" />
+                              <span>@{replyTo.nickname}에게 답글</span>
+                              <button onClick={() => setReplyTo(null)} className="text-muted-foreground hover:text-foreground">
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+                            <form onSubmit={handleCommentSubmit} className="flex gap-2">
+                              <Input
+                                placeholder={`@${replyTo.nickname}에게 답글...`}
+                                value={commentText}
+                                onChange={(e) => setCommentText(e.target.value)}
+                                className="flex-1 h-8 text-sm"
+                                autoFocus
+                              />
+                              <Button type="submit" size="sm" disabled={submittingComment || !commentText.trim()}>
+                                {submittingComment ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                              </Button>
+                            </form>
+                          </div>
+                        )}
+
                         {/* 답글 (1 depth 들여쓰기, @닉네임 표시) */}
                         {replyMap.get(comment.id)?.map((reply) => (
-                          <div key={reply.id} className="border-b py-3 pl-11">
-                            <div className="flex items-start gap-2">
-                              <div className="w-6 h-6 bg-muted/50 rounded-full flex items-center justify-center shrink-0">
-                                <span className="text-muted-foreground text-xs font-medium">
-                                  {(reply.author.nickname || '?').charAt(0)}
-                                </span>
-                              </div>
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className="font-medium text-xs">{reply.author.nickname || '익명'}</span>
-                                  <span className="text-xs text-muted-foreground">{formatDate(reply.createdAt)}</span>
+                          <div key={reply.id}>
+                            <div className="border-b py-3 pl-11">
+                              <div className="flex items-start gap-2">
+                                <div className="w-6 h-6 bg-muted/50 rounded-full flex items-center justify-center shrink-0">
+                                  <span className="text-muted-foreground text-xs font-medium">
+                                    {(reply.author.nickname || '?').charAt(0)}
+                                  </span>
                                 </div>
-                                <p className="text-sm whitespace-pre-wrap">
-                                  {reply.parent?.author?.nickname && (
-                                    <span className="text-primary font-medium">@{reply.parent.author.nickname} </span>
-                                  )}
-                                  {reply.content}
-                                </p>
-                                <div className="flex items-center gap-2 mt-1">
-                                  {board.useReaction && (
-                                    <CommentReactions slug={slug} postId={postId} commentId={reply.id} isLoggedIn={!!user} />
-                                  )}
-                                  {canComment && (
-                                    <button
-                                      onClick={() => setReplyTo({ id: reply.id, nickname: reply.author.nickname || '익명' })}
-                                      className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
-                                    >
-                                      <Reply className="h-3 w-3" /> 답글
-                                    </button>
-                                  )}
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span className="font-medium text-xs">{reply.author.nickname || '익명'}</span>
+                                    <span className="text-xs text-muted-foreground">{formatDate(reply.createdAt)}</span>
+                                  </div>
+                                  <p className="text-sm whitespace-pre-wrap">
+                                    {reply.parent?.author?.nickname && (
+                                      <span className="text-primary font-medium">@{reply.parent.author.nickname} </span>
+                                    )}
+                                    {reply.content}
+                                  </p>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    {board.useReaction && (
+                                      <CommentReactions slug={slug} postId={postId} commentId={reply.id} isLoggedIn={!!user} />
+                                    )}
+                                    {canComment && (
+                                      <button
+                                        onClick={() => { setReplyTo({ id: reply.id, nickname: reply.author.nickname || '익명' }); setCommentText('') }}
+                                        className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1"
+                                      >
+                                        <Reply className="h-3 w-3" /> 답글
+                                      </button>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             </div>
+
+                            {/* 대댓글 바로 아래 답글 입력폼 */}
+                            {replyTo?.id === reply.id && canComment && (
+                              <div className="py-2 pl-11 border-b">
+                                <div className="flex items-center gap-2 mb-1.5 text-xs text-primary">
+                                  <Reply className="h-3 w-3" />
+                                  <span>@{replyTo.nickname}에게 답글</span>
+                                  <button onClick={() => setReplyTo(null)} className="text-muted-foreground hover:text-foreground">
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </div>
+                                <form onSubmit={handleCommentSubmit} className="flex gap-2">
+                                  <Input
+                                    placeholder={`@${replyTo.nickname}에게 답글...`}
+                                    value={commentText}
+                                    onChange={(e) => setCommentText(e.target.value)}
+                                    className="flex-1 h-8 text-sm"
+                                    autoFocus
+                                  />
+                                  <Button type="submit" size="sm" disabled={submittingComment || !commentText.trim()}>
+                                    {submittingComment ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                                  </Button>
+                                </form>
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -951,34 +1033,24 @@ export default function BoardPostPage() {
                 </div>
               )}
 
-              {/* 댓글 작성 */}
+              {/* 새 댓글 작성 */}
               {canComment ? (
-                <div>
-                  {replyTo && (
-                    <div className="flex items-center gap-2 mb-2 text-sm text-primary">
-                      <Reply className="h-3.5 w-3.5" />
-                      <span>@{replyTo.nickname}에게 답글</span>
-                      <button onClick={() => setReplyTo(null)} className="text-muted-foreground hover:text-foreground">
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  )}
-                  <form onSubmit={handleCommentSubmit} className="flex gap-2">
-                    <Input
-                      placeholder={replyTo ? `@${replyTo.nickname}에게 답글...` : "댓글을 입력하세요"}
-                      value={commentText}
-                      onChange={(e) => setCommentText(e.target.value)}
-                      className="flex-1"
-                    />
-                    <Button type="submit" disabled={submittingComment || !commentText.trim()}>
-                      {submittingComment ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Send className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </form>
-                </div>
+                <form onSubmit={(e) => { setReplyTo(null); handleCommentSubmit(e) }} className="flex gap-2">
+                  <Input
+                    placeholder="댓글을 입력하세요"
+                    value={replyTo ? '' : commentText}
+                    onChange={(e) => { if (!replyTo) setCommentText(e.target.value) }}
+                    onFocus={() => setReplyTo(null)}
+                    className="flex-1"
+                  />
+                  <Button type="submit" disabled={submittingComment || (!commentText.trim() || !!replyTo)}>
+                    {submittingComment ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
+                  </Button>
+                </form>
               ) : board.commentMemberOnly && !isLoggedIn ? (
                 <div className="text-center">
                   <Link href="/login" className="text-primary hover:underline text-sm">
