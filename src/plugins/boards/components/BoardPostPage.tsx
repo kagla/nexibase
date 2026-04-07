@@ -29,7 +29,7 @@ import {
   ZoomIn,
   ZoomOut,
   Reply,
-  MoreHorizontal,
+  MoreVertical,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -963,7 +963,7 @@ export default function BoardPostPage() {
                                   <Popover>
                                     <PopoverTrigger asChild>
                                       <button className="text-muted-foreground hover:text-foreground p-1 rounded hover:bg-muted">
-                                        <MoreHorizontal className="h-4 w-4" />
+                                        <MoreVertical className="h-4 w-4" />
                                       </button>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-32 p-1" align="end">
@@ -1050,7 +1050,7 @@ export default function BoardPostPage() {
                                       <Popover>
                                         <PopoverTrigger asChild>
                                           <button className="text-muted-foreground hover:text-foreground p-0.5 rounded hover:bg-muted">
-                                            <MoreHorizontal className="h-3.5 w-3.5" />
+                                            <MoreVertical className="h-3.5 w-3.5" />
                                           </button>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-32 p-1" align="end">
