@@ -129,7 +129,6 @@ export default function Footer() {
                 <ul className="space-y-2">
                   <li><Link href="/policies/terms" className="text-sm text-muted-foreground hover:text-foreground transition-colors">이용약관</Link></li>
                   <li><Link href="/policies/privacy" className="text-sm text-muted-foreground hover:text-foreground transition-colors">개인정보처리방침</Link></li>
-                  <li><Link href="/shop/policy" className="text-sm text-muted-foreground hover:text-foreground transition-colors">취소/반품/교환 정책</Link></li>
                 </ul>
               </div>
             </>
@@ -142,9 +141,6 @@ export default function Footer() {
             <p className="text-sm text-muted-foreground">
               {settings.footer_copyright || `© ${new Date().getFullYear()} ${settings.site_name}. All rights reserved.`}
             </p>
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <span>Made with ❤️</span>
-            </div>
           </div>
         </div>
       </div>
