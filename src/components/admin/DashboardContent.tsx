@@ -4,12 +4,13 @@ import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   BarChart3, Users, MessageSquare, TrendingUp, Loader2, LayoutDashboard,
-  Eye, ThumbsUp
+  Eye, ThumbsUp, CheckCircle2, XCircle
 } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { ko } from "date-fns/locale"
 import Image from "next/image"
 import Link from "next/link"
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 
 interface DashboardData {
   pluginStatus?: {
@@ -45,23 +46,47 @@ interface DashboardData {
     commentCount: number
     board: { slug: string; name: string }
   }[]
+  recentComments?: {
+    id: number
+    content: string
+    createdAt: string
+    author: { nickname: string }
+    post: { id: number; title: string; board: { slug: string } }
+  }[]
   trends: {
     users: { date: string; count: number }[]
   }
 }
 
+interface LoginLog {
+  id: number
+  email: string
+  ip: string
+  success: boolean
+  createdAt: string
+}
+
 export function DashboardContent() {
   const [data, setData] = useState<DashboardData | null>(null)
+  const [loginLogs, setLoginLogs] = useState<LoginLog[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     async function fetchDashboard() {
       try {
-        const res = await fetch("/api/admin/dashboard")
-        const json = await res.json()
-        if (!res.ok) throw new Error(json.error || "Failed to fetch")
+        const [dashRes, logsRes] = await Promise.all([
+          fetch("/api/admin/dashboard"),
+          fetch("/api/admin/login-logs?limit=5"),
+        ])
+        const json = await dashRes.json()
+        if (!dashRes.ok) throw new Error(json.error || "Failed to fetch")
         setData(json)
+
+        if (logsRes.ok) {
+          const logsData = await logsRes.json()
+          setLoginLogs(logsData.logs || [])
+        }
       } catch (err) {
         setError("데이터를 불러오는데 실패했습니다.")
         console.error(err)
@@ -96,8 +121,6 @@ export function DashboardContent() {
   const formatTimeAgo = (dateStr: string) => {
     return formatDistanceToNow(new Date(dateStr), { addSuffix: true, locale: ko })
   }
-
-  const maxUsers = Math.max(...(data.trends?.users?.map(d => d.count) || []), 1)
 
   return (
     <div className="space-y-6">
@@ -176,41 +199,48 @@ export function DashboardContent() {
         </Card>
       </div>
 
-      {/* 신규 가입자 추이 */}
-      {data.trends && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">최근 7일 신규 가입자</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {data.trends.users?.map((item, idx) => (
-                <div key={idx} className="space-y-1">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground w-20">
-                      {new Date(item.date).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })}
-                    </span>
-                    <span className="font-medium">{item.count}명</span>
-                  </div>
-                  <div className="h-2 bg-muted rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-primary rounded-full transition-all"
-                      style={{ width: `${(item.count / maxUsers) * 100}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* 최근 활동 */}
+      {/* 신규 가입자 추이 + 최근 로그인 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {data.trends && (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-base">최근 7일 신규 가입자</CardTitle>
+              <Link href="/admin/user-trends" className="text-sm text-muted-foreground hover:text-primary">
+                상세보기
+              </Link>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={250}>
+                <LineChart data={data.trends.users?.map(item => ({
+                  date: new Date(item.date).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' }),
+                  count: item.count,
+                }))}>
+                  <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.3} />
+                  <XAxis dataKey="date" fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis allowDecimals={false} fontSize={12} tickLine={false} axisLine={false} />
+                  <Tooltip
+                    contentStyle={{ borderRadius: '8px', border: '1px solid hsl(var(--border))', backgroundColor: 'hsl(var(--popover))', color: 'hsl(var(--popover-foreground))' }}
+                    labelStyle={{ fontWeight: 600 }}
+                    formatter={(value) => [`${value}명`, '가입자']}
+                  />
+                  <Line
+                    type="linear"
+                    dataKey="count"
+                    stroke="#3b82f6"
+                    strokeWidth={2}
+                    dot={{ r: 3, fill: '#3b82f6', stroke: '#3b82f6' }}
+                    activeDot={{ r: 5 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        )}
+
         {/* 최근 가입 회원 */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>최근 가입 회원</CardTitle>
+            <CardTitle className="text-base">최근 가입 회원</CardTitle>
             <Link href="/admin/users" className="text-sm text-muted-foreground hover:text-primary">
               전체보기
             </Link>
@@ -242,23 +272,100 @@ export function DashboardContent() {
             </div>
           </CardContent>
         </Card>
+      </div>
 
-        {/* 최근 게시글 */}
-        {data.pluginStatus?.boards && data.recentPosts && (
+      {/* 최근 로그인 + 인기 게시글 */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* 최근 로그인 기록 */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-base">최근 로그인</CardTitle>
+            <Link href="/admin/login-logs" className="text-sm text-muted-foreground hover:text-primary">
+              전체보기
+            </Link>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {loginLogs.length === 0 ? (
+                <p className="text-sm text-muted-foreground">로그인 기록이 없습니다.</p>
+              ) : (
+                loginLogs.map((log) => (
+                  <div key={log.id} className="flex items-center gap-3">
+                    <div className="flex-shrink-0">
+                      {log.success ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <XCircle className="h-4 w-4 text-red-500" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{log.email}</p>
+                      <p className="text-sm text-muted-foreground">{log.ip}</p>
+                    </div>
+                    <span className="text-xs text-muted-foreground">{formatTimeAgo(log.createdAt)}</span>
+                  </div>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 인기 게시글 */}
+        {data.pluginStatus?.boards && data.popularPosts && data.popularPosts.length > 0 && (
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>최근 게시글</CardTitle>
-              <Link href="/admin/boards" className="text-sm text-muted-foreground hover:text-primary">
+              <CardTitle className="text-base">인기 게시글</CardTitle>
+              <Link href="/popular" target="_blank" className="text-sm text-muted-foreground hover:text-primary">
                 전체보기
               </Link>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <div className="space-y-1">
+                {data.popularPosts.map((post, idx) => (
+                  <Link key={post.id} href={`/boards/${post.board.slug}/${post.id}`} target="_blank" className="flex items-center gap-3 hover:bg-muted/50 rounded-lg py-1.5 px-2 -mx-2 transition-colors">
+                    <span className={`w-6 h-6 rounded-lg text-xs font-bold flex items-center justify-center ${
+                      idx === 0 ? 'bg-yellow-500 text-yellow-950' :
+                      idx === 1 ? 'bg-gray-400 text-gray-900' :
+                      idx === 2 ? 'bg-amber-600 text-amber-100' :
+                      'bg-muted text-muted-foreground'
+                    }`}>
+                      {idx + 1}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{post.title}</p>
+                      <p className="text-xs text-muted-foreground">{post.board.name}</p>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1"><Eye className="h-3 w-3" />{post.viewCount}</span>
+                      <span className="flex items-center gap-1"><ThumbsUp className="h-3 w-3" />{post.likeCount}</span>
+                      <span className="flex items-center gap-1"><MessageSquare className="h-3 w-3" />{post.commentCount}</span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      {/* 최근 게시글 + 최근 댓글 */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* 최근 게시글 */}
+        {data.pluginStatus?.boards && data.recentPosts && (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-base">최근 게시글</CardTitle>
+              <Link href="/latest" target="_blank" className="text-sm text-muted-foreground hover:text-primary">
+                전체보기
+              </Link>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-1">
                 {data.recentPosts.length === 0 ? (
                   <p className="text-sm text-muted-foreground">최근 게시글이 없습니다.</p>
                 ) : (
                   data.recentPosts.map((post) => (
-                    <Link key={post.id} href={`/boards/${post.board.slug}/${post.id}`} className="flex items-center justify-between hover:bg-muted/50 rounded-lg p-2 -mx-2 transition-colors">
+                    <Link key={post.id} href={`/boards/${post.board.slug}/${post.id}`} target="_blank" className="flex items-center justify-between hover:bg-muted/50 rounded-lg py-1.5 px-2 -mx-2 transition-colors">
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{post.title}</p>
                         <p className="text-xs text-muted-foreground">{post.author.nickname}</p>
@@ -271,41 +378,36 @@ export function DashboardContent() {
             </CardContent>
           </Card>
         )}
-      </div>
 
-      {/* 인기 게시글 */}
-      {data.pluginStatus?.boards && data.popularPosts && data.popularPosts.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>인기 게시글</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {data.popularPosts.map((post, idx) => (
-                <Link key={post.id} href={`/boards/${post.board.slug}/${post.id}`} className="flex items-center gap-3 hover:bg-muted/50 rounded-lg p-2 -mx-2 transition-colors">
-                  <span className={`w-6 h-6 rounded-lg text-xs font-bold flex items-center justify-center ${
-                    idx === 0 ? 'bg-yellow-500 text-yellow-950' :
-                    idx === 1 ? 'bg-gray-400 text-gray-900' :
-                    idx === 2 ? 'bg-amber-600 text-amber-100' :
-                    'bg-muted text-muted-foreground'
-                  }`}>
-                    {idx + 1}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{post.title}</p>
-                    <p className="text-xs text-muted-foreground">{post.board.name}</p>
-                  </div>
-                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1"><Eye className="h-3 w-3" />{post.viewCount}</span>
-                    <span className="flex items-center gap-1"><ThumbsUp className="h-3 w-3" />{post.likeCount}</span>
-                    <span className="flex items-center gap-1"><MessageSquare className="h-3 w-3" />{post.commentCount}</span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+        {/* 최근 댓글 */}
+        {data.pluginStatus?.boards && data.recentComments && (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-base">최근 댓글</CardTitle>
+              <Link href="/new/comments" target="_blank" className="text-sm text-muted-foreground hover:text-primary">
+                전체보기
+              </Link>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-1">
+                {data.recentComments.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">최근 댓글이 없습니다.</p>
+                ) : (
+                  data.recentComments.map((comment) => (
+                    <Link key={comment.id} href={`/boards/${comment.post.board.slug}/${comment.post.id}`} target="_blank" className="flex items-center justify-between hover:bg-muted/50 rounded-lg py-1.5 px-2 -mx-2 transition-colors">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm truncate">{comment.content}</p>
+                        <p className="text-xs text-muted-foreground">{comment.author.nickname} · {comment.post.title}</p>
+                      </div>
+                      <span className="text-xs text-muted-foreground ml-2">{formatTimeAgo(comment.createdAt)}</span>
+                    </Link>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   )
 }

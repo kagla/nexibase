@@ -43,7 +43,7 @@ export async function GET() {
 
     // === 게시판 통계 (boards 플러그인 활성 시) ===
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let totalPosts = 0, lastWeekPosts = 0, recentPosts: any[] = [], popularPosts: any[] = []
+    let totalPosts = 0, lastWeekPosts = 0, recentPosts: any[] = [], popularPosts: any[] = [], recentComments: any[] = []
 
     if (boardsEnabled) {
       const boardsResults = await Promise.all([
@@ -73,6 +73,17 @@ export async function GET() {
       lastWeekPosts = boardsResults[1]
       recentPosts = boardsResults[2]
       popularPosts = boardsResults[3]
+
+      recentComments = await prisma.comment.findMany({
+        where: { status: { not: "deleted" } },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+        select: {
+          id: true, content: true, createdAt: true,
+          author: { select: { nickname: true } },
+          post: { select: { id: true, title: true, board: { select: { slug: true } } } }
+        }
+      })
     }
 
     // === 증감률 계산 ===
@@ -111,7 +122,7 @@ export async function GET() {
         activeUserGrowth: parseFloat(activeUserGrowth)
       },
       recentUsers,
-      ...(boardsEnabled ? { recentPosts, popularPosts } : {}),
+      ...(boardsEnabled ? { recentPosts, popularPosts, recentComments } : {}),
       trends: { users: userTrend }
     })
   } catch (error) {
