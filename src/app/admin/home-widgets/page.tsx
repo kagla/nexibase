@@ -42,6 +42,7 @@ const WIDGET_META: Record<string, { label: string; description: string; settings
   'auction-live': { label: '진행중 경매', description: '진행중인 경매 목록', settingsSchema: { limit: { type: 'number', label: '표시 개수', default: 4 } } },
   'community-guide': { label: '커뮤니티 가이드', description: '커뮤니티 이용 가이드', settingsSchema: null },
   'board-cards': { label: '게시판 카드', description: '게시판 카드 그리드', settingsSchema: { limit: { type: 'number', label: '표시 개수', default: 4 } } },
+  'demo-guide': { label: '데모 사이트 안내', description: '데모 사이트 및 데모 계정 안내', settingsSchema: null },
 }
 
 const ZONES = ['top', 'center', 'bottom'] as const

@@ -14,6 +14,7 @@ const REGISTRY_KEYS = [
   'auction-live',
   'community-guide',
   'board-cards',
+  'demo-guide',
 ]
 
 // widgetKey → plugin folder 매핑

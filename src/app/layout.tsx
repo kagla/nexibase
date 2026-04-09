@@ -21,8 +21,41 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NexiBase",
-  description: "NexiBase - Community Platform",
+  metadataBase: new URL("https://nexibase.com"),
+  title: {
+    default: "NexiBase - 커뮤니티 플랫폼",
+    template: "%s | NexiBase",
+  },
+  description: "NexiBase - 오픈소스 커뮤니티 플랫폼. 게시판, 콘텐츠 관리, 사용자 관리를 하나로.",
+  keywords: ["NexiBase", "커뮤니티", "게시판", "오픈소스", "Next.js", "커뮤니티 플랫폼"],
+  authors: [{ name: "NexiBase" }],
+  openGraph: {
+    type: "website",
+    locale: "ko_KR",
+    url: "https://nexibase.com",
+    siteName: "NexiBase",
+    title: "NexiBase - 커뮤니티 플랫폼",
+    description: "NexiBase - 오픈소스 커뮤니티 플랫폼. 게시판, 콘텐츠 관리, 사용자 관리를 하나로.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "NexiBase - 커뮤니티 플랫폼",
+    description: "NexiBase - 오픈소스 커뮤니티 플랫폼. 게시판, 콘텐츠 관리, 사용자 관리를 하나로.",
+  },
+  alternates: {
+    canonical: "https://nexibase.com",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
 };
 
 export default async function RootLayout({
@@ -45,6 +78,23 @@ export default async function RootLayout({
     <html lang="ko" suppressHydrationWarning>
       <head>
         <ThemeLoader />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              name: "NexiBase",
+              url: "https://nexibase.com",
+              description: "NexiBase - 오픈소스 커뮤니티 플랫폼",
+              potentialAction: {
+                "@type": "SearchAction",
+                target: "https://nexibase.com/search?q={search_term_string}",
+                "query-input": "required name=search_term_string",
+              },
+            }),
+          }}
+        />
         {gaId && (
           <>
             <Script

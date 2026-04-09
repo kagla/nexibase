@@ -7,6 +7,11 @@ export interface ThemeMeta {
 }
 
 export const themeManifest: Record<string, ThemeMeta> = {
+  'cool-blue': {
+    name: '쿨 블루',
+    description: '깔끔한 블루 계열 테마 — 눈이 편하고 프로페셔널한 느낌',
+    author: 'nexibase',
+  },
   'default': {
     name: '기본 테마',
     description: '기본 라이트/다크 테마',
