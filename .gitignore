@@ -91,7 +91,12 @@ next-env.d.ts
 /src/app/admin/photo-gallery/
 /src/app/api/admin/photo-gallery/
 
-/public
+# public 디렉토리의 모든 파일 무시. 단, 아래 예외는 포함.
+/public/*
+# GA 가이드 스크린샷은 저장소에 포함 (재생성이 번거롭고 가이드의 일부)
+!/public/admin
+/public/admin/*
+!/public/admin/ga-guide
 
 # Claude Code 관련 파일
 .claude/
