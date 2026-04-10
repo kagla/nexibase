@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import Link from "next/link"
 import { Sidebar } from "@/components/admin/Sidebar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -22,6 +23,7 @@ import {
   Palette,
   Upload,
   ImageIcon,
+  BarChart3,
 } from "lucide-react"
 
 interface FooterLink {
@@ -51,6 +53,8 @@ interface SettingsData {
 
   // 외부 서비스
   google_analytics_id: string
+  ga4_property_id: string
+  ga4_service_account_json: string
 
 }
 
@@ -77,7 +81,9 @@ const DEFAULT_SETTINGS: SettingsData = {
   footer_links: '[]',
   layout_folder: 'default',
   theme_folder: 'default',
-  google_analytics_id: ''
+  google_analytics_id: '',
+  ga4_property_id: '',
+  ga4_service_account_json: ''
 }
 
 export default function SettingsPage() {
@@ -89,6 +95,54 @@ export default function SettingsPage() {
   const [hasSettings, setHasSettings] = useState(false)
   const [layouts, setLayouts] = useState<LayoutInfo[]>([])
   const [themes, setThemes] = useState<ThemeInfo[]>([])
+
+  // Google Analytics 섹션 전용 상태
+  const [gaJsonEditing, setGaJsonEditing] = useState(false)
+  const [gaJsonDraft, setGaJsonDraft] = useState('')
+  const [gaTestResult, setGaTestResult] = useState<
+    | { status: 'idle' }
+    | { status: 'loading' }
+    | { status: 'success'; propertyId: string; todayUsers: number }
+    | { status: 'error'; message: string }
+  >({ status: 'idle' })
+
+  const handleGaFieldChange = (key: keyof SettingsData, value: string) => {
+    handleChange(key, value)
+    if (gaTestResult.status !== 'idle') {
+      setGaTestResult({ status: 'idle' })
+    }
+  }
+
+  const handleGaJsonEdit = () => {
+    setGaJsonDraft(settings.ga4_service_account_json || '')
+    setGaJsonEditing(true)
+  }
+
+  const handleGaJsonCancel = () => {
+    setGaJsonEditing(false)
+    setGaJsonDraft('')
+  }
+
+  const handleGaJsonApply = () => {
+    handleGaFieldChange('ga4_service_account_json', gaJsonDraft)
+    setGaJsonEditing(false)
+    setGaJsonDraft('')
+  }
+
+  const handleGaTest = async () => {
+    setGaTestResult({ status: 'loading' })
+    try {
+      const res = await fetch('/api/admin/analytics/test', { method: 'POST' })
+      const data = await res.json()
+      if (data.ok) {
+        setGaTestResult({ status: 'success', propertyId: data.propertyId, todayUsers: data.todayUsers })
+      } else {
+        setGaTestResult({ status: 'error', message: data.error || '알 수 없는 오류' })
+      }
+    } catch (err) {
+      setGaTestResult({ status: 'error', message: err instanceof Error ? err.message : String(err) })
+    }
+  }
 
   // JSON 문자열을 FooterLink 배열로 파싱
   const parseFooterLinks = (jsonStr: string): FooterLink[] => {
@@ -165,6 +219,7 @@ export default function SettingsPage() {
       if (response.ok) {
         alert(data.message)
         setHasSettings(true)
+        setGaTestResult({ status: 'idle' })
       } else {
         alert(data.error || '저장에 실패했습니다.')
       }
@@ -386,18 +441,135 @@ export default function SettingsPage() {
                   </p>
                 </div>
 
+              </CardContent>
+            </Card>
+
+            {/* Google Analytics */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  Google Analytics
+                </CardTitle>
+                <CardDescription>
+                  방문자 통계 위젯에 사용되는 GA4 연동 설정입니다
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="rounded-md border border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-900 p-3 text-sm">
+                  <p className="font-medium mb-1">💡 Google Analytics 연동</p>
+                  <p className="text-muted-foreground">
+                    방문자 통계 위젯을 사용하려면 GA4 Data API 연동이 필요합니다.{' '}
+                    <Link
+                      href="/admin/settings/ga-guide"
+                      className="underline text-blue-700 dark:text-blue-400 font-medium"
+                    >
+                      설정 가이드 (단계별 안내)
+                    </Link>
+                  </p>
+                </div>
+
                 <div className="grid gap-2">
-                  <Label htmlFor="google_analytics_id">Google Analytics ID</Label>
+                  <Label htmlFor="google_analytics_id">Measurement ID</Label>
                   <Input
                     id="google_analytics_id"
                     value={settings.google_analytics_id}
-                    onChange={(e) => handleChange('google_analytics_id', e.target.value)}
+                    onChange={(e) => handleGaFieldChange('google_analytics_id', e.target.value)}
                     placeholder="G-XXXXXXXXXX"
                   />
                   <p className="text-sm text-muted-foreground">
-                    Google Analytics 측정 ID를 입력하면 자동으로 추적 코드가 삽입됩니다
+                    방문자 추적 스크립트에 사용됩니다 (1단계에서 발급)
                   </p>
                 </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="ga4_property_id">GA4 Property ID</Label>
+                  <Input
+                    id="ga4_property_id"
+                    value={settings.ga4_property_id}
+                    onChange={(e) => handleGaFieldChange('ga4_property_id', e.target.value)}
+                    placeholder="412345678"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    데이터 조회 API에 사용됩니다 (GA4 관리 → 속성 설정에서 확인)
+                  </p>
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="ga4_service_account_json">Service Account JSON</Label>
+                  {!gaJsonEditing ? (
+                    <div className="flex items-center gap-2 rounded-md border px-3 py-2">
+                      {settings.ga4_service_account_json ? (
+                        <span className="text-sm text-green-700 dark:text-green-400">
+                          ✓ 입력됨 (Service Account 키)
+                        </span>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">
+                          저장된 키가 없습니다
+                        </span>
+                      )}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="ml-auto"
+                        onClick={handleGaJsonEdit}
+                      >
+                        {settings.ga4_service_account_json ? '변경' : '입력'}
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <Textarea
+                        id="ga4_service_account_json"
+                        value={gaJsonDraft}
+                        onChange={(e) => setGaJsonDraft(e.target.value)}
+                        placeholder='{"type":"service_account","project_id":"...","private_key":"..."}'
+                        rows={8}
+                        className="font-mono text-sm"
+                      />
+                      <div className="flex gap-2">
+                        <Button type="button" size="sm" onClick={handleGaJsonApply}>
+                          적용
+                        </Button>
+                        <Button type="button" variant="outline" size="sm" onClick={handleGaJsonCancel}>
+                          취소
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  <p className="text-sm text-muted-foreground">
+                    Google Cloud에서 다운로드한 JSON 키 전체 내용 (2단계에서 발급)
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3 pt-2 border-t">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleGaTest}
+                    disabled={
+                      gaTestResult.status === 'loading' ||
+                      !settings.ga4_property_id ||
+                      !settings.ga4_service_account_json
+                    }
+                  >
+                    {gaTestResult.status === 'loading' ? '테스트 중...' : '연결 테스트'}
+                  </Button>
+                  {gaTestResult.status === 'success' && (
+                    <span className="text-sm text-green-700 dark:text-green-400">
+                      ✓ 연결됨 — Property {gaTestResult.propertyId} (오늘 {gaTestResult.todayUsers.toLocaleString('ko-KR')}명)
+                    </span>
+                  )}
+                  {gaTestResult.status === 'error' && (
+                    <span className="text-sm text-red-600 dark:text-red-400">
+                      ✗ {gaTestResult.message}
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  ⚠ 연결 테스트는 현재 입력값이 아닌 <strong>저장된</strong> 설정을 검증합니다. 먼저 저장 버튼을 눌러주세요.
+                </p>
               </CardContent>
             </Card>
 
