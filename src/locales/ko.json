@@ -643,6 +643,7 @@
     "widgetPlacedInZone": "{label} 위젯이 {zone} 영역에 배치되었습니다.",
     "widgetPlaceFailed": "위젯 배치 실패",
     "widgetSettings": "{title} 설정",
+    "widgetTitleLabel": "위젯 제목",
     "colSpanLabel": "열 너비 (1~12)",
     "rowSpanLabel": "행 높이",
     "zoneTop": "상단 영역",

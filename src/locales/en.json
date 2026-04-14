@@ -643,6 +643,7 @@
     "widgetPlacedInZone": "{label} widget placed in {zone} zone.",
     "widgetPlaceFailed": "Widget placement failed",
     "widgetSettings": "{title} settings",
+    "widgetTitleLabel": "Widget title",
     "colSpanLabel": "Column width (1-12)",
     "rowSpanLabel": "Row height",
     "zoneTop": "Top zone",
