@@ -1,4 +1,4 @@
-import { getGoogleTranslateClient } from './google-client'
+import { getGoogleTranslateClient, isTranslationEnabled } from './google-client'
 import { routing } from '@/i18n/routing'
 
 export interface TranslateOptions {
@@ -15,12 +15,13 @@ export async function translateText(
   targetLocale: string,
   options: TranslateOptions = {}
 ): Promise<string | null> {
+  if (!isTranslationEnabled()) return null
   if (!text || !text.trim()) return text
 
   const source = options.sourceLocale ?? routing.defaultLocale
   if (source === targetLocale) return text
 
-  const gc = await getGoogleTranslateClient()
+  const gc = getGoogleTranslateClient()
   if (!gc) return null
 
   try {
@@ -47,11 +48,13 @@ export async function translateMany(
   targetLocale: string,
   options: TranslateOptions = {}
 ): Promise<(string | null)[]> {
-  if (texts.length === 0) return []
+  if (!isTranslationEnabled() || texts.length === 0) {
+    return texts.map(() => null)
+  }
   const source = options.sourceLocale ?? routing.defaultLocale
   if (source === targetLocale) return texts.map(t => t)
 
-  const gc = await getGoogleTranslateClient()
+  const gc = getGoogleTranslateClient()
   if (!gc) return texts.map(() => null)
 
   try {
