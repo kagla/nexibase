@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
+import { useTranslations } from "next-intl"
 import { UserLayout } from "@/components/layout/UserLayout"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -42,6 +43,9 @@ interface PluginWithMenus {
 }
 
 export function MyPageLayout({ children }: { children: React.ReactNode }) {
+  const t = useTranslations('mypage')
+  const tc = useTranslations('common')
+  const ta = useTranslations('admin')
   const router = useRouter()
   const pathname = usePathname()
   const [user, setUser] = useState<UserInfo | null>(null)
@@ -61,8 +65,8 @@ export function MyPageLayout({ children }: { children: React.ReactNode }) {
 
       // 네비게이션 구성
       const items: NavItem[] = [
-        { label: '마이페이지', icon: 'User', path: '/mypage' },
-        { label: '프로필 수정', icon: 'Pencil', path: '/mypage/profile/edit' },
+        { label: t('title'), icon: 'User', path: '/mypage' },
+        { label: t('editProfile'), icon: 'Pencil', path: '/mypage/profile/edit' },
       ]
 
       // 플러그인 메뉴 추가
@@ -80,7 +84,7 @@ export function MyPageLayout({ children }: { children: React.ReactNode }) {
         }
       }
 
-      items.push({ label: '알림', icon: 'Bell', path: '/mypage/notifications' })
+      items.push({ label: t('notifications'), icon: 'Bell', path: '/mypage/notifications' })
       setNavItems(items)
     }).finally(() => setLoading(false))
   }, [router])
@@ -88,7 +92,7 @@ export function MyPageLayout({ children }: { children: React.ReactNode }) {
   if (loading) {
     return (
       <UserLayout>
-        <div className="py-12 text-center text-muted-foreground">로딩 중...</div>
+        <div className="py-12 text-center text-muted-foreground">{tc('loading')}</div>
       </UserLayout>
     )
   }
@@ -116,7 +120,7 @@ export function MyPageLayout({ children }: { children: React.ReactNode }) {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-lg font-bold">{user.nickname}</h1>
-              {user.role === 'admin' && <Badge className="text-xs">관리자</Badge>}
+              {user.role === 'admin' && <Badge className="text-xs">{ta('roleAdmin')}</Badge>}
             </div>
             <p className="text-sm text-muted-foreground">{user.email}</p>
           </div>
