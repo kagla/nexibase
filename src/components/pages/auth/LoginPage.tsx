@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
+import { useTranslations } from "next-intl";
 import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import { GoogleReCaptchaProvider, useGoogleReCaptcha } from "react-google-recaptcha-v3";
 import { Button } from "@/components/ui/button";
@@ -45,6 +46,8 @@ const captchaProvider = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
     : "";
 
 function LoginForm() {
+  const t = useTranslations("auth");
+  const tc = useTranslations("common");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -63,11 +66,11 @@ function LoginForm() {
   useEffect(() => {
     const error = searchParams.get("error");
     if (error === "DeletedAccount" || error === "AccessDenied" || error === "InactiveAccount") {
-      setErrorMessage("로그인에 문제가 있습니다.\n관리자에게 문의해 주세요.");
+      setErrorMessage(t("loginFailed"));
     } else if (error === "WithdrawnAccount") {
-      setErrorMessage("탈퇴한 계정입니다. 동일한 소셜 계정으로는 재가입이 불가능합니다.");
+      setErrorMessage(t("withdrawnAccount"));
     } else if (error) {
-      setErrorMessage("로그인 중 오류가 발생했습니다.");
+      setErrorMessage(t("loginError"));
     }
   }, [searchParams]);
 
@@ -130,11 +133,11 @@ function LoginForm() {
           setCaptchaToken(null);
           turnstileRef.current?.reset();
         }
-        setErrorMessage(data.message || "로그인에 실패했습니다.");
+        setErrorMessage(data.message || t("loginFailed"));
       }
     } catch (error) {
       console.error("로그인 에러:", error);
-      setErrorMessage("네트워크 오류가 발생했습니다.");
+      setErrorMessage(t("networkError"));
     } finally {
       setIsLoading(false);
     }
@@ -149,7 +152,7 @@ function LoginForm() {
       await signIn(provider, { callbackUrl });
     } catch (error) {
       console.error(`${provider} 로그인 에러:`, error);
-      alert('소셜 로그인에 실패했습니다.');
+      alert(t("socialLoginFailed"));
     } finally {
       setSocialLoading(null);
     }
@@ -160,7 +163,7 @@ function LoginForm() {
       <div className="max-w-md w-full space-y-8">
         <Card className="shadow-lg border-border">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-center">로그인</CardTitle>
+            <CardTitle className="text-2xl font-bold text-center">{t("loginTitle")}</CardTitle>
             <CardDescription className="text-center">
               계정에 로그인하여 서비스를 이용하세요
             </CardDescription>
@@ -174,7 +177,7 @@ function LoginForm() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <label htmlFor="email" className="text-sm font-medium text-foreground">
-                  이메일
+                  {t("email")}
                 </label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -195,7 +198,7 @@ function LoginForm() {
 
               <div className="space-y-2">
                 <label htmlFor="password" className="text-sm font-medium text-foreground">
-                  비밀번호
+                  {t("password")}
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -243,7 +246,7 @@ function LoginForm() {
                 className="w-full"
                 disabled={isLoading || (captchaRequired && captchaProvider === "turnstile" && !captchaToken)}
               >
-                {isLoading ? "로그인 중..." : "로그인"}
+                {isLoading ? tc("loading") : t("loginButton")}
               </Button>
             </form>
 
@@ -272,7 +275,7 @@ function LoginForm() {
                 ) : (
                   <>
                     <GoogleIcon />
-                    <span className="ml-2">Google로 계속하기</span>
+                    <span className="ml-2">{t("googleLogin")}</span>
                   </>
                 )}
               </Button>
@@ -290,7 +293,7 @@ function LoginForm() {
                     <svg className="w-5 h-5" viewBox="0 0 24 24">
                       <path fill="#03C75A" d="M16.273 12.845L7.376 0H0v24h7.727V11.155L16.624 24H24V0h-7.727z"/>
                     </svg>
-                    <span className="ml-2">Naver로 계속하기</span>
+                    <span className="ml-2">{t("naverLogin")}</span>
                   </>
                 )}
               </Button>
@@ -308,7 +311,7 @@ function LoginForm() {
                     <svg className="w-5 h-5" viewBox="0 0 24 24">
                       <path fill="#FEE500" d="M12 3c5.799 0 10.5 3.664 10.5 8.185 0 4.52-4.701 8.184-10.5 8.184a13.5 13.5 0 0 1-1.727-.11l-4.408 2.883c-.501.265-.678.236-.472-.413l.892-3.678c-2.88-1.46-4.785-3.99-4.785-6.866C1.5 6.665 6.201 3 12 3z"/>
                     </svg>
-                    <span className="ml-2">Kakao로 계속하기</span>
+                    <span className="ml-2">{t("kakaoLogin")}</span>
                   </>
                 )}
               </Button>
@@ -318,9 +321,9 @@ function LoginForm() {
 
             <div className="text-center">
               <span className="text-sm text-muted-foreground">
-                계정이 없으신가요?{" "}
+                {t("noAccount")}{" "}
                 <Link href="/signup" className="text-primary hover:underline font-medium">
-                  회원가입
+                  {t("signupButton")}
                 </Link>
               </span>
             </div>
