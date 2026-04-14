@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
+import { useTranslations } from 'next-intl'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -70,6 +71,7 @@ export default function BoardListPage() {
   const params = useParams()
   const router = useRouter()
   const slug = params.slug as string
+  const t = useTranslations('boards')
 
   const [board, setBoard] = useState<Board | null>(null)
   const [posts, setPosts] = useState<Post[]>([])
@@ -230,7 +232,7 @@ export default function BoardListPage() {
             {canWrite && (
               <Button onClick={() => router.push(`/boards/${slug}/create`)}>
                 <PenSquare className="h-4 w-4 mr-2" />
-                글쓰기
+                {t('write')}
               </Button>
             )}
           </div>
@@ -331,9 +333,9 @@ export default function BoardListPage() {
                 {/* 데스크톱 헤더 */}
                 <div className="hidden md:flex items-center px-4 py-2 border-b text-xs text-muted-foreground font-medium">
                   <div className="flex-1">제목</div>
-                  <div className="w-28 text-left pl-2">작성자</div>
-                  <div className="w-24 text-center">날짜</div>
-                  <div className="w-16 text-center">조회</div>
+                  <div className="w-28 text-left pl-2">{t('author')}</div>
+                  <div className="w-24 text-center">{t('createdAt')}</div>
+                  <div className="w-16 text-center">{t('viewCount')}</div>
                   {board.useReaction && <div className="w-16 text-center">추천</div>}
                 </div>
                 {posts.map((post) => {
@@ -420,7 +422,7 @@ export default function BoardListPage() {
           <div className="flex justify-end mt-4">
             <Button onClick={() => router.push(`/boards/${slug}/create`)}>
               <PenSquare className="h-4 w-4 mr-2" />
-              글쓰기
+              {t('write')}
             </Button>
           </div>
         )}
@@ -428,7 +430,7 @@ export default function BoardListPage() {
         {!canWrite && board.writeMemberOnly && (
           <div className="mt-4 text-center">
             <Link href="/login" className="text-primary hover:underline text-sm">
-              글을 쓰려면 로그인이 필요합니다.
+              {t('writeLoginRequired')}
             </Link>
           </div>
         )}
