@@ -1,0 +1,14 @@
+{
+  "boards": {
+    "title": "게시판",
+    "list": "목록",
+    "write": "글쓰기",
+    "author": "작성자",
+    "createdAt": "날짜",
+    "viewCount": "조회",
+    "commentCount": "댓글",
+    "loginRequired": "로그인이 필요합니다",
+    "writeLoginRequired": "글을 쓰려면 로그인이 필요합니다.",
+    "notice": "공지사항"
+  }
+}

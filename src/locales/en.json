@@ -1,0 +1,23 @@
+{
+  "header": {
+    "search": "Search...",
+    "lightMode": "Light mode",
+    "darkMode": "Dark mode",
+    "login": "Log in",
+    "logout": "Log out",
+    "signup": "Sign up",
+    "mypage": "My page",
+    "admin": "Admin"
+  },
+  "footer": {
+    "community": "Community",
+    "home": "Home",
+    "latest": "Latest",
+    "popular": "Popular"
+  },
+  "locale": {
+    "switchTo": "Change language",
+    "en": "English",
+    "ko": "한국어"
+  }
+}

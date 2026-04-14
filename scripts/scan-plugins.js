@@ -161,6 +161,7 @@ function scanPlugins() {
   generateHeaderWidgetRegistry(plugins)
   generateAppWrappers(plugins)
   mergeSchemas(plugins)
+  mergeLocales(plugins)
 }
 
 // Extract a balanced object literal starting at the position of `key:` inside content.
@@ -595,6 +596,41 @@ ${pluginSchemas.join('\n')}
 
   fs.writeFileSync(SCHEMA_OUTPUT, merged, 'utf-8')
   console.log(`[scan-plugins] Merged ${pluginSchemas.length} plugin schema(s) into ${SCHEMA_OUTPUT}`)
+}
+
+function mergeLocales(plugins) {
+  const CORE_LOCALES_DIR = path.join(__dirname, '..', 'src', 'locales')
+  const OUT_DIR = path.join(__dirname, '..', 'src', 'messages')
+  const LOCALES = ['en', 'ko']
+
+  if (!fs.existsSync(OUT_DIR)) {
+    fs.mkdirSync(OUT_DIR, { recursive: true })
+  }
+
+  for (const locale of LOCALES) {
+    const merged = {}
+
+    // 1. Core messages
+    const corePath = path.join(CORE_LOCALES_DIR, `${locale}.json`)
+    if (fs.existsSync(corePath)) {
+      Object.assign(merged, JSON.parse(fs.readFileSync(corePath, 'utf-8')))
+    }
+
+    // 2. Plugin messages
+    for (const p of plugins) {
+      const pluginLocalePath = path.join(PLUGINS_DIR, p.folder, 'locales', `${locale}.json`)
+      if (fs.existsSync(pluginLocalePath)) {
+        const pluginMessages = JSON.parse(fs.readFileSync(pluginLocalePath, 'utf-8'))
+        Object.assign(merged, pluginMessages)
+      }
+    }
+
+    // 3. Write merged output
+    const outPath = path.join(OUT_DIR, `${locale}.json`)
+    fs.writeFileSync(outPath, JSON.stringify(merged, null, 2), 'utf-8')
+  }
+
+  console.log(`[scan-plugins] Merged locales for ${LOCALES.length} language(s)`)
 }
 
 scanPlugins()

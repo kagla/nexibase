@@ -1,0 +1,23 @@
+{
+  "header": {
+    "search": "검색어를 입력하세요...",
+    "lightMode": "라이트 모드",
+    "darkMode": "다크 모드",
+    "login": "로그인",
+    "logout": "로그아웃",
+    "signup": "회원가입",
+    "mypage": "마이페이지",
+    "admin": "관리자"
+  },
+  "footer": {
+    "community": "커뮤니티",
+    "home": "홈",
+    "latest": "최신글",
+    "popular": "인기글"
+  },
+  "locale": {
+    "switchTo": "언어 변경",
+    "en": "English",
+    "ko": "한국어"
+  }
+}

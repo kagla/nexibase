@@ -1,0 +1,14 @@
+{
+  "boards": {
+    "title": "Boards",
+    "list": "List",
+    "write": "Write",
+    "author": "Author",
+    "createdAt": "Date",
+    "viewCount": "Views",
+    "commentCount": "Comments",
+    "loginRequired": "Login required",
+    "writeLoginRequired": "Login required to write a post.",
+    "notice": "Notice"
+  }
+}
