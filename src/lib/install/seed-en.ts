@@ -18,8 +18,8 @@ export const seedEn: SeedData = {
     { position: 'header', label: 'Home', url: '/', sortOrder: 0 },
     { position: 'header', label: 'Board', url: '/boards/free', sortOrder: 1 },
     { position: 'header', label: 'Login', url: '/login', sortOrder: 2 },
-    { position: 'footer', label: 'Terms of Service', url: '/policies/terms', sortOrder: 0 },
-    { position: 'footer', label: 'Privacy Policy', url: '/policies/privacy', sortOrder: 1 },
+    { position: 'footer', groupName: 'Policies', label: 'Terms of Service', url: '/policies/terms', sortOrder: 0 },
+    { position: 'footer', groupName: 'Policies', label: 'Privacy Policy', url: '/policies/privacy', sortOrder: 1 },
   ],
   widgets: [
     {

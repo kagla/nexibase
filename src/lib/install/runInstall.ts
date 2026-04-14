@@ -75,6 +75,7 @@ export async function runInstall(params: InstallParams): Promise<void> {
       await tx.menu.create({
         data: {
           position: m.position,
+          groupName: m.groupName ?? null,
           label: m.label,
           url: m.url,
           sortOrder: m.sortOrder,

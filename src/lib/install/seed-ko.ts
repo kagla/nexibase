@@ -18,8 +18,8 @@ export const seedKo: SeedData = {
     { position: 'header', label: '홈', url: '/', sortOrder: 0 },
     { position: 'header', label: '게시판', url: '/boards/free', sortOrder: 1 },
     { position: 'header', label: '로그인', url: '/login', sortOrder: 2 },
-    { position: 'footer', label: '이용약관', url: '/policies/terms', sortOrder: 0 },
-    { position: 'footer', label: '개인정보처리방침', url: '/policies/privacy', sortOrder: 1 },
+    { position: 'footer', groupName: '정책', label: '이용약관', url: '/policies/terms', sortOrder: 0 },
+    { position: 'footer', groupName: '정책', label: '개인정보처리방침', url: '/policies/privacy', sortOrder: 1 },
   ],
   widgets: [
     {

@@ -10,6 +10,7 @@ export interface SeedBoard {
 
 export interface SeedMenu {
   position: 'header' | 'footer'
+  groupName?: string | null
   label: string
   url: string
   sortOrder: number
