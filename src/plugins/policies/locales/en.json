@@ -1,0 +1,24 @@
+{
+  "policies": {
+    "title": "Policies",
+    "version": "Version",
+    "activeVersion": "Active version",
+    "loadFailed": "Failed to load policy",
+    "notFound": "Policy not found",
+    "admin": {
+      "title": "Policy management",
+      "create": "Create policy",
+      "edit": "Edit policy",
+      "delete": "Delete policy",
+      "name": "Title",
+      "slug": "Slug",
+      "version": "Version",
+      "content": "Content",
+      "isActive": "Active",
+      "activate": "Activate this version",
+      "saved": "Saved",
+      "deleted": "Deleted",
+      "deleteConfirm": "Delete this policy?"
+    }
+  }
+}

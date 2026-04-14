@@ -1,0 +1,20 @@
+{
+  "contents": {
+    "title": "Contents",
+    "loadFailed": "Failed to load content",
+    "notFound": "Content not found",
+    "admin": {
+      "title": "Content management",
+      "create": "Create content",
+      "edit": "Edit content",
+      "delete": "Delete content",
+      "name": "Title",
+      "slug": "Slug",
+      "content": "Content",
+      "isPublic": "Public",
+      "saved": "Saved",
+      "deleted": "Deleted",
+      "deleteConfirm": "Delete this content?"
+    }
+  }
+}

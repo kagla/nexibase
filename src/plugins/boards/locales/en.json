@@ -9,6 +9,74 @@
     "commentCount": "Comments",
     "loginRequired": "Login required",
     "writeLoginRequired": "Login required to write a post.",
-    "notice": "Notice"
+    "notice": "Notice",
+    "all": "All",
+    "noResults": "No posts found",
+    "edit": "Edit",
+    "delete": "Delete",
+    "deleteConfirm": "Delete this post?",
+    "loadFailed": "Failed to load board info",
+    "post": {
+      "title": "Title",
+      "content": "Content",
+      "attachments": "Attachments",
+      "maxAttachments": "Maximum 5 attachments allowed",
+      "noPost": "Post not found",
+      "secret": "Secret post",
+      "save": "Save",
+      "cancel": "Cancel",
+      "publish": "Publish",
+      "previous": "Previous",
+      "next": "Next",
+      "list": "List"
+    },
+    "comment": {
+      "title": "Comments",
+      "placeholder": "Write a comment...",
+      "submit": "Submit",
+      "reply": "Reply",
+      "edit": "Edit",
+      "delete": "Delete",
+      "deleteConfirm": "Delete this comment?",
+      "noComments": "No comments yet",
+      "writeFirst": "Be the first to comment"
+    },
+    "reactions": {
+      "like": "Like",
+      "haha": "Haha",
+      "agree": "Agree",
+      "thanks": "Thanks",
+      "wow": "Wow"
+    },
+    "errors": {
+      "loginRequired": "Login required",
+      "deleteFailed": "Failed to delete",
+      "saveFailed": "Failed to save",
+      "loadFailed": "Failed to load"
+    },
+    "admin": {
+      "title": "Board management",
+      "create": "Create board",
+      "edit": "Edit board",
+      "delete": "Delete board",
+      "deleteConfirm": "Type the slug to confirm deletion",
+      "name": "Name",
+      "slug": "Slug",
+      "description": "Description",
+      "category": "Category",
+      "useComment": "Use comments",
+      "useReaction": "Use reactions",
+      "useFile": "Use file attachments",
+      "useSecret": "Allow secret posts",
+      "memberOnly": "Member only",
+      "writeMemberOnly": "Write requires login",
+      "commentMemberOnly": "Comment requires login",
+      "displayType": "Display type",
+      "displayList": "List",
+      "displayGallery": "Gallery",
+      "active": "Active",
+      "saved": "Saved",
+      "deleted": "Deleted"
+    }
   }
 }
