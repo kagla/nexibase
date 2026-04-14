@@ -239,7 +239,7 @@ export default function SignupPage() {
     
     // 제출 전 최종 검증
     if (!email) {
-      alert('이메일을 입력해주세요.');
+      alert(t("emailRequired"));
       return;
     }
     
@@ -249,12 +249,12 @@ export default function SignupPage() {
     }
     
     if (emailStatus.available !== true) {
-      alert('이메일 중복 확인을 완료하세요.');
+      alert(t("emailCheckRequired"));
       return;
     }
     
     if (!password) {
-      alert('비밀번호를 입력해주세요.');
+      alert(t("passwordRequired"));
       return;
     }
     
@@ -269,12 +269,12 @@ export default function SignupPage() {
     }
     
     if (nickname.length < 2) {
-      alert('닉네임은 최소 2자 이상이어야 합니다.');
+      alert(t("nicknameMinLength"));
       return;
     }
     
     if (nicknameStatus.available !== true) {
-      alert('닉네임 중복 확인을 완료하세요.');
+      alert(t("nicknameCheckRequired"));
       return;
     }
     
@@ -296,10 +296,10 @@ export default function SignupPage() {
       const data = await response.json();
 
       if (response.ok) {
-        alert('회원가입이 성공적으로 완료되었습니다!');
+        alert(t("signupSuccess"));
         router.push('/login');
       } else {
-        alert(data.error || '회원가입 중 오류가 발생했습니다.');
+        alert(data.error || t("signupError"));
       }
     } catch (error) {
       console.error('회원가입 에러:', error);
@@ -328,10 +328,10 @@ export default function SignupPage() {
             <CardDescription className="text-center">
               {isFirstUser ? (
                 <span className="text-blue-600 font-medium">
-                  최초 가입자는 관리자로 등록됩니다
+                  {t("firstUserBecomesAdmin")}
                 </span>
               ) : (
-                "새 계정을 만들어 서비스를 시작하세요"
+                t("signupDescription")
               )}
             </CardDescription>
           </CardHeader>
@@ -346,7 +346,7 @@ export default function SignupPage() {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="이메일을 입력하세요"
+                    placeholder={t("emailPlaceholder")}
                     value={email}
                     onChange={handleEmailChange}
                     className={`pl-10 ${
@@ -380,7 +380,7 @@ export default function SignupPage() {
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="비밀번호를 입력하세요"
+                    placeholder={t("passwordPlaceholder")}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="pl-10 pr-10"
@@ -407,7 +407,7 @@ export default function SignupPage() {
                   <Input
                     id="nickname"
                     type="text"
-                    placeholder="닉네임을 입력하세요"
+                    placeholder={t("nicknamePlaceholder")}
                     value={nickname}
                     onChange={handleNicknameChange}
                     className={`pl-10 ${
@@ -438,13 +438,13 @@ export default function SignupPage() {
                 disabled={isLoading || !isFormValid()}
                 className="w-full"
               >
-                {isLoading ? tc("loading") : t("signupButton")}
+                {isLoading ? t("signingUp") : t("signupButton")}
               </Button>
               
               {isLoading && (
                 <div className="text-center">
                   <p className="text-sm text-muted-foreground">
-                    회원가입 처리 중입니다. 메일 발송으로 인해 잠시 시간이 걸릴 수 있습니다.
+                    {t("signupProcessing")}
                   </p>
                   <div className="mt-2">
                     <div className="inline-block animate-spin h-4 w-4 border-2 border-muted border-t-primary rounded-full"></div>
@@ -459,7 +459,7 @@ export default function SignupPage() {
               </div>
               <div className="relative flex justify-center text-xs uppercase">
                 <span className="bg-card px-2 text-muted-foreground">
-                  또는 소셜 계정으로 가입
+                  {t("socialSignupDivider")}
                 </span>
               </div>
             </div>

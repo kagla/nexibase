@@ -47,7 +47,6 @@ const captchaProvider = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
 
 function LoginForm() {
   const t = useTranslations("auth");
-  const tc = useTranslations("common");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -165,7 +164,7 @@ function LoginForm() {
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold text-center">{t("loginTitle")}</CardTitle>
             <CardDescription className="text-center">
-              계정에 로그인하여 서비스를 이용하세요
+              {t("loginDescription")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -185,7 +184,7 @@ function LoginForm() {
                     id="email"
                     name="email"
                     type="email"
-                    placeholder="이메일을 입력하세요"
+                    placeholder={t("emailPlaceholder")}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     onBlur={(e) => checkCaptchaRequired(e.target.value)}
@@ -206,7 +205,7 @@ function LoginForm() {
                     id="password"
                     name="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="비밀번호를 입력하세요"
+                    placeholder={t("passwordPlaceholder")}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="pl-10 pr-10"
@@ -225,7 +224,7 @@ function LoginForm() {
 
               <div className="flex items-center justify-end">
                 <Link href="/forgot-password" className="text-sm text-primary hover:underline">
-                  비밀번호를 잊으셨나요?
+                  {t("forgotPassword")}
                 </Link>
               </div>
 
@@ -246,7 +245,7 @@ function LoginForm() {
                 className="w-full"
                 disabled={isLoading || (captchaRequired && captchaProvider === "turnstile" && !captchaToken)}
               >
-                {isLoading ? tc("loading") : t("loginButton")}
+                {isLoading ? t("loggingIn") : t("loginButton")}
               </Button>
             </form>
 
@@ -256,7 +255,7 @@ function LoginForm() {
               </div>
               <div className="relative flex justify-center text-xs uppercase">
                 <span className="bg-card px-2 text-muted-foreground">
-                  또는 소셜 계정으로 로그인
+                  {t("socialLoginDivider")}
                 </span>
               </div>
             </div>

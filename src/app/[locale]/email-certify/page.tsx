@@ -9,7 +9,6 @@ import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 
 function EmailCertifyContent() {
   const t = useTranslations('auth');
-  const tc = useTranslations('common');
   const [verificationStatus, setVerificationStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('');
   const router = useRouter();
@@ -22,7 +21,7 @@ function EmailCertifyContent() {
       
       if (!mb_id || !mb_md5) {
         setVerificationStatus('error');
-        setMessage('인증 정보가 올바르지 않습니다.');
+        setMessage(t('invalidVerification'));
         return;
       }
 
@@ -61,7 +60,7 @@ function EmailCertifyContent() {
   const getStatusTitle = () => {
     switch (verificationStatus) {
       case 'loading':
-        return tc('loading');
+        return t('verifying');
       case 'success':
         return t('emailVerified');
       case 'error':
