@@ -469,7 +469,7 @@ function generateAppWrappers(plugins) {
     // Generate route wrappers
     if (p.hasRoutes) {
       const routesDir = path.join(PLUGINS_DIR, p.folder, 'routes')
-      generateWrappersRecursive(routesDir, path.join(APP_DIR, slug), `@/plugins/${p.folder}/routes`, p.folder)
+      generateWrappersRecursive(routesDir, path.join(APP_DIR, '[locale]', slug), `@/plugins/${p.folder}/routes`, p.folder)
     }
 
     // Generate API wrappers
@@ -484,7 +484,7 @@ function generateAppWrappers(plugins) {
       // Only generate for page.tsx files, not api/ subfolder
       const adminPagePath = path.join(adminDir, 'page.tsx')
       if (fs.existsSync(adminPagePath)) {
-        generateWrappersRecursive(adminDir, path.join(APP_DIR, 'admin', slug), `@/plugins/${p.folder}/admin`, p.folder, ['api'])
+        generateWrappersRecursive(adminDir, path.join(APP_DIR, '[locale]', 'admin', slug), `@/plugins/${p.folder}/admin`, p.folder, ['api'])
       }
 
       // Generate admin API wrappers
