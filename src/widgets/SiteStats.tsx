@@ -25,7 +25,7 @@ export default function SiteStats() {
           setStats(data.stats)
         }
       } catch (error) {
-        console.error('SiteStats 데이터 조회 에러:', error)
+        console.error('SiteStats fetch failed:', error)
       }
     }
     fetchStats()

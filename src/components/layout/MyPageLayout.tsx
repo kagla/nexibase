@@ -83,13 +83,13 @@ export function MyPageLayout({ children }: { children: React.ReactNode }) {
         router.push('/login')
       }
 
-      // 네비게이션 구성
+      // Build navigation items
       const items: NavItem[] = [
         { label: t('title'), icon: 'User', path: '/mypage' },
         { label: t('editProfile'), icon: 'Pencil', path: '/mypage/profile/edit' },
       ]
 
-      // 플러그인 메뉴 추가
+      // Append plugin menus
       if (pluginsData?.plugins) {
         for (const p of pluginsData.plugins as PluginWithMenus[]) {
           if (p.enabled && p.myPageMenus?.length > 0) {
@@ -120,7 +120,7 @@ export function MyPageLayout({ children }: { children: React.ReactNode }) {
 
   if (!user) return null
 
-  // 현재 경로에 해당하는 탭 활성화
+  // Activate the tab matching the current path
   const isActive = (path: string) => {
     if (path === '/mypage') return pathname === '/mypage'
     return pathname?.startsWith(path.split('?')[0]) || false
@@ -129,7 +129,7 @@ export function MyPageLayout({ children }: { children: React.ReactNode }) {
   return (
     <UserLayout>
       <div className="max-w-3xl mx-auto">
-        {/* 프로필 헤더 */}
+        {/* Profile header */}
         <div className="flex items-center gap-4 mb-6">
           <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
             {user.image ? (
@@ -147,7 +147,7 @@ export function MyPageLayout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
-        {/* 네비게이션 탭 */}
+        {/* Navigation tabs */}
         <div className="flex gap-1 overflow-x-auto mb-6 border-b pb-2">
           {navItems.map((item, idx) => {
             const Icon = iconMap[item.icon] || User
@@ -169,7 +169,7 @@ export function MyPageLayout({ children }: { children: React.ReactNode }) {
           })}
         </div>
 
-        {/* 콘텐츠 */}
+        {/* Content */}
         {children}
       </div>
     </UserLayout>

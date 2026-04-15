@@ -36,7 +36,7 @@ export default function HomePage() {
           setAllWidgets(widgets)
         }
       } catch (error) {
-        console.error('위젯 조회 에러:', error)
+        console.error('failed to fetch widgets:', error)
       } finally {
         setIsLoading(false)
       }

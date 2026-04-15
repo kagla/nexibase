@@ -6,11 +6,11 @@ import { Users, Activity } from "lucide-react"
 import type { VisitorStatsData } from "@/lib/gaTypes"
 import { useTranslations } from 'next-intl'
 
-const POLL_INTERVAL_MS = 120_000 // 120초
+const POLL_INTERVAL_MS = 120_000 // 120 seconds
 
 export default function VisitorStats() {
   const t = useTranslations('widgets')
-  // null = 아직 첫 fetch 완료 전 (스켈레톤 UI 표시)
+  // null = first fetch not yet completed (show skeleton UI)
   const [stats, setStats] = useState<VisitorStatsData | null>(null)
 
   useEffect(() => {
@@ -24,7 +24,7 @@ export default function VisitorStats() {
           setStats(data)
         }
       } catch {
-        // 네트워크 에러 — 기존 값 유지하고 다음 폴링에서 재시도
+        // Network error — keep existing values and retry on the next poll
       }
     }
 
@@ -37,7 +37,7 @@ export default function VisitorStats() {
     }
   }, [])
 
-  // 설정 안 됨 → 위젯 자체 숨김
+  // Not configured → hide the widget entirely
   if (stats && !stats.configured) {
     return null
   }

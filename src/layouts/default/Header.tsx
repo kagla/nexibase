@@ -46,7 +46,7 @@ export default function Header() {
   }, [])
 
 
-  // 알림 개수 조회
+  // Fetch unread notification count
   const fetchUnreadCount = async () => {
     try {
       const res = await fetch('/api/notifications/count')
@@ -55,11 +55,11 @@ export default function Header() {
         setUnreadCount(data.count)
       }
     } catch (error) {
-      console.error('알림 개수 조회 에러:', error)
+      console.error('failed to fetch notification count:', error)
     }
   }
 
-  // 알림 목록 조회
+  // Fetch notification list
   const fetchNotifications = async () => {
     try {
       const res = await fetch('/api/notifications?limit=10')
@@ -69,11 +69,11 @@ export default function Header() {
         setUnreadCount(data.unreadCount)
       }
     } catch (error) {
-      console.error('알림 목록 조회 에러:', error)
+      console.error('failed to fetch notifications:', error)
     }
   }
 
-  // 알림 읽음 처리
+  // Mark notification as read
   const markAsRead = async (notificationId: number) => {
     try {
       await fetch('/api/notifications', {
@@ -82,11 +82,11 @@ export default function Header() {
         body: JSON.stringify({ notificationId }),
       })
     } catch (error) {
-      console.error('알림 읽음 처리 에러:', error)
+      console.error('failed to mark notifications as read:', error)
     }
   }
 
-  // 모든 알림 읽음 처리
+  // Mark all notifications as read
   const markAllAsRead = async () => {
     try {
       await fetch('/api/notifications', {
@@ -97,11 +97,11 @@ export default function Header() {
       setUnreadCount(0)
       setNotifications(notifications.map(n => ({ ...n, isRead: true })))
     } catch (error) {
-      console.error('알림 읽음 처리 에러:', error)
+      console.error('failed to mark notifications as read:', error)
     }
   }
 
-  // 알림 클릭 처리
+  // Handle notification click
   const handleNotificationClick = (notification: Notification) => {
     if (!notification.isRead) {
       markAsRead(notification.id)
@@ -124,7 +124,7 @@ export default function Header() {
       router.push('/')
       router.refresh()
     } catch (error) {
-      console.error('로그아웃 에러:', error)
+      console.error('logout failed:', error)
     }
   }
 
@@ -141,11 +141,11 @@ export default function Header() {
     }
   }
 
-  // 로그인 시 알림 개수 조회
+  // Fetch notification count once logged in
   useEffect(() => {
     if (user) {
       fetchUnreadCount()
-      // 1분마다 알림 개수 갱신
+      // Refresh notification count every minute
       const interval = setInterval(fetchUnreadCount, 60000)
       return () => clearInterval(interval)
     }
@@ -156,7 +156,7 @@ export default function Header() {
       if (moreMenuRef.current && !moreMenuRef.current.contains(event.target as Node)) {
         setMoreMenuOpen(false)
       }
-      // 드롭다운 메뉴 닫기
+      // Close dropdown menus
       if (openDropdownId !== null) {
         const target = event.target as HTMLElement
         if (!target.closest('[data-dropdown]')) {
@@ -173,11 +173,11 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 bg-background border-b">
-      {/* 상단 헤더 */}
+      {/* Top header */}
       <div className="border-b bg-muted/30">
         <div className="max-w-6xl mx-auto px-4">
           <div className="flex items-center justify-between h-14">
-            {/* 로고 */}
+            {/* Logo */}
             <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
               {isLoading ? (
                 <div className="w-7 h-7" />
@@ -199,7 +199,7 @@ export default function Header() {
               <span className="text-xl font-bold text-foreground hidden md:block">{isLoading ? '' : settings.site_name}</span>
             </Link>
 
-            {/* 검색 (데스크톱) */}
+            {/* Search (desktop) */}
             <div className="hidden md:flex flex-1 max-w-md mx-8">
               <form onSubmit={handleSearch} className="w-full relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -212,9 +212,9 @@ export default function Header() {
               </form>
             </div>
 
-            {/* 우측 액션 */}
+            {/* Right-side actions */}
             <div className="flex items-center gap-2">
-              {/* 테마 토글 */}
+              {/* Theme toggle */}
               <Button
                 variant="ghost"
                 size="icon"
@@ -228,12 +228,12 @@ export default function Header() {
                 )}
               </Button>
 
-              {/* 플러그인 헤더 위젯 */}
+              {/* Plugin header widgets */}
               {headerWidgets.map(({ folder, component: Widget }) => (
                 <Widget key={folder} />
               ))}
 
-              {/* 알림 (로그인 시만 표시) */}
+              {/* Notifications (only shown when logged in) */}
               {user && (
                 <div className="relative" ref={notificationRef}>
                   <Button
@@ -255,7 +255,7 @@ export default function Header() {
                     )}
                   </Button>
 
-                  {/* 알림 드롭다운 */}
+                  {/* Notification dropdown */}
                   {notificationOpen && (
                     <div className="fixed md:absolute left-2 right-2 md:left-auto md:right-0 top-16 md:top-full md:mt-2 md:w-80 bg-background border rounded-lg shadow-lg z-50">
                       <div className="flex items-center justify-between px-4 py-3 border-b">
@@ -320,19 +320,19 @@ export default function Header() {
                 </div>
               )}
 
-              {/* 데스크톱: 모든 액션 표시 */}
+              {/* Desktop: show all actions */}
               <div className="hidden md:flex items-center gap-2">
                 {!isLoading && (
                   <>
                     {user ? (
                       <>
-                        {/* 마이페이지 */}
+                        {/* My page */}
                         <Link href="/mypage">
                           <Button variant="ghost" size="icon" className="relative">
                             <User className="h-5 w-5" />
                           </Button>
                         </Link>
-                        {/* 관리자 바로가기 */}
+                        {/* Admin shortcut */}
                         {user.role === 'admin' && (
                           <Link href="/admin">
                             <Button variant="ghost" size="icon" title={t('admin')}>
@@ -371,7 +371,7 @@ export default function Header() {
                 )}
               </div>
 
-              {/* 모바일: 프로필/로그인 + 햄버거 메뉴 */}
+              {/* Mobile: profile/login + hamburger menu */}
               <div className="flex md:hidden items-center gap-1">
                 {!isLoading && (
                   <>
@@ -391,7 +391,7 @@ export default function Header() {
                     )}
                   </>
                 )}
-                {/* 햄버거 메뉴 버튼 */}
+                {/* Hamburger menu button */}
                 <Button
                   variant="ghost"
                   size="icon"
@@ -406,14 +406,14 @@ export default function Header() {
         </div>
       </div>
 
-      {/* 네비게이션 탭 */}
+      {/* Navigation tabs */}
       <div className="bg-background">
         <div className="max-w-6xl mx-auto px-4">
           <nav className="hidden md:flex items-center gap-1 h-11 overflow-visible">
-            {/* DB 기반 메뉴 렌더링 */}
+            {/* DB-driven menu rendering */}
             {headerMenus.length > 0 ? (
               <>
-                {/* 상위 메뉴 (처음 7개를 탭으로 표시) */}
+                {/* Top-level menus (first 7 shown as tabs) */}
                 {headerMenus.filter(m => {
                   if (m.visibility === 'member' && !user) return false
                   if (m.visibility === 'admin' && user?.role !== 'admin') return false
@@ -425,7 +425,7 @@ export default function Header() {
                     : pathname?.startsWith(menu.url)
                   const hasChildren = menu.children && menu.children.length > 0
 
-                  // 구분선: 첫 4개 메뉴(홈, 인기, 쇼핑, 경매) 이후
+                  // Separator placed after the first 4 menus (Home, Popular, Shop, Auction)
                   const showSeparator = idx === 3 && headerMenus.length > 4
 
                   return (
@@ -480,7 +480,7 @@ export default function Header() {
                   )
                 })}
 
-                {/* 나머지 메뉴를 더보기로 */}
+                {/* Remaining menus under a "More" dropdown */}
                 {headerMenus.filter(m => {
                   if (m.visibility === 'member' && !user) return false
                   if (m.visibility === 'admin' && user?.role !== 'admin') return false
@@ -520,13 +520,13 @@ export default function Header() {
                   </div>
                 )}
               </>
-            ) : null /* DB 메뉴 로드 전엔 빈 nav (하드코딩 한국어 fallback 제거) */}
+            ) : null /* Empty nav until DB menus load (no hardcoded Korean fallback) */}
           </nav>
 
-          {/* 모바일 네비게이션 */}
+          {/* Mobile navigation */}
           {mobileMenuOpen && (
             <nav className="md:hidden py-3 border-t space-y-1">
-              {/* 검색 */}
+              {/* Search */}
               <div className="px-3 pb-3">
                 <form onSubmit={handleSearch} className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -539,7 +539,7 @@ export default function Header() {
                 </form>
               </div>
 
-              {/* 사용자 정보 */}
+              {/* User info */}
               {user && (
                 <>
                   <div className="px-3 py-2 flex items-center gap-3 bg-muted/50 rounded-md mx-3">
@@ -558,7 +558,7 @@ export default function Header() {
                 </>
               )}
 
-              {/* DB 기반 모바일 메뉴 */}
+              {/* DB-driven mobile menu */}
               {headerMenus.length > 0 ? (
                 <>
                   {headerMenus.filter(m => {
@@ -580,7 +580,7 @@ export default function Header() {
                       >
                         {menu.icon ? `${menu.icon} ` : ''}{menu.label}
                       </Link>
-                      {/* 하위 메뉴 */}
+                      {/* Child menus */}
                       {menu.children && menu.children.length > 0 && (
                         <div className="ml-4">
                           {menu.children.filter(c => {
@@ -604,9 +604,9 @@ export default function Header() {
                     </div>
                   ))}
                 </>
-              ) : null /* DB 메뉴 로드 전엔 빈 상태 (하드코딩 한국어 fallback 제거) */}
+              ) : null /* Empty state until DB menus load (no hardcoded Korean fallback) */}
               <div className="border-t my-2" />
-              {/* 플러그인 헤더 위젯 (모바일) */}
+              {/* Plugin header widgets (mobile) */}
               {headerWidgets.map(({ folder, component: Widget }) => (
                 <div key={folder} onClick={() => setMobileMenuOpen(false)}>
                   <Widget />

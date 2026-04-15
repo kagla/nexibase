@@ -43,14 +43,14 @@ export default function WelcomeBanner() {
         }
       }
     } catch (error) {
-      console.error('WelcomeBanner 데이터 조회 에러:', error)
+      console.error('WelcomeBanner fetch failed:', error)
     }
   }, [])
 
   useEffect(() => {
     fetchData()
 
-    // 페이지 포커스 시 세션 상태 갱신 (로그인/로그아웃 반영)
+    // Refresh session state on page focus (reflect login/logout)
     const handleFocus = () => fetchData()
     window.addEventListener('focus', handleFocus)
     return () => window.removeEventListener('focus', handleFocus)

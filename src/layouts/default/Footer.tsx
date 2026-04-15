@@ -43,7 +43,7 @@ export default function Footer() {
           setMenuGroups(data.menus || {})
         }
       } catch (error) {
-        console.error('푸터 데이터 조회 에러:', error)
+        console.error('failed to fetch footer data:', error)
       }
     }
 
@@ -55,9 +55,9 @@ export default function Footer() {
   return (
     <footer className="border-t bg-muted/30">
       <div className="max-w-6xl mx-auto px-4 py-8">
-        {/* 메인 푸터 콘텐츠 */}
+        {/* Main footer content */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
-          {/* 사이트 정보 */}
+          {/* Site info */}
           <div className="col-span-2 md:col-span-1">
             <div className="flex items-center gap-2 mb-3">
               <div className="w-6 h-6 bg-primary rounded flex items-center justify-center">
@@ -69,7 +69,7 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* DB 기반 메뉴 그룹 */}
+          {/* DB-driven menu groups */}
           {groupNames.length > 0 ? (
             groupNames.map((groupName) => (
               <div key={groupName}>
@@ -89,10 +89,10 @@ export default function Footer() {
                 </ul>
               </div>
             ))
-          ) : null /* DB 메뉴 로드 전엔 빈 상태 (하드코딩 한국어 fallback 제거) */}
+          ) : null /* Empty state until DB menus load (no hardcoded Korean fallback) */}
         </div>
 
-        {/* 하단 Copyright */}
+        {/* Copyright strip */}
         <div className="border-t pt-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-sm text-muted-foreground">

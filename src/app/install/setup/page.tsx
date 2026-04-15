@@ -40,7 +40,7 @@ function SetupForm() {
   const searchParams = useSearchParams()
   const locale = searchParams.get('locale') || 'en'
 
-  // locale이 레지스트리에 없으면 Step 1로 되돌리기
+  // If the locale is not in the registry, fall back to Step 1
   useEffect(() => {
     if (!(locale in localeRegistry)) {
       router.replace('/install')
@@ -94,7 +94,7 @@ function SetupForm() {
         return
       }
 
-      // 성공 → 전체 페이지 reload로 middleware가 새 상태 읽게 함
+      // Success → full page reload so middleware picks up the new state
       window.location.href = data.redirectTo || '/admin/login'
     } catch (err) {
       setErrors({ _: err instanceof Error ? err.message : t.unknownError })
