@@ -22,7 +22,7 @@ export function UsersContent() {
         </Button>
       </div>
 
-      {/* 검색 및 필터 */}
+      {/* Search and filters */}
       <Card>
         <CardContent className="pt-6">
           <div className="flex gap-4">
@@ -35,7 +35,7 @@ export function UsersContent() {
         </CardContent>
       </Card>
 
-      {/* 회원 목록 */}
+      {/* Member list */}
       <Card>
         <CardHeader>
           <CardTitle>{t('members')}</CardTitle>

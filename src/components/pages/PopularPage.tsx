@@ -68,7 +68,7 @@ export default function PopularPage() {
           setPagination(data.pagination)
         }
       } catch (error) {
-        console.error('인기글 조회 에러:', error)
+        console.error('failed to fetch popular posts:', error)
       } finally {
         setIsLoading(false)
       }
@@ -114,14 +114,14 @@ export default function PopularPage() {
   }
 
   const getContentPreview = (content: string) => {
-    // HTML 태그 제거
+    // Strip HTML tags
     const text = content.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ')
     return text.length > 100 ? text.substring(0, 100) + '...' : text
   }
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
-      {/* 헤더 */}
+      {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-2">
           <Flame className="h-6 w-6 text-orange-500" />
@@ -132,7 +132,7 @@ export default function PopularPage() {
         </p>
       </div>
 
-      {/* 기간 필터 */}
+      {/* Date range filter */}
       <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
         {periodOptions.map((option) => (
           <Button
@@ -148,7 +148,7 @@ export default function PopularPage() {
         ))}
       </div>
 
-      {/* 게시글 목록 */}
+      {/* Post list */}
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -160,7 +160,7 @@ export default function PopularPage() {
               <Card className="hover:border-primary/50 hover:shadow-md transition-all duration-200 cursor-pointer">
                 <CardContent className="p-4">
                   <div className="flex items-start gap-4">
-                    {/* 순위 */}
+                    {/* Rank */}
                     <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg ${
                       index === 0 ? 'bg-yellow-500 text-yellow-950' :
                       index === 1 ? 'bg-gray-400 text-gray-900' :
@@ -170,7 +170,7 @@ export default function PopularPage() {
                       {(currentPage - 1) * 20 + index + 1}
                     </div>
 
-                    {/* 내용 */}
+                    {/* Body */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <Badge variant="outline" className="text-xs shrink-0">
@@ -214,7 +214,7 @@ export default function PopularPage() {
         </Card>
       )}
 
-      {/* 페이지네이션 */}
+      {/* Pagination */}
       {pagination && pagination.totalPages > 1 && (
         <div className="flex justify-center gap-2 mt-6">
           <Button

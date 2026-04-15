@@ -11,7 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { Mail, Lock, User, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 
-// 소셜 로그인 아이콘 컴포넌트
+// Social login icon components
 const GoogleIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24">
     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -57,18 +57,18 @@ export default function SignupPage() {
     try {
       await signIn(provider, { callbackUrl: "/" });
     } catch (error) {
-      console.error(`${provider} 로그인 에러:`, error);
+      console.error(`${provider} login error:`, error);
       alert(t("socialLoginFailed"));
     } finally {
       setSocialLoading(null);
     }
   };
 
-  // 디바운스를 위한 ref
+  // Refs for debounce timers
   const emailTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const nicknameTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 첫 회원인지 확인
+  // Check whether this is the first user
   useEffect(() => {
     const checkFirstUser = async () => {
       try {
@@ -84,21 +84,21 @@ export default function SignupPage() {
           });
         }
       } catch (error) {
-        console.error('첫 회원 확인 에러:', error);
+        console.error('first-user check failed:', error);
       }
     };
     checkFirstUser();
   }, []);
 
-  // 이메일 형식 검증 함수 추가
+  // Email format validator
   const isValidEmail = (email: string): boolean => {
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     return emailRegex.test(email);
   };
 
-  // 이메일 중복 확인 함수 (개선됨)
+  // Email availability check
   const checkEmailAvailability = async (emailValue: string) => {
-    // 이메일 형식이 유효하지 않으면 중복 확인하지 않음
+    // Skip the availability check when the email format is invalid
     if (!emailValue || !isValidEmail(emailValue)) {
       setEmailStatus({ 
         available: null, 
@@ -135,7 +135,7 @@ export default function SignupPage() {
         });
       }
     } catch (error) {
-      console.error('이메일 확인 에러:', error);
+      console.error('email check failed:', error);
       setEmailStatus({
         available: false,
         message: t("networkError"),
@@ -144,7 +144,7 @@ export default function SignupPage() {
     }
   };
 
-  // 닉네임 중복 확인 함수
+  // Nickname availability check
   const checkNicknameAvailability = async (nicknameValue: string) => {
     if (!nicknameValue || nicknameValue.length < 2) {
       setNicknameStatus({ available: null, message: "", checking: false });
@@ -178,7 +178,7 @@ export default function SignupPage() {
         });
       }
     } catch (error) {
-      console.error('닉네임 확인 에러:', error);
+      console.error('nickname check failed:', error);
       setNicknameStatus({
         available: false,
         message: t("networkError"),
@@ -187,42 +187,42 @@ export default function SignupPage() {
     }
   };
 
-  // 이메일 입력 핸들러 (개선된 디바운스)
+  // Email input handler (debounced)
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newEmail = e.target.value;
     setEmail(newEmail);
     
-    // 기존 타이머가 있다면 클리어
+    // Clear any existing timer
     if (emailTimeoutRef.current) {
       clearTimeout(emailTimeoutRef.current);
     }
     
-    // 새 타이머 설정
+    // Start a new timer
     emailTimeoutRef.current = setTimeout(() => {
       checkEmailAvailability(newEmail);
     }, 500);
   };
 
-  // 닉네임 입력 핸들러 (개선된 디바운스)
+  // Nickname input handler (debounced)
   const handleNicknameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // 첫 회원인 경우 닉네임 변경 불가
+    // First user cannot change nickname
     if (isFirstUser) return;
 
     const newNickname = e.target.value;
     setNickname(newNickname);
 
-    // 기존 타이머가 있다면 클리어
+    // Clear any existing timer
     if (nicknameTimeoutRef.current) {
       clearTimeout(nicknameTimeoutRef.current);
     }
 
-    // 새 타이머 설정
+    // Start a new timer
     nicknameTimeoutRef.current = setTimeout(() => {
       checkNicknameAvailability(newNickname);
     }, 500);
   };
 
-  // 컴포넌트 언마운트 시 타이머 정리
+  // Clean up timers on unmount
   useEffect(() => {
     return () => {
       if (emailTimeoutRef.current) {
@@ -237,7 +237,7 @@ export default function SignupPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // 제출 전 최종 검증
+    // Final validation before submit
     if (!email) {
       alert(t("emailRequired"));
       return;
@@ -259,7 +259,7 @@ export default function SignupPage() {
     }
     
     // if (password.length < 6) {
-    //   alert('비밀번호는 최소 6자 이상이어야 합니다.');
+    //   alert('Password must be at least 6 characters.');
     //   return;
     // }
     
@@ -307,14 +307,14 @@ export default function SignupPage() {
         alert(data.error || t("signupError"));
       }
     } catch (error) {
-      console.error('회원가입 에러:', error);
+      console.error('signup error:', error);
       alert(`${t("networkError")} ${tc("tryAgain")}`);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // 폼 제출 버튼에서 실제로 사용할 수 있도록 수정
+  // Adjusted so the form submit button can invoke it directly
   const isFormValid = () => {
     return email && 
            password && 
@@ -469,7 +469,7 @@ export default function SignupPage() {
               </div>
             </div>
 
-            {/* 소셜 로그인 버튼 */}
+            {/* Social login buttons */}
             <div className="flex flex-col gap-3">
               <Button
                 type="button"

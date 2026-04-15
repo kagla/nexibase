@@ -15,14 +15,14 @@ import Link from "next/link";
 import { markBrowserSession, markJustLoggedIn } from "@/components/providers/SessionProvider";
 import { useSite } from "@/lib/SiteContext";
 
-// PasswordCredential 타입 선언
+// PasswordCredential type declaration
 declare global {
   interface Window {
     PasswordCredential?: new (data: { id: string; password: string }) => Credential;
   }
 }
 
-// 소셜 로그인 아이콘 컴포넌트
+// Social login icon components
 const GoogleIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24">
     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -32,13 +32,13 @@ const GoogleIcon = () => (
   </svg>
 );
 
-// reCAPTCHA 토큰 가져오기 훅 래퍼
+// Hook wrapper for obtaining a reCAPTCHA token
 function useRecaptchaToken() {
   const context = useGoogleReCaptcha();
   return context?.executeRecaptcha || null;
 }
 
-// Turnstile 키 있으면 Turnstile, 없으면 reCAPTCHA 키 확인, 둘 다 없으면 비활성화
+// Use Turnstile if its site key is set, otherwise reCAPTCHA; disabled when neither is configured
 const captchaProvider = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
   ? "turnstile"
   : process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY
@@ -68,7 +68,7 @@ function LoginForm() {
     }
   }, [status, router, searchParams]);
 
-  // URL 에러 파라미터 처리
+  // Handle URL error parameters
   useEffect(() => {
     const error = searchParams.get("error");
     if (error === "DeletedAccount" || error === "AccessDenied" || error === "InactiveAccount") {
@@ -87,7 +87,7 @@ function LoginForm() {
       const data = await res.json();
       setCaptchaRequired(data.failCount > 3);
     } catch {
-      // 조회 실패 시 CAPTCHA 없이 진행
+      // Proceed without CAPTCHA when the lookup fails
     }
   };
 
@@ -97,7 +97,7 @@ function LoginForm() {
     setErrorMessage(null);
 
     try {
-      // reCAPTCHA인 경우 submit 시점에 토큰 발급
+      // For reCAPTCHA, fetch a token at submit time
       let tokenToSend = captchaToken;
       if (captchaRequired && captchaProvider === "recaptcha" && executeRecaptcha) {
         tokenToSend = await executeRecaptcha("login");
@@ -123,11 +123,11 @@ function LoginForm() {
             const cred = new window.PasswordCredential({ id: email, password });
             await navigator.credentials.store(cred);
           } catch {
-            // 자격 증명 저장 실패해도 로그인은 계속 진행
+            // Continue login even if credential storage fails
           }
         }
 
-        // 헤더 등 UI 즉시 갱신
+        // Refresh UI (header etc.) immediately
         await refreshUser();
 
         const callbackUrl = searchParams.get("callbackUrl") || "/";
@@ -142,7 +142,7 @@ function LoginForm() {
         setErrorMessage(t("invalidCredentials"));
       }
     } catch (error) {
-      console.error("로그인 에러:", error);
+      console.error("login error:", error);
       setErrorMessage(t("networkError"));
     } finally {
       setIsLoading(false);
@@ -152,12 +152,12 @@ function LoginForm() {
   const handleSocialLogin = async (provider: string) => {
     setSocialLoading(provider);
     try {
-      // 소셜 로그인은 리다이렉트 방식이므로, 로그인 플래그를 미리 설정
+      // Social login uses redirect flow, so mark the login flag ahead of time
       markJustLoggedIn();
       const callbackUrl = searchParams.get("callbackUrl") || "/";
       await signIn(provider, { callbackUrl });
     } catch (error) {
-      console.error(`${provider} 로그인 에러:`, error);
+      console.error(`${provider} login error:`, error);
       alert(t("socialLoginFailed"));
     } finally {
       setSocialLoading(null);
@@ -267,7 +267,7 @@ function LoginForm() {
               </div>
             </div>
 
-            {/* 소셜 로그인 버튼 */}
+            {/* Social login buttons */}
             <div className="flex flex-col gap-3">
               <Button
                 type="button"

@@ -170,7 +170,7 @@ function SearchContent() {
         setData(null)
       }
     } catch (error) {
-      console.error('검색 에러:', error)
+      console.error('search failed:', error)
       setData(null)
     } finally {
       setLoading(false)
@@ -280,7 +280,7 @@ function SearchContent() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      {/* 검색 헤더 */}
+      {/* Search header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold mb-4 flex items-center gap-2">
           <Search className="h-6 w-6" />
@@ -306,7 +306,7 @@ function SearchContent() {
         </form>
       </div>
 
-      {/* 탭 네비게이션 */}
+      {/* Tab navigation */}
       {searched && data && (
         <div className="mb-4">
           <div className="flex gap-1 p-1 bg-muted rounded-lg">
@@ -333,7 +333,7 @@ function SearchContent() {
         </div>
       )}
 
-      {/* 게시글 필터 */}
+      {/* Post filters */}
       {searched && data && selectedType === 'posts' && (
         <div className="flex flex-wrap gap-3 mb-4">
           <Select
@@ -390,7 +390,7 @@ function SearchContent() {
         </div>
       )}
 
-      {/* 검색 결과 */}
+      {/* Search results */}
       {loading ? (
         <div className="flex items-center justify-center py-20">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -402,10 +402,10 @@ function SearchContent() {
             {' '}{t('resultSummary', { count: data.counts.all.toLocaleString() })}
           </div>
 
-          {/* 전체 탭 */}
+          {/* All tab */}
           {selectedType === 'all' && (
             <div className="space-y-6">
-              {/* 게시글 섹션 */}
+              {/* Posts section */}
               {data.results.posts.total > 0 && (
                 <Card>
                   <div className="border-b px-4 py-3 flex items-center justify-between">
@@ -439,7 +439,7 @@ function SearchContent() {
                 </Card>
               )}
 
-              {/* 콘텐츠 섹션 */}
+              {/* Contents section */}
               {data.results.contents.total > 0 && (
                 <Card>
                   <div className="border-b px-4 py-3 flex items-center justify-between">
@@ -465,7 +465,7 @@ function SearchContent() {
                 </Card>
               )}
 
-              {/* 상품 섹션 */}
+              {/* Products section */}
               {data.results.products.total > 0 && (
                 <Card>
                   <div className="border-b px-4 py-3 flex items-center justify-between">
@@ -520,7 +520,7 @@ function SearchContent() {
                 </Card>
               )}
 
-              {/* 정책 섹션 */}
+              {/* Policies section */}
               {data.results.policies.total > 0 && (
                 <Card>
                   <div className="border-b px-4 py-3 flex items-center justify-between">
@@ -561,7 +561,7 @@ function SearchContent() {
             </div>
           )}
 
-          {/* 게시글 탭 */}
+          {/* Posts tab */}
           {selectedType === 'posts' && (
             <>
               {data.results.posts.items.length > 0 ? (
@@ -601,7 +601,7 @@ function SearchContent() {
             </>
           )}
 
-          {/* 콘텐츠 탭 */}
+          {/* Contents tab */}
           {selectedType === 'contents' && (
             <>
               {data.results.contents.items.length > 0 ? (
@@ -628,7 +628,7 @@ function SearchContent() {
             </>
           )}
 
-          {/* 정책 탭 */}
+          {/* Policies tab */}
           {selectedType === 'policies' && (
             <>
               {data.results.policies.items.length > 0 ? (
@@ -658,7 +658,7 @@ function SearchContent() {
             </>
           )}
 
-          {/* 상품 탭 */}
+          {/* Products tab */}
           {selectedType === 'products' && (
             <>
               {data.results.products.items.length > 0 ? (
@@ -729,7 +729,7 @@ function SearchContent() {
   )
 }
 
-// 페이지네이션 컴포넌트
+// Pagination component
 function PaginationNav({ pagination, onPageChange }: {
   pagination: { page: number; totalPages: number }
   onPageChange: (page: number) => void
@@ -762,7 +762,7 @@ function PaginationNav({ pagination, onPageChange }: {
   )
 }
 
-// 빈 결과 컴포넌트
+// Empty-result component
 function EmptyResult({ icon: Icon, message }: { icon: React.ComponentType<{ className?: string }>; message: string }) {
   return (
     <Card>

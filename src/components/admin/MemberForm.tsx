@@ -11,7 +11,7 @@ import { ArrowLeft, Save, Mail, MapPin, Shield, Settings, Lock, FileText, Calend
 import { MemberFormData, MemberFormProps, Member } from "@/lib/types/member"
 import { Textarea } from "@/components/ui/textarea"
 
-// Daum 우편번호 API 타입 선언
+// Type declarations for the Daum postcode API
 declare global {
   interface Window {
     daum: {
@@ -39,7 +39,7 @@ export function MemberForm({ mode, memberId, onCancel, onSuccess }: MemberFormPr
   const [nickChecking, setNickChecking] = useState(false)
   const [emailChecking, setEmailChecking] = useState(false)
   
-  // 중복 체크 상태들
+  // Duplicate-check states
   const [idStatus, setIdStatus] = useState<{
     available: boolean | null
     message: string
@@ -112,7 +112,7 @@ export function MemberForm({ mode, memberId, onCancel, onSuccess }: MemberFormPr
     mb_10: ""
   })
 
-  // Edit 모드일 때 기존 데이터 로드
+  // Load existing data in edit mode
   useEffect(() => {
     if (mode === 'edit' && memberId) {
       const fetchMember = async () => {
@@ -162,7 +162,7 @@ export function MemberForm({ mode, memberId, onCancel, onSuccess }: MemberFormPr
               mb_10: ""
             })
 
-            // Edit 모드에서는 아이디 중복 체크를 건너뛰고 기본적으로 사용 가능으로 설정
+            // Skip the user-id uniqueness check in edit mode and mark it as available
             setIdStatus({
               available: true,
               message: t('existingId'),
@@ -172,7 +172,7 @@ export function MemberForm({ mode, memberId, onCancel, onSuccess }: MemberFormPr
             alert(data.error || t('memberLoadError'))
           }
         } catch (error) {
-          console.error('회원 정보 조회 실패:', error)
+          console.error('failed to load member:', error)
           alert(t('networkError'))
         } finally {
           setLoading(false)
@@ -183,7 +183,7 @@ export function MemberForm({ mode, memberId, onCancel, onSuccess }: MemberFormPr
     }
   }, [mode, memberId, t])
 
-  // 유효성 검사 함수들
+  // Validation helpers
   const validateId = (id: string) => {
     if (!id.trim()) {
       return { valid: false, message: t('validateIdRequired') }
@@ -221,10 +221,10 @@ export function MemberForm({ mode, memberId, onCancel, onSuccess }: MemberFormPr
     return { valid: true, message: "" }
   }
 
-  // 디바운스된 중복 체크 함수들
+  // Debounced uniqueness checks
   const debouncedCheckId = useCallback(
     (async (id: string) => {
-      // Edit 모드에서는 아이디 중복 체크 생략 (아이디는 변경불가)
+      // Skip user-id uniqueness check in edit mode (ID is immutable)
       if (mode === 'edit') return
 
       const idValidation = validateId(id)
@@ -263,7 +263,7 @@ export function MemberForm({ mode, memberId, onCancel, onSuccess }: MemberFormPr
           })
         }
       } catch (error) {
-        console.error('아이디 중복 확인 에러:', error)
+        console.error('user-id uniqueness check failed:', error)
         setIdStatus({
           available: false,
           message: t('networkError'),
@@ -297,7 +297,7 @@ export function MemberForm({ mode, memberId, onCancel, onSuccess }: MemberFormPr
           },
           body: JSON.stringify({ 
             mb_nick: nick,
-            // Edit 모드일 때는 현재 회원 제외
+            // In edit mode, exclude the current member
             exclude_id: mode === 'edit' ? memberId : undefined
           }),
         })
@@ -318,7 +318,7 @@ export function MemberForm({ mode, memberId, onCancel, onSuccess }: MemberFormPr
           })
         }
       } catch (error) {
-        console.error('닉네임 중복 확인 에러:', error)
+        console.error('nickname uniqueness check failed:', error)
         setNickStatus({
           available: false,
           message: t('networkError'),
@@ -352,7 +352,7 @@ export function MemberForm({ mode, memberId, onCancel, onSuccess }: MemberFormPr
           },
           body: JSON.stringify({ 
             email: email,
-            // Edit 모드일 때는 현재 회원 제외
+            // In edit mode, exclude the current member
             exclude_id: mode === 'edit' ? memberId : undefined
           }),
         })
@@ -373,7 +373,7 @@ export function MemberForm({ mode, memberId, onCancel, onSuccess }: MemberFormPr
           })
         }
       } catch (error) {
-        console.error('이메일 중복 확인 에러:', error)
+        console.error('email uniqueness check failed:', error)
         setEmailStatus({
           available: false,
           message: t('networkError'),
@@ -386,7 +386,7 @@ export function MemberForm({ mode, memberId, onCancel, onSuccess }: MemberFormPr
     [mode, memberId, t]
   )
 
-  // 자동 중복 체크 useEffect들
+  // Auto-running uniqueness-check effects
   useEffect(() => {
     let timeoutId: NodeJS.Timeout
     if (formData.mb_id.trim() && mode === 'create') {
@@ -439,7 +439,7 @@ export function MemberForm({ mode, memberId, onCancel, onSuccess }: MemberFormPr
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
-  // 오늘 날짜로 설정하는 함수들
+  // Helpers that set dates to today
   const handleTodayLeave = (checked: boolean) => {
     setSetTodayLeave(checked)
     if (checked) {
@@ -456,7 +456,7 @@ export function MemberForm({ mode, memberId, onCancel, onSuccess }: MemberFormPr
     }
   }
 
-  // 주소 검색 함수
+  // Address search helper
   const handleAddressSearch = () => {
     if (!window.daum) {
       alert(t('addressServiceLoading'))
@@ -497,7 +497,7 @@ export function MemberForm({ mode, memberId, onCancel, onSuccess }: MemberFormPr
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // 기본 유효성 검증
+    // Basic validation
     const idValidation = validateId(formData.mb_id)
     if (!idValidation.valid) {
       alert(idValidation.message)
@@ -509,7 +509,7 @@ export function MemberForm({ mode, memberId, onCancel, onSuccess }: MemberFormPr
       return
     }
 
-    // Create 모드에서만 비밀번호 필수
+    // Password is required only in create mode
     if (mode === 'create' && !formData.mb_password) {
       alert(t('validatePasswordRequired'))
       document.getElementById('mb_password')?.focus()
@@ -584,17 +584,17 @@ export function MemberForm({ mode, memberId, onCancel, onSuccess }: MemberFormPr
         alert(data.error || t('memberSaveFailed', { action: mode === 'create' ? t('actionAdd') : t('actionEdit') }))
       }
     } catch (error) {
-      console.error(`회원 ${mode} 실패:`, error)
+      console.error(`member ${mode} failed:`, error)
       alert(t('networkError'))
     } finally {
       setLoading(false)
     }
   }
 
-  // Enter 키 핸들러 수정
+  // Enter key handler
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
-      // Textarea에서 Shift+Enter는 줄바꿈을 위해 허용
+      // Allow Shift+Enter in a textarea to insert a newline
       const target = e.target as HTMLElement
       if (target.tagName === 'TEXTAREA') {
         return
@@ -607,17 +607,17 @@ export function MemberForm({ mode, memberId, onCancel, onSuccess }: MemberFormPr
 
   return (
     <>
-      {/* Daum 우편번호 API 스크립트 로드 */}
+      {/* Load the Daum postcode API script */}
       <Script
         src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"
         strategy="lazyOnload"
         onError={(e) => {
-          console.error('Daum Postcode API 로드 실패:', e)
+          console.error('Daum Postcode API load failed:', e)
         }}
       />
       
       <div className="space-y-6" onKeyDown={handleKeyDown}>
-        {/* 헤더 */}
+        {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Button variant="outline" size="sm" onClick={onCancel} className="text-sm">
@@ -656,7 +656,7 @@ export function MemberForm({ mode, memberId, onCancel, onSuccess }: MemberFormPr
           </Button>
         </div>
 
-        {/* 1. 기본 계정 정보 */}
+        {/* 1. Basic account info */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
@@ -665,7 +665,7 @@ export function MemberForm({ mode, memberId, onCancel, onSuccess }: MemberFormPr
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* 아이디 / 비밀번호 */}
+            {/* User ID / password */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="mb_id" className="text-xs font-medium">{t('idLabel')}</Label>
@@ -677,7 +677,7 @@ export function MemberForm({ mode, memberId, onCancel, onSuccess }: MemberFormPr
                   autoComplete="off"
                   className={`text-sm ${mode === 'edit' ? 'bg-gray-100' : ''}`}
                   required
-                  disabled={mode === 'edit'} // Edit 모드에서는 아이디 변경 불가
+                  disabled={mode === 'edit'} // User ID cannot be changed in edit mode
                 />
                 {formData.mb_id && (
                   <div className={`text-xs ${
@@ -706,7 +706,7 @@ export function MemberForm({ mode, memberId, onCancel, onSuccess }: MemberFormPr
               </div>
             </div>
 
-            {/* 이름 / 닉네임 */}
+            {/* Name / nickname */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="mb_name" className="text-xs font-medium">{t('realNameLabel')}</Label>
@@ -741,7 +741,7 @@ export function MemberForm({ mode, memberId, onCancel, onSuccess }: MemberFormPr
               </div>
             </div>
 
-            {/* 이메일 */}
+            {/* Email */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="mb_email" className="text-xs font-medium">{t('emailLabel')} *</Label>
@@ -767,7 +767,7 @@ export function MemberForm({ mode, memberId, onCancel, onSuccess }: MemberFormPr
               </div>
             </div>
 
-            {/* 회원 권한 / 포인트 */}
+            {/* Role / points */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="mb_level" className="text-xs font-medium">{t('memberRole')}</Label>
@@ -796,7 +796,7 @@ export function MemberForm({ mode, memberId, onCancel, onSuccess }: MemberFormPr
           </CardContent>
         </Card>
 
-        {/* 2. 연락처 정보 */}
+        {/* 2. Contact info */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
@@ -842,7 +842,7 @@ export function MemberForm({ mode, memberId, onCancel, onSuccess }: MemberFormPr
           </CardContent>
         </Card>
 
-        {/* 3. 주소 정보 */}
+        {/* 3. Address info */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
@@ -888,7 +888,7 @@ export function MemberForm({ mode, memberId, onCancel, onSuccess }: MemberFormPr
           </CardContent>
         </Card>
 
-        {/* 4. 인증 및 설정 */}
+        {/* 4. Verification & settings */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
@@ -1027,7 +1027,7 @@ export function MemberForm({ mode, memberId, onCancel, onSuccess }: MemberFormPr
           </CardContent>
         </Card>
 
-        {/* 5. 파일 업로드 */}
+        {/* 5. File uploads */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
@@ -1061,7 +1061,7 @@ export function MemberForm({ mode, memberId, onCancel, onSuccess }: MemberFormPr
           </CardContent>
         </Card>
 
-        {/* 6. 추가 정보 */}
+        {/* 6. Additional info */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
@@ -1103,7 +1103,7 @@ export function MemberForm({ mode, memberId, onCancel, onSuccess }: MemberFormPr
               />
             </div>
 
-            {/* 여분 필드들 */}
+            {/* Extra fields */}
             <div className="space-y-4">
               <Label className="text-xs font-medium">{t('extraFields')}</Label>
               
@@ -1139,7 +1139,7 @@ export function MemberForm({ mode, memberId, onCancel, onSuccess }: MemberFormPr
           </CardContent>
         </Card>
 
-        {/* 7. 관리 정보 */}
+        {/* 7. Admin info */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
@@ -1201,7 +1201,7 @@ export function MemberForm({ mode, memberId, onCancel, onSuccess }: MemberFormPr
           </CardContent>
         </Card>
 
-        {/* 하단 액션 버튼 */}
+        {/* Bottom action buttons */}
         <div className="flex justify-center gap-4 pt-6">
           <Button variant="outline" onClick={onCancel} size="lg" className="text-sm">
             <ArrowLeft className="h-4 w-4 mr-2" />

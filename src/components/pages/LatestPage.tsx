@@ -58,7 +58,7 @@ export default function LatestPage() {
           setPagination(data.pagination)
         }
       } catch (error) {
-        console.error('최신글 조회 에러:', error)
+        console.error('failed to fetch latest posts:', error)
       } finally {
         setIsLoading(false)
       }
@@ -95,7 +95,7 @@ export default function LatestPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
-      {/* 헤더 */}
+      {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-2">
           <Clock className="h-6 w-6 text-blue-500" />
@@ -106,7 +106,7 @@ export default function LatestPage() {
         </p>
       </div>
 
-      {/* 게시글 목록 */}
+      {/* Post list */}
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -118,7 +118,7 @@ export default function LatestPage() {
               <Card className="hover:border-primary/50 hover:shadow-md transition-all duration-200 cursor-pointer">
                 <CardContent className="p-4">
                   <div className="flex items-start gap-4">
-                    {/* 내용 */}
+                    {/* Body */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <Badge variant="outline" className="text-xs shrink-0">
@@ -149,7 +149,7 @@ export default function LatestPage() {
                       </div>
                     </div>
 
-                    {/* 시간 */}
+                    {/* Timestamp */}
                     <div className="flex-shrink-0 text-xs text-muted-foreground">
                       {formatTimeAgo(post.createdAt)}
                     </div>
@@ -167,7 +167,7 @@ export default function LatestPage() {
         </Card>
       )}
 
-      {/* 페이지네이션 */}
+      {/* Pagination */}
       {pagination && pagination.totalPages > 1 && (
         <div className="flex justify-center gap-2 mt-6">
           <Button

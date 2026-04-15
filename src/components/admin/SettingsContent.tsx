@@ -15,7 +15,7 @@ export function SettingsContent() {
         <p className="text-muted-foreground">{t('settingsDesc')}</p>
       </div>
 
-      {/* 기본 설정 */}
+      {/* Basic settings */}
       <Card>
         <CardHeader>
           <CardTitle>{t('siteBasicSettings')}</CardTitle>
@@ -39,7 +39,7 @@ export function SettingsContent() {
         </CardContent>
       </Card>
 
-      {/* 저장 버튼 */}
+      {/* Save button */}
       <div className="flex justify-end">
         <Button>{t('saveBtn')}</Button>
       </div>

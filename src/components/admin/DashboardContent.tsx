@@ -136,7 +136,7 @@ export function DashboardContent() {
         <p className="text-muted-foreground mt-1">{t('welcomeMessage')}</p>
       </div>
 
-      {/* 통계 카드 */}
+      {/* Stats cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Link href="/admin/users">
           <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
@@ -203,7 +203,7 @@ export function DashboardContent() {
         </Card>
       </div>
 
-      {/* 신규 가입자 추이 + 최근 로그인 */}
+      {/* New signup trend + recent logins */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {data.trends && (
           <Card>
@@ -241,7 +241,7 @@ export function DashboardContent() {
           </Card>
         )}
 
-        {/* 최근 가입 회원 */}
+        {/* Recent signups */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-base">{t('recentUsers')}</CardTitle>
@@ -278,9 +278,9 @@ export function DashboardContent() {
         </Card>
       </div>
 
-      {/* 최근 로그인 + 인기 게시글 */}
+      {/* Recent logins + popular posts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* 최근 로그인 기록 */}
+        {/* Recent login history */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-base">{t('recentLogins')}</CardTitle>
@@ -314,7 +314,7 @@ export function DashboardContent() {
           </CardContent>
         </Card>
 
-        {/* 인기 게시글 */}
+        {/* Popular posts */}
         {data.pluginStatus?.boards && data.popularPosts && data.popularPosts.length > 0 && (
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
@@ -352,9 +352,9 @@ export function DashboardContent() {
         )}
       </div>
 
-      {/* 최근 게시글 + 최근 댓글 */}
+      {/* Recent posts + recent comments */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* 최근 게시글 */}
+        {/* Recent posts */}
         {data.pluginStatus?.boards && data.recentPosts && (
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
@@ -383,7 +383,7 @@ export function DashboardContent() {
           </Card>
         )}
 
-        {/* 최근 댓글 */}
+        {/* Recent comments */}
         {data.pluginStatus?.boards && data.recentComments && (
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">

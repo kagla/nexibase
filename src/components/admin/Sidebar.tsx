@@ -104,7 +104,7 @@ const coreMenuItems = [
   { id: "home-widgets", labelKey: "homeWidgets", icon: LayoutGrid, path: "/admin/home-widgets" },
 ] as const
 
-// 캐시된 사용자 정보를 가져오는 함수
+// Returns cached user info (session-storage backed)
 const getCachedUser = (): UserInfo | null => {
   if (typeof window === 'undefined') return null
   try {
@@ -115,7 +115,7 @@ const getCachedUser = (): UserInfo | null => {
   }
 }
 
-// 캐시된 플러그인 정보를 가져오는 함수
+// Returns cached plugin info (session-storage backed)
 const getCachedPlugins = (): PluginInfo[] => {
   if (typeof window === 'undefined') return []
   try {
@@ -173,11 +173,11 @@ export function Sidebar({ activeMenu, onMenuChange }: SidebarProps) {
     }
   }, [])
 
-  // 마운트 시 사용자 정보 가져오기
+  // Fetch user info on mount
   useEffect(() => {
     setMounted(true)
 
-    // 캐시 확인 및 state 업데이트
+    // Check cache and update state
     const cached = sessionStorage.getItem('admin_user')
     if (cached) {
       try {
@@ -192,7 +192,7 @@ export function Sidebar({ activeMenu, onMenuChange }: SidebarProps) {
       }
     }
 
-    // 캐시가 없거나 파싱 실패 시 API 호출
+    // Call the API when the cache is missing or fails to parse
     if (!cached) {
       fetch('/api/me')
         .then(res => res.ok ? res.json() : null)
@@ -207,7 +207,7 @@ export function Sidebar({ activeMenu, onMenuChange }: SidebarProps) {
 
     fetchPlugins()
 
-    // GitHub에서 NexiBase 코어 최신 버전(tag) 가져오기 (세션 캐시 10분)
+    // Fetch the latest NexiBase core version (tag) from GitHub (session-cached for 10 min)
     const fetchLatestVersion = async () => {
       try {
         const cachedVersion = sessionStorage.getItem('nexibase_latest_version')
@@ -228,12 +228,12 @@ export function Sidebar({ activeMenu, onMenuChange }: SidebarProps) {
           sessionStorage.setItem('nexibase_latest_version_at', String(Date.now()))
         }
       } catch {
-        // 네트워크 실패 시 무시
+        // Ignore network failures
       }
     }
     fetchLatestVersion()
 
-    // 플러그인 상태 변경 이벤트 리스너
+    // Listen for plugin status change events
     const handlePluginChange = () => {
       sessionStorage.removeItem('admin_plugins_v2')
       fetchPlugins()
@@ -351,7 +351,7 @@ export function Sidebar({ activeMenu, onMenuChange }: SidebarProps) {
     return theme === 'dark' ? t('dark') : t('light')
   }
 
-  // 홈으로 이동 (shift 클릭 시 새창)
+  // Navigate home (open in a new tab on shift-click)
   const handleHomeClick = (e: React.MouseEvent) => {
     if (e.shiftKey || e.ctrlKey || e.metaKey) {
       window.open('/', '_blank')
@@ -364,7 +364,7 @@ export function Sidebar({ activeMenu, onMenuChange }: SidebarProps) {
 
   return (
     <>
-      {/* 모바일 메뉴 버튼 */}
+      {/* Mobile menu button */}
       <Button
         variant="outline"
         size="sm"
@@ -374,7 +374,7 @@ export function Sidebar({ activeMenu, onMenuChange }: SidebarProps) {
         {isOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
       </Button>
 
-      {/* 모바일 오버레이 */}
+      {/* Mobile overlay */}
       {isOpen && (
         <div
           className="lg:hidden fixed inset-0 bg-black/50 z-40"
@@ -382,7 +382,7 @@ export function Sidebar({ activeMenu, onMenuChange }: SidebarProps) {
         />
       )}
 
-      {/* 사이드바 */}
+      {/* Sidebar */}
       <div className={`
         fixed lg:static inset-y-0 left-0 z-40
         w-64 bg-background border-r border-border
@@ -391,14 +391,14 @@ export function Sidebar({ activeMenu, onMenuChange }: SidebarProps) {
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         <div className="flex flex-col h-full">
-          {/* 로고 */}
+          {/* Logo */}
           <div className="p-6 border-b border-border">
             <h1 className="text-xl font-bold text-foreground">{t('panel')}</h1>
           </div>
 
-          {/* 메뉴 */}
+          {/* Menu */}
           <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-            {/* 홈 링크 & 다크모드 토글 */}
+            {/* Home link & dark mode toggle */}
             <div className="flex items-center gap-2 pb-2 mb-2 border-b border-border">
               <Button
                 variant="outline"
@@ -501,7 +501,7 @@ export function Sidebar({ activeMenu, onMenuChange }: SidebarProps) {
               )
             })}
 
-            {/* 사용자 정보 */}
+            {/* User info */}
             <div className="pt-3 mt-2 border-t border-border">
               <div className="flex items-center gap-2 px-2">
                 <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
@@ -516,7 +516,7 @@ export function Sidebar({ activeMenu, onMenuChange }: SidebarProps) {
               </div>
             </div>
 
-            {/* 버전 정보 */}
+            {/* Version info */}
             {CURRENT_VERSION && (
               <div className="pt-3 mt-2 border-t border-border">
                 <div className="px-2 space-y-1">

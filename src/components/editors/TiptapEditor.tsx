@@ -84,7 +84,7 @@ export function TiptapEditor({
     }
   })
 
-  // content가 외부에서 변경되면 에디터 업데이트
+  // Sync the editor when content is changed from outside
   useEffect(() => {
     if (editor && content !== editor.getHTML()) {
       editor.commands.setContent(content)
@@ -117,23 +117,23 @@ export function TiptapEditor({
     }
   }, [editor])
 
-  // 파일 업로드 관련
+  // File upload state
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
 
-  // HTML 소스 보기 모드
+  // HTML source view mode
   const [sourceMode, setSourceMode] = useState(false)
   const [sourceContent, setSourceContent] = useState('')
 
   const toggleSourceMode = useCallback(() => {
     if (sourceMode) {
-      // 소스 모드 -> 에디터 모드: HTML 적용
+      // Source → editor: apply the edited HTML
       if (editor) {
         editor.commands.setContent(sourceContent)
         onChange(sourceContent)
       }
     } else {
-      // 에디터 모드 -> 소스 모드: 현재 HTML 가져오기
+      // Editor → source: capture the current HTML
       if (editor) {
         setSourceContent(editor.getHTML())
       }
@@ -150,13 +150,13 @@ export function TiptapEditor({
     const file = e.target.files?.[0]
     if (!file) return
 
-    // 파일 타입 검증
+    // Validate file type
     if (!file.type.startsWith('image/')) {
       alert(t('imageOnly'))
       return
     }
 
-    // 파일 크기 검증 (10MB)
+    // Validate file size (10MB)
     if (file.size > 10 * 1024 * 1024) {
       alert(t('fileTooLarge'))
       return
@@ -180,11 +180,11 @@ export function TiptapEditor({
         alert(data.error || t('uploadFailed'))
       }
     } catch (error) {
-      console.error('이미지 업로드 에러:', error)
+      console.error('image upload failed:', error)
       alert(t('uploadFailed'))
     } finally {
       setUploading(false)
-      // input 초기화
+      // Reset the input
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
       }
@@ -201,9 +201,9 @@ export function TiptapEditor({
 
   return (
     <div className={cn('border rounded-lg overflow-hidden bg-background', className)}>
-      {/* 툴바 */}
+      {/* Toolbar */}
       <div className="border-b bg-muted/30 p-1.5 sm:p-2 flex overflow-x-auto gap-1 scrollbar-none">
-        {/* 텍스트 스타일 */}
+        {/* Text styles */}
         <div className="flex gap-0.5 border-r pr-2 mr-2 shrink-0">
           <ToolbarButton
             onClick={() => editor.chain().focus().toggleBold().run()}
@@ -242,7 +242,7 @@ export function TiptapEditor({
           </ToolbarButton>
         </div>
 
-        {/* 헤딩 */}
+        {/* Headings */}
         <div className="flex gap-0.5 border-r pr-2 mr-2 shrink-0">
           <ToolbarButton
             onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
@@ -267,7 +267,7 @@ export function TiptapEditor({
           </ToolbarButton>
         </div>
 
-        {/* 리스트 */}
+        {/* Lists */}
         <div className="flex gap-0.5 border-r pr-2 mr-2 shrink-0">
           <ToolbarButton
             onClick={() => editor.chain().focus().toggleBulletList().run()}
@@ -292,7 +292,7 @@ export function TiptapEditor({
           </ToolbarButton>
         </div>
 
-        {/* 삽입 */}
+        {/* Insert */}
         <div className="flex gap-0.5 border-r pr-2 mr-2 shrink-0">
           <ToolbarButton
             onClick={setLink}
@@ -326,7 +326,7 @@ export function TiptapEditor({
           </ToolbarButton>
         </div>
 
-        {/* 숨겨진 파일 입력 */}
+        {/* Hidden file input */}
         <input
           ref={fileInputRef}
           type="file"
@@ -335,7 +335,7 @@ export function TiptapEditor({
           className="hidden"
         />
 
-        {/* 실행 취소/다시 실행 */}
+        {/* Undo / redo */}
         <div className="flex gap-0.5 border-r pr-2 mr-2 shrink-0">
           <ToolbarButton
             onClick={() => editor.chain().focus().undo().run()}
@@ -353,7 +353,7 @@ export function TiptapEditor({
           </ToolbarButton>
         </div>
 
-        {/* HTML 소스 보기 */}
+        {/* HTML source view */}
         <div className="flex gap-0.5 shrink-0">
           <ToolbarButton
             onClick={toggleSourceMode}
@@ -365,7 +365,7 @@ export function TiptapEditor({
         </div>
       </div>
 
-      {/* 에디터 영역 */}
+      {/* Editor area */}
       {sourceMode ? (
         <Textarea
           value={sourceContent}
