@@ -118,7 +118,7 @@ export default function BoardEditPage() {
         setContent(data.post.content)
         setIsSecret(data.post.isSecret)
 
-        // 기존 첨부파일 로드
+        // Load existing attachments
         if (data.post.attachments && data.post.attachments.length > 0) {
           setAttachments(data.post.attachments.map((att: ExistingAttachment) => ({
             id: att.id,
@@ -187,7 +187,7 @@ export default function BoardEditPage() {
   const handleRemoveFile = (index: number) => {
     const fileToRemove = attachments[index]
 
-    // 기존 파일이면 삭제 목록에 추가
+    // If it is an existing file, add it to the delete set
     if (fileToRemove.id && !fileToRemove.isNew) {
       setDeletedAttachmentIds(prev => [...prev, fileToRemove.id!])
     }
@@ -277,10 +277,10 @@ export default function BoardEditPage() {
         return
       }
 
-      // 수정 완료 후 게시글로 이동
+      // After saving, navigate back to the post
       router.push(`/boards/${slug}/${postId}`)
     } catch (error) {
-      console.error('글 수정 에러:', error)
+      console.error('failed to update post:', error)
       alert(t('post.editError'))
     } finally {
       setSubmitting(false)

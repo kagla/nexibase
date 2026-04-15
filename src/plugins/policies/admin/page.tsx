@@ -43,7 +43,7 @@ interface SlugGroup {
   _count: { id: number }
 }
 
-// 약관 모달
+// Policy modal
 function PolicyModal({
   isOpen,
   onClose,
@@ -227,7 +227,7 @@ export default function PoliciesPage() {
     }
   }
 
-  // 약관 목록 조회
+  // Fetch policy list
   const fetchPolicies = useCallback(async () => {
     setLoading(true)
     try {
@@ -255,7 +255,7 @@ export default function PoliciesPage() {
     fetchPolicies()
   }, [fetchPolicies])
 
-  // 약관 저장
+  // Save policy
   const handleSavePolicy = async (formData: Partial<Policy>) => {
     try {
       const url = editingPolicy
@@ -278,12 +278,12 @@ export default function PoliciesPage() {
         alert(data.error || t('saveFailed'))
       }
     } catch (error) {
-      console.error('약관 저장 에러:', error)
+      console.error('failed to save policy:', error)
       alert(t('saveError'))
     }
   }
 
-  // 약관 활성화
+  // Activate policy
   const handleActivate = async (policy: Policy) => {
     if (!confirm(t('activateConfirm', { title: policy.title, version: policy.version }))) return
 
@@ -387,7 +387,7 @@ export default function PoliciesPage() {
             <p className="text-muted-foreground mt-1">{t('headerDesc')}</p>
           </div>
 
-          {/* 슬러그 요약 */}
+          {/* Slug summary */}
           {slugGroups.length > 0 && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               {slugGroups.map(group => (
@@ -430,7 +430,7 @@ export default function PoliciesPage() {
             </CardContent>
           </Card>
 
-          {/* 약관 목록 */}
+          {/* Policy list */}
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-lg">{t('listTitle')}</CardTitle>

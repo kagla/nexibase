@@ -84,7 +84,7 @@ export const sendEmailVerificationEmail = async (
 };
 
 /**
- * 쇼핑몰 이름 조회
+ * Fetch the shop name
  */
 const getShopName = async (): Promise<string> => {
   try {
@@ -98,7 +98,7 @@ const getShopName = async (): Promise<string> => {
 };
 
 /**
- * 이메일 알림 활성화 여부 확인
+ * Check whether email notifications are enabled
  */
 export const isEmailNotificationEnabled = async (): Promise<boolean> => {
   try {
@@ -112,7 +112,7 @@ export const isEmailNotificationEnabled = async (): Promise<boolean> => {
 };
 
 /**
- * 주문 완료 이메일 발송 (고객용)
+ * Send the order completion email (customer)
  */
 export const sendOrderCompletedEmail = async (
   email: string,
@@ -190,7 +190,7 @@ export const sendOrderCompletedEmail = async (
 };
 
 /**
- * 주문 상태 변경 이메일 발송 (고객용)
+ * Send the order status update email (customer)
  */
 export const sendOrderStatusEmail = async (
   email: string,
@@ -281,7 +281,7 @@ export const sendOrderStatusEmail = async (
 };
 
 /**
- * 새 주문 알림 이메일 발송 (관리자용)
+ * Send the new order email (admin)
  */
 export const sendNewOrderEmailToAdmin = async (
   adminEmail: string,
@@ -336,7 +336,7 @@ export const sendNewOrderEmailToAdmin = async (
 };
 
 /**
- * 주문 취소 이메일 발송 (고객용)
+ * Send the order cancellation email (customer)
  */
 export const sendOrderCancelledEmail = async (
   email: string,
@@ -398,7 +398,7 @@ export const sendOrderCancelledEmail = async (
 };
 
 /**
- * 주문 취소 알림 이메일 발송 (관리자용)
+ * Send the order cancellation email (admin)
  */
 export const sendOrderCancelledEmailToAdmin = async (
   adminEmail: string,

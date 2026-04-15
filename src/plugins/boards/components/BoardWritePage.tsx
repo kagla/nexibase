@@ -87,7 +87,7 @@ export default function BoardWritePage() {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
 
-  // 로그인 체크 - 글쓰기는 회원만 가능
+  // Login check — writing is member-only
   const checkSession = useCallback(async () => {
     try {
       const response = await fetch('/api/me')
@@ -95,13 +95,13 @@ export default function BoardWritePage() {
       if (data.user) {
         setUser(data.user)
       } else {
-        // 비로그인 시 로그인 페이지로 이동
+        // Redirect to the login page when unauthenticated
         alert(t('errors.loginRequiredDot'))
         router.push(`/login?callbackUrl=/boards/${slug}/create`)
         return
       }
     } catch (err) {
-      console.error('세션 체크 에러:', err)
+      console.error('session check error:', err)
       alert(t('errors.loginRequiredDot'))
       router.push(`/login?callbackUrl=/boards/${slug}/create`)
       return
@@ -115,7 +115,7 @@ export default function BoardWritePage() {
   }, [checkSession])
 
   useEffect(() => {
-    // 로그인 체크 후에 게시판 정보 로드
+    // Load the board after the login check
     if (!sessionChecked || !user) return
 
     const fetchBoard = async () => {
@@ -177,7 +177,7 @@ export default function BoardWritePage() {
       alert(t('post.uploadError'))
     } finally {
       setUploading(false)
-      // input 초기화
+      // Reset input
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
       }
@@ -262,17 +262,17 @@ export default function BoardWritePage() {
         return
       }
 
-      // 작성 완료 후 게시글로 이동
+      // After creation, navigate to the post
       router.push(`/boards/${slug}/${data.post.id}`)
     } catch (error) {
-      console.error('글 작성 에러:', error)
+      console.error('failed to create post:', error)
       alert(t('post.writeError'))
     } finally {
       setSubmitting(false)
     }
   }
 
-  // 세션 체크 중이거나 비로그인 상태면 로딩 표시 (리다이렉트 중)
+  // Show loading while the session is being checked or while redirecting unauthenticated users
   if (!sessionChecked || !user || loading) {
     return (
       <UserLayout>

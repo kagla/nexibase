@@ -38,12 +38,12 @@ import { CommentReactions } from "@/plugins/boards/components/CommentReactions"
 import { MiniEditor } from "@/components/editors/MiniEditor"
 import { UserNickname } from "@/components/UserNickname"
 
-// 이모지 리액션 컴포넌트
+// Emoji reaction component
 const EmojiIcon = ({ emoji, className }: { emoji: string; className?: string }) => (
   <span className={cn("text-base leading-none", className)}>{emoji}</span>
 )
 
-// 리액션 타입 정의 (긍정적인 것만)
+// Reaction type definitions (positive only)
 const REACTIONS = [
   { type: 'like', emoji: '👍', color: 'text-blue-500', bgActive: 'bg-blue-500 hover:bg-blue-600 ring-blue-500' },
   { type: 'haha', emoji: '😂', color: 'text-yellow-500', bgActive: 'bg-yellow-500 hover:bg-yellow-600 ring-yellow-500 text-black' },
@@ -137,7 +137,7 @@ function ImageViewer({ images, initialIndex, onClose }: ImageViewerProps) {
 
   const currentImage = images[currentIndex]
 
-  // 키보드 이벤트 핸들러
+  // Keyboard event handler
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       switch (e.key) {
@@ -193,7 +193,7 @@ function ImageViewer({ images, initialIndex, onClose }: ImageViewerProps) {
         if (e.target === e.currentTarget) onClose()
       }}
     >
-      {/* 상단 툴바 */}
+      {/* Top toolbar */}
       <div className="absolute top-0 left-0 right-0 p-4 flex items-center justify-between bg-gradient-to-b from-black/50 to-transparent z-10">
         <div className="text-white text-sm">
           <span className="font-medium">{currentIndex + 1}</span>
@@ -277,7 +277,7 @@ function ImageViewer({ images, initialIndex, onClose }: ImageViewerProps) {
         </Button>
       )}
 
-      {/* 하단 썸네일 */}
+      {/* Bottom thumbnails */}
       {images.length > 1 && (
         <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/50 to-transparent">
           <div className="flex items-center justify-center gap-2 overflow-x-auto py-2">
@@ -420,7 +420,7 @@ export default function BoardPostPage() {
     fetchPost()
   }, [fetchPost])
 
-  // 해시 앵커 스크롤 (댓글 로드 후)
+  // Hash-anchor scroll (after comments load)
   useEffect(() => {
     if (post && window.location.hash) {
       const timer = setTimeout(() => {
@@ -494,7 +494,7 @@ export default function BoardPostPage() {
         setUserReactions(data.userReactions || [])
       }
     } catch (error) {
-      console.error('반응 에러:', error)
+      console.error('reaction error:', error)
     }
   }
 
@@ -573,7 +573,7 @@ export default function BoardPostPage() {
     }
   }
 
-  // 총 리액션 수 계산
+  // Compute total reaction count
   const totalReactions = Object.values(reactions).reduce((a, b) => a + b, 0)
 
   if (loading) {
@@ -608,14 +608,14 @@ export default function BoardPostPage() {
     return null
   }
 
-  // 댓글 권한: 회원전용이면 로그인 필요, 아니면 누구나 가능
+  // Comment permission: login required for member-only boards, otherwise open to anyone
   const canComment = board.useComment && (board.commentMemberOnly ? isLoggedIn : true)
   const canEdit = isAuthor || isAdmin
 
   return (
     <UserLayout>
       <div className="max-w-4xl mx-auto sm:px-4 py-2 sm:py-6">
-        {/* 게시판 네비게이션 */}
+        {/* Board navigation */}
         <div className="flex items-center justify-between mb-4 sm:mb-6 px-2 sm:px-0">
           <div className="flex items-center gap-2 min-w-0">
             <Link
@@ -658,10 +658,10 @@ export default function BoardPostPage() {
           </div>
         </div>
 
-        {/* 게시글 */}
+        {/* Post */}
         <Card className="mb-4 sm:mb-6 rounded-none sm:rounded-lg">
           <CardContent className="p-3 sm:p-6">
-            {/* 제목 */}
+            {/* Title */}
             <div className="mb-4">
               <div className="flex items-center gap-2 mb-2">
                 {post.isNotice && (
@@ -706,7 +706,7 @@ export default function BoardPostPage() {
               </div>
             </div>
 
-            {/* 본문 */}
+            {/* Body */}
             <div
               ref={contentRef}
               className="tiptap prose dark:prose-invert max-w-none mb-6 overflow-x-auto break-words [&_img]:cursor-zoom-in [&_img]:max-w-full [&_img]:h-auto"
@@ -730,7 +730,7 @@ export default function BoardPostPage() {
               }}
             />
 
-            {/* 갤러리 형식: 이미지 갤러리 */}
+            {/* Gallery mode: image gallery */}
             {board.displayType === 'gallery' && board.useFile && post.attachments && (() => {
               const imageAttachments = post.attachments.filter(f => f.mimeType.startsWith('image/'))
               if (imageAttachments.length === 0) return null
@@ -762,7 +762,7 @@ export default function BoardPostPage() {
               )
             })()}
 
-            {/* 첨부파일 */}
+            {/* Attachments */}
             {board.useFile && post.attachments && post.attachments.length > 0 && (() => {
               const imageAttachments = post.attachments.filter(f => f.mimeType.startsWith('image/'))
               return (
@@ -848,7 +848,7 @@ export default function BoardPostPage() {
               )
             })()}
 
-            {/* 리액션 버튼들 */}
+            {/* Reaction buttons */}
             {board.useReaction && (
               <div className="flex flex-wrap items-center gap-2 py-4 border-t">
                 {REACTIONS.map(({ type, emoji, bgActive }) => {
@@ -884,7 +884,7 @@ export default function BoardPostPage() {
               </div>
             )}
 
-            {/* 수정/삭제 */}
+            {/* Edit / delete */}
             {canEdit && (
               <div className="flex justify-end gap-2 pt-4 border-t">
                 <Button
@@ -909,7 +909,7 @@ export default function BoardPostPage() {
           </CardContent>
         </Card>
 
-        {/* 댓글 */}
+        {/* Comments */}
         {board.useComment && (
           <Card className="rounded-none sm:rounded-lg">
             <CardContent className="p-3 sm:p-6">
@@ -918,7 +918,7 @@ export default function BoardPostPage() {
                 {t('comment.titleWithCount', { count: post.comments?.length || 0 })}
               </h3>
 
-              {/* 인라인 답글 입력폼 */}
+              {/* Inline reply input */}
               {(() => {
                 const ReplyForm = ({ parentId, nickname, indent }: { parentId: string; nickname: string; indent: boolean }) => (
                   replyTo?.id === parentId ? (
@@ -949,7 +949,7 @@ export default function BoardPostPage() {
                 return null
               })()}
 
-              {/* 댓글 목록 */}
+              {/* Comment list */}
               {post.comments && post.comments.length > 0 ? (
                 <div className="space-y-0 mb-6">
                   {(() => {
@@ -969,7 +969,7 @@ export default function BoardPostPage() {
 
                     return rootComments.map((comment) => (
                       <div key={comment.id}>
-                        {/* 원댓글 */}
+                        {/* Top-level comment */}
                         <div id={`comment-${comment.id}`} className="border-b py-3 scroll-mt-20">
                           <div className="flex items-start gap-3">
                             <div className="flex-1">
@@ -1026,7 +1026,7 @@ export default function BoardPostPage() {
                           </div>
                         </div>
 
-                        {/* 원댓글 바로 아래 답글 입력폼 */}
+                        {/* Reply input directly under the comment */}
                         {replyTo?.id === comment.id && canComment && (
                           <div className="py-2 pl-11 border-b">
                             <div className="flex items-center gap-2 mb-1.5 text-xs text-primary">
@@ -1046,7 +1046,7 @@ export default function BoardPostPage() {
                           </div>
                         )}
 
-                        {/* 답글 (1 depth 들여쓰기, @닉네임 표시) */}
+                        {/* Reply (indented one level, shows @nickname) */}
                         {replyMap.get(comment.id)?.map((reply) => (
                           <div key={reply.id}>
                             <div id={`comment-${reply.id}`} className="border-b py-3 pl-11 scroll-mt-20">
@@ -1108,7 +1108,7 @@ export default function BoardPostPage() {
                               </div>
                             </div>
 
-                            {/* 대댓글 바로 아래 답글 입력폼 */}
+                            {/* Reply input directly under a nested comment */}
                             {replyTo?.id === reply.id && canComment && (
                               <div className="py-2 pl-11 border-b">
                                 <div className="flex items-center gap-2 mb-1.5 text-xs text-primary">
@@ -1139,7 +1139,7 @@ export default function BoardPostPage() {
                 </div>
               )}
 
-              {/* 새 댓글 작성 */}
+              {/* Write a new comment */}
               {canComment && !replyTo ? (
                 <div>
                   <MiniEditor content={commentText} onChange={setCommentText} placeholder={t('comment.placeholder')} />
@@ -1161,7 +1161,7 @@ export default function BoardPostPage() {
           </Card>
         )}
 
-        {/* 첨부 이미지 뷰어 모달 */}
+        {/* Attachment image viewer modal */}
         {imageViewerOpen && board.useFile && post.attachments && (() => {
           const imageAttachments = post.attachments.filter(f => f.mimeType.startsWith('image/'))
           if (imageAttachments.length === 0) return null
@@ -1174,7 +1174,7 @@ export default function BoardPostPage() {
           )
         })()}
 
-        {/* 본문 이미지 뷰어 모달 */}
+        {/* Body image viewer modal */}
         {contentImageViewer && (
           <ImageViewer
             images={contentImageViewer.images}

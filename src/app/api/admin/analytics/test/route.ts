@@ -5,10 +5,10 @@ import { getGaClient } from '@/lib/gaClient'
 export const dynamic = 'force-dynamic'
 
 /**
- * 관리자 전용 — 저장된 GA4 설정으로 실제 API 호출 1회 실행하여 연결 검증.
- * 성공 시 propertyId와 오늘 사용자 수를 함께 반환한다.
- * 설정 누락 / JSON 파싱 실패 / GA 인증 실패 / 권한 미부여 등 모든 실패는
- * 200 OK + { ok: false, error } 로 응답 (프론트가 에러 메시지 그대로 표시).
+ * Admin-only — runs a single real API call against the stored GA4 config to verify the connection.
+ * On success, returns the propertyId alongside today's active user count.
+ * All failures — missing config, JSON parse errors, GA auth errors, missing permissions —
+ * respond with 200 OK + { ok: false, error } (the frontend shows the error message verbatim).
  */
 export async function POST() {
   const admin = await getAdminUser()

@@ -37,7 +37,7 @@ interface Content {
   selected?: boolean
 }
 
-// 콘텐츠 모달
+// Content modal
 function ContentModal({
   isOpen,
   onClose,
@@ -235,7 +235,7 @@ export default function ContentsPage() {
     fetchContents()
   }, [fetchContents])
 
-  // 콘텐츠 저장
+  // Save content
   const handleSaveContent = async (formData: Partial<Content>) => {
     try {
       const url = editingContent
@@ -258,7 +258,7 @@ export default function ContentsPage() {
         alert(data.error || t('saveFailed'))
       }
     } catch (error) {
-      console.error('콘텐츠 저장 에러:', error)
+      console.error('failed to save content:', error)
       alert(t('saveError'))
     }
   }
@@ -382,7 +382,7 @@ export default function ContentsPage() {
             </CardContent>
           </Card>
 
-          {/* 콘텐츠 목록 */}
+          {/* Content list */}
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-lg">{t('listTitle')}</CardTitle>

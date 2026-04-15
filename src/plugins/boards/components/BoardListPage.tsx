@@ -158,7 +158,7 @@ export default function BoardListPage() {
     }
   }
 
-  // 게시글 클릭
+  // Post click
   const handlePostClick = (post: Post, e?: React.MouseEvent) => {
     if (e && (e.target as HTMLElement).closest('[data-user-nickname]')) return
     if (post.isSecret && post.author.id !== user?.id && !isAdmin) {
@@ -207,13 +207,13 @@ export default function BoardListPage() {
     return null
   }
 
-  // 글쓰기 권한: 회원전용이면 로그인 필요, 아니면 누구나 가능
+  // Write permission: login required for member-only boards, otherwise open to anyone
   const canWrite = board.writeMemberOnly ? isLoggedIn : true
 
   return (
     <UserLayout>
       <div className="max-w-4xl mx-auto sm:px-4 py-2 sm:py-6">
-        {/* 게시판 헤더 */}
+        {/* Board header */}
         <div className="mb-6">
           <div className="flex items-center justify-between">
             <div>
@@ -240,7 +240,7 @@ export default function BoardListPage() {
 
         <Card>
           <CardContent className="p-0">
-            {/* 공지사항 */}
+            {/* Notices */}
             {notices.length > 0 && (
               <div className="border-b bg-muted/30">
                 {notices.map((post) => (
@@ -264,13 +264,13 @@ export default function BoardListPage() {
               </div>
             )}
 
-            {/* 게시글 목록 */}
+            {/* Post list */}
             {posts.length === 0 ? (
               <div className="py-12 text-center text-muted-foreground">
                 {t('noPosts')}
               </div>
             ) : board.displayType === 'gallery' ? (
-              /* 갤러리 뷰 */
+              /* Gallery view */
               <div className="p-4">
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {posts.map((post) => (
@@ -328,9 +328,9 @@ export default function BoardListPage() {
                 </div>
               </div>
             ) : (
-              /* 목록 뷰 */
+              /* List view */
               <div>
-                {/* 데스크톱 헤더 */}
+                {/* Desktop header */}
                 <div className="hidden md:flex items-center px-4 py-2 border-b text-xs text-muted-foreground font-medium">
                   <div className="flex-1">{t('post.title')}</div>
                   <div className="w-28 text-left pl-2">{t('author')}</div>
@@ -345,7 +345,7 @@ export default function BoardListPage() {
                     key={post.id}
                     className="flex items-center px-4 py-3 border-b last:border-b-0"
                   >
-                    {/* 모바일: 기존 스택 레이아웃 */}
+                    {/* Mobile: original stacked layout */}
                     <div className="flex-1 min-w-0 md:hidden">
                       <div className="flex items-center gap-2 mb-1">
                         {post.isNotice && <Pin className="h-3.5 w-3.5 text-orange-500 shrink-0" />}
@@ -364,7 +364,7 @@ export default function BoardListPage() {
                         <span className="flex items-center gap-0.5"><Eye className="h-3 w-3" />{post.viewCount}</span>
                       </div>
                     </div>
-                    {/* 데스크톱: 테이블 레이아웃 */}
+                    {/* Desktop: table layout */}
                     <div className="hidden md:flex md:items-center md:flex-1 md:min-w-0">
                       <div className="flex-1 min-w-0 flex items-center gap-2">
                         {post.isNotice && <Badge variant="outline" className="shrink-0 text-xs px-1.5 py-0 text-orange-500 border-orange-500">{t('noticeBadge')}</Badge>}
@@ -417,7 +417,7 @@ export default function BoardListPage() {
           </CardContent>
         </Card>
 
-        {/* 글쓰기 버튼 (하단) */}
+        {/* Write button (bottom) */}
         {canWrite && posts.length > 0 && (
           <div className="flex justify-end mt-4">
             <Button onClick={() => router.push(`/boards/${slug}/create`)}>

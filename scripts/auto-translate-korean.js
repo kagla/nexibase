@@ -725,6 +725,254 @@ const EXACT = {
   "'게시글 수정 에러:'": "'failed to update post:'",
   "'게시글 삭제 에러:'": "'failed to delete post:'",
   '"설정 로드 에러:"': '"failed to load settings:"',
+
+  // ---- Batch 4 additions ----
+  // Boards / posts / comments
+  '// Sort 조건': '// Sort conditions',
+  '// 첨부파일이 있으면 저장': '// Save attachments if any',
+  '// 게시판 글 수 업데이트': "// Update the board's post count",
+  '// 공개 게시판 목록 조회 (활성 게시판만)': '// Fetch the public board list (active boards only)',
+  '// 기존 첨부파일 로드': '// Load existing attachments',
+  '// 기존 파일이면 삭제 목록에 추가': '// If it is an existing file, add it to the delete set',
+  '// 수정 완료 후 게시글로 이동': '// After saving, navigate back to the post',
+  '// 게시글 클릭': '// Post click',
+  '// 글쓰기 권한: 회원전용이면 로그인 필요, 아니면 누구나 가능':
+    '// Write permission: login required for member-only boards, otherwise open to anyone',
+  '// 이모지 리액션 컴포넌트': '// Emoji reaction component',
+  '// 리액션 타입 정의 (긍정적인 것만)': '// Reaction type definitions (positive only)',
+  '// 이미지 뷰어 모달 컴포넌트': '// Image viewer modal component',
+  '// 키보드 이벤트 핸들러': '// Keyboard event handler',
+  '// 해시 앵커 스크롤 (댓글 로드 후)': '// Hash-anchor scroll (after comments load)',
+  '// 총 리액션 수 계산': '// Compute total reaction count',
+  '// 총 리액션 수': '// Total reaction count',
+  '// 활성화된 리액션들 (수가 있는 것)': '// Active reactions (those with a non-zero count)',
+  '// 댓글 권한: 회원전용이면 로그인 필요, 아니면 누구나 가능':
+    '// Comment permission: login required for member-only boards, otherwise open to anyone',
+  '// 로그인 체크 - 글쓰기는 회원만 가능': '// Login check — writing is member-only',
+  '// 비로그인 시 로그인 페이지로 이동': '// Redirect to the login page when unauthenticated',
+  '// 로그인 체크 후에 게시판 정보 로드': '// Load the board after the login check',
+  '// input 초기화': '// Reset input',
+  '// 작성 완료 후 게시글로 이동': '// After creation, navigate to the post',
+  '// 세션 체크 중이거나 비로그인 상태면 로딩 표시 (리다이렉트 중)':
+    '// Show loading while the session is being checked or while redirecting unauthenticated users',
+  '// 리액션 타입 정의': '// Reaction type definitions',
+
+  // Contents / policies
+  '// 콘텐츠 상세 조회': '// Fetch content detail',
+  '// 콘텐츠 수정': '// Edit content',
+  '// 콘텐츠 일괄 삭제': '// Bulk delete contents',
+  '// 기본 콘텐츠 데이터': '// Default content data',
+  '// 이미 존재하는 콘텐츠 slug 확인': '// Check for an existing content slug',
+  '// 존재하지 않는 콘텐츠만 생성': '// Only create contents that do not already exist',
+  '// 콘텐츠 모달': '// Content modal',
+  '// 콘텐츠 저장': '// Save content',
+  '// 약관 활성화 (해당 슬러그의 다른 버전은 비활성화)':
+    '// Activate policy (deactivates other versions of the same slug)',
+  '// 트랜잭션으로 처리: 같은 슬러그의 모든 버전 비활성화 후 해당 버전만 활성화':
+    '// In a transaction: deactivate all versions of the same slug, then activate the target version',
+  '// 같은 슬러그의 모든 버전 비활성화': '// Deactivate every version of the same slug',
+  '// 해당 버전 활성화': '// Activate the target version',
+  '// 약관 상세 조회': '// Fetch policy detail',
+  '// 약관 수정': '// Edit policy',
+  '// 약관 목록 조회 (슬러그별 그룹핑)': '// Fetch policy list (grouped by slug)',
+  '// 특정 슬러그의 버전 목록 조회': '// Fetch the version list for a specific slug',
+  '// 전체 목록 (슬러그별 최신 활성 버전 우선)':
+    '// Full list (the most recent active version per slug comes first)',
+  '// 슬러그별 그룹핑 정보': '// Per-slug grouping info',
+  '// 약관 생성 (새 버전)': '// Create policy (new version)',
+  '// 버전 형식 검증 (예: 1.0, 1.1, 2.0)': '// Validate version format (e.g., 1.0, 1.1, 2.0)',
+  '// 동일 슬러그+버전 중복 확인': '// Check for a duplicate slug+version pair',
+  '// 약관 생성 (기본 비활성 상태)': '// Create policy (inactive by default)',
+  '// 약관 일괄 삭제': '// Bulk delete policies',
+  '// 기본 약관 데이터': '// Default policy data',
+  '// 이미 존재하는 약관 확인 (slug + version 조합)':
+    '// Check for an existing policy (slug + version combination)',
+  '// 존재하지 않는 약관만 생성': '// Only create policies that do not already exist',
+  '// 약관 생성': '// Create policy',
+  '// 약관 모달': '// Policy modal',
+  '// 약관 목록 조회': '// Fetch policy list',
+  '// 약관 저장': '// Save policy',
+  '// 약관 활성화': '// Activate policy',
+
+  // Shop categories / delivery
+  '// 카테고리 생성': '// Create category',
+  '// 카테고리 수정': '// Edit category',
+  '// 카테고리 삭제': '// Delete category',
+  '// 카테고리에 속한 상품이 있는지 확인': '// Check for products in this category',
+  '// 배송비 정책 목록 조회': '// Fetch shipping fee policies',
+  '// 배송비 정책 생성': '// Create shipping fee policy',
+  '// 배송비 정책 수정': '// Update shipping fee policy',
+  '// 배송비 정책 삭제': '// Delete shipping fee policy',
+  '// 기본 배송비는 삭제 불가': '// The default shipping fee cannot be deleted',
+
+  // Shop orders / payments
+  '// 배송 라벨 HTML 생성': '// Build the shipping label HTML',
+  '// 상품 요약': '// Product summary',
+  '// HTML 생성 (A6 사이즈 기준, 105mm x 148mm)': '// Build HTML (A6 size, 105mm x 148mm)',
+  '// 자동 인쇄 대화상자 열기 (선택사항)': '// Open the print dialog automatically (optional)',
+  '// 배송 전 상태인지 확인': '// Check whether the order is still pre-shipping',
+  '// 이니시스 결제 취소 (v2 API 직접 호출)': '// Inicis payment cancellation (direct v2 API call)',
+  '// 주문 상세 조회 (ID 또는 주문번호로 조회 가능)':
+    '// Fetch order detail (lookup by ID or order number)',
+  '// 순수 숫자이고 8자리 이하면 ID, 그 외에는 주문번호로 판단':
+    '// Treat short numeric values (≤8 digits) as IDs; everything else is an order number',
+  '// 무통장입금인 경우 계좌정보 조회': '// For bank-transfer orders, fetch the account info',
+  '// 주문 상태 변경 (ID 또는 주문번호로 조회 가능)':
+    '// Update order status (lookup by ID or order number)',
+  '// 취소 요청 승인': '// Approve cancellation request',
+  '// 파싱 실패 시 새로운 객체 생성': '// When parsing fails, start with a new object',
+  '// 취소 요청 거절 (배송중으로 변경)': '// Reject cancellation request (move to shipping)',
+  '// 알림 생성 (취소 거절 -> 배송중)': '// Create notification (cancellation rejected → shipping)',
+  '// 환불 요청 승인': '// Approve refund request',
+  '// 카드 결제인 경우 PG 환불 처리': '// For card payments, run the PG refund flow',
+  '// paymentInfo에 환불 정보 추가': '// Append refund info to paymentInfo',
+  '// Restore stock + 환불 처리': '// Restore stock and process the refund',
+  '// 주문 상태 변경 (환불 완료)': '// Update order status (refund complete)',
+  '// 환불 요청 거절': '// Reject refund request',
+  '// 관리자 주문 취소 (피치 못할 사정으로 인한 취소)':
+    '// Admin-initiated order cancellation (unavoidable circumstances)',
+  '// 이미 취소/환불된 주문은 취소 불가':
+    '// Already-cancelled or refunded orders cannot be cancelled again',
+  '// 고객에게 관리자 취소 알림 발송 (취소 사유 포함)':
+    '// Notify the customer of the admin cancellation (includes the reason)',
+  '// 고객에게 결제 완료 알림 발송': '// Notify the customer that payment completed',
+  '// 상태 변경': '// Change status',
+  '// 상태별 추가 처리': '// Per-status follow-up work',
+  '// 배송 전 취소: 전액 환불': '// Pre-shipping cancellation: full refund',
+  '// 카드 결제인 경우 자동 취소': '// Auto-cancel when paid by card',
+  '// 배송 후 취소: 반품 배송비 차감': '// Post-shipping cancellation: deduct return shipping fee',
+  '// 환불 금액 계산': '// Compute refund amount',
+  '// 환불 금액이 없으면 반품 배송비 차감 후 계산':
+    '// When no refund amount is provided, deduct the return shipping fee',
+  '// 카드 결제인 경우 환불 처리': '// For card payments, process the refund',
+  '// Restore stock (아직 복구 안된 경우)': '// Restore stock (only if not already restored)',
+  '// 배송 정보 업데이트': '// Update shipping info',
+  '// 관리자 메모': '// Admin memo',
+  '// 상태 변경 시 알림 생성': '// Create a notification on status change',
+  '// Restore stock 함수': '// Restore stock helper',
+  '// 주문 삭제 (소프트 삭제) - ID 또는 주문번호로 조회 가능':
+    '// Delete order (soft delete) — lookup by ID or order number',
+  '// 이미 삭제된 주문인지 확인': '// Check whether the order is already deleted',
+
+  // Email templates (lib/email.ts)
+  '쇼핑몰 이름 조회': 'Fetch the shop name',
+  '이메일 알림 활성화 여부 확인': 'Check whether email notifications are enabled',
+  '주문 완료 이메일 발송 (고객용)': 'Send the order completion email (customer)',
+  '주문 상태 변경 이메일 발송 (고객용)': 'Send the order status update email (customer)',
+  '새 주문 알림 이메일 발송 (관리자용)': 'Send the new order email (admin)',
+  '주문 취소 이메일 발송 (고객용)': 'Send the order cancellation email (customer)',
+  '주문 취소 알림 이메일 발송 (관리자용)': 'Send the order cancellation email (admin)',
+
+  // ga-stats / analytics docs (block comments)
+  '관리자 전용 — 저장된 GA4 설정으로 실제 API 호출 1회 실행하여 연결 검증.':
+    'Admin-only — runs a single real API call against the stored GA4 config to verify the connection.',
+  '성공 시 propertyId와 오늘 사용자 수를 함께 반환한다.':
+    "On success, returns the propertyId alongside today's active user count.",
+  '설정 누락 / JSON 파싱 실패 / GA 인증 실패 / 권한 미부여 등 모든 실패는':
+    'All failures — missing config, JSON parse errors, GA auth errors, missing permissions —',
+  '200 OK + { ok: false, error } 로 응답 (프론트가 에러 메시지 그대로 표시).':
+    'respond with 200 OK + { ok: false, error } (the frontend shows the error message verbatim).',
+  '홈 위젯용 GA4 방문자 통계.': 'GA4 visitor stats for the home widget.',
+  '- online: 현재 접속자 (Realtime API, 지난 30분)': '- online: current visitors (Realtime API, last 30 minutes)',
+  '- today: 오늘 activeUsers': '- today: active users today',
+  '- yesterday: 어제 activeUsers': '- yesterday: active users yesterday',
+  '- sevenDays: 오늘 포함 지난 7일 activeUsers':
+    '- sevenDays: active users over the last 7 days including today',
+  '설정 미완 시 configured: false 로 응답 (위젯이 자신을 숨김).':
+    'When not fully configured, responds with configured: false (the widget hides itself).',
+  'GA API 실패 시 configured: true + 모든 값 0 (위젯은 0으로 표시).':
+    'On GA API failure, responds with configured: true and all zeroes (widget renders zeros).',
+  '인메모리 캐시(TTL 120s) + inflight promise guard로 GA 할당량/응답 시간 절약.':
+    'An in-memory cache (TTL 120s) plus an inflight-promise guard saves GA quota and latency.',
+
+  // Console template strings (backticks) — these appear in the extracted map
+  // with the full ${…} interpolations. Keeping them keyed on the raw string.
+  '`이미지 삭제: ${imageUrl}`': '`image deleted: ${imageUrl}`',
+  '`이미지 삭제 실패 (파일 없음): ${imageUrl}`': '`image delete skipped (file missing): ${imageUrl}`',
+  '`썸네일 삭제: ${thumbPath}`': '`thumbnail deleted: ${thumbPath}`',
+  '`썸네일 생성: ${thumbnailName}`': '`thumbnail created: ${thumbnailName}`',
+  '`파일 업로드: ${file.name} (${(file.size / 1024).toFixed(1)}KB) → ${storedName}`':
+    '`file upload: ${file.name} (${(file.size / 1024).toFixed(1)}KB) → ${storedName}`',
+  '`프로필 이미지 업로드: user=${user.id}, file=${filename} (${(outputBuffer.length / 1024).toFixed(1)}KB)`':
+    '`profile image upload: user=${user.id}, file=${filename} (${(outputBuffer.length / 1024).toFixed(1)}KB)`',
+  '`프로필 이미지 삭제: ${user.image}`': '`profile image deleted: ${user.image}`',
+  '`이미지 업로드: ${file.name} (${(file.size / 1024).toFixed(1)}KB) → ${outputFilename} (${(outputBuffer.length / 1024).toFixed(1)}KB), 썸네일: ${thumbFilename} (${(thumbBuffer.length / 1024).toFixed(1)}KB)`':
+    '`image upload: ${file.name} (${(file.size / 1024).toFixed(1)}KB) → ${outputFilename} (${(outputBuffer.length / 1024).toFixed(1)}KB), thumb: ${thumbFilename} (${(thumbBuffer.length / 1024).toFixed(1)}KB)`',
+  '`위젯 레지스트리에 없는 키: ${widget.widgetKey}`': '`widget key not in the registry: ${widget.widgetKey}`',
+
+  // Extra JSX comments
+  '{/* 게시판 헤더 */}': '{/* Board header */}',
+  '{/* 공지사항 */}': '{/* Notices */}',
+  '{/* 게시글 목록 */}': '{/* Post list */}',
+  '/* 갤러리 뷰 */': '/* Gallery view */',
+  '/* 목록 뷰 */': '/* List view */',
+  '{/* 데스크톱 헤더 */}': '{/* Desktop header */}',
+  '{/* 모바일: 기존 스택 레이아웃 */}': '{/* Mobile: original stacked layout */}',
+  '{/* 데스크톱: 테이블 레이아웃 */}': '{/* Desktop: table layout */}',
+  '{/* 글쓰기 버튼 (하단) */}': '{/* Write button (bottom) */}',
+  '{/* 상단 툴바 */}': '{/* Top toolbar */}',
+  '{/* 하단 썸네일 */}': '{/* Bottom thumbnails */}',
+  '{/* 게시판 네비게이션 */}': '{/* Board navigation */}',
+  '{/* 게시글 */}': '{/* Post */}',
+  '{/* 제목 */}': '{/* Title */}',
+  '{/* 본문 */}': '{/* Body */}',
+  '{/* 갤러리 형식: 이미지 갤러리 */}': '{/* Gallery mode: image gallery */}',
+  '{/* 첨부파일 */}': '{/* Attachments */}',
+  '{/* 리액션 버튼들 */}': '{/* Reaction buttons */}',
+  '{/* 수정/삭제 */}': '{/* Edit / delete */}',
+  '{/* 댓글 */}': '{/* Comments */}',
+  '{/* 인라인 답글 입력폼 */}': '{/* Inline reply input */}',
+  '{/* 댓글 목록 */}': '{/* Comment list */}',
+  '{/* 원댓글 */}': '{/* Top-level comment */}',
+  '{/* 원댓글 바로 아래 답글 입력폼 */}': '{/* Reply input directly under the comment */}',
+  '{/* 답글 (1 depth 들여쓰기, @닉네임 표시) */}':
+    '{/* Reply (indented one level, shows @nickname) */}',
+  '{/* 대댓글 바로 아래 답글 입력폼 */}': '{/* Reply input directly under a nested comment */}',
+  '{/* 새 댓글 작성 */}': '{/* Write a new comment */}',
+  '{/* 첨부 이미지 뷰어 모달 */}': '{/* Attachment image viewer modal */}',
+  '{/* 본문 이미지 뷰어 모달 */}': '{/* Body image viewer modal */}',
+  '{/* 기존 리액션 표시 */}': '{/* Existing reactions */}',
+  '{/* 리액션 추가 버튼 */}': '{/* Add reaction button */}',
+  '{/* 콘텐츠 목록 */}': '{/* Content list */}',
+  '{/* 슬러그 요약 */}': '{/* Slug summary */}',
+  '{/* 약관 목록 */}': '{/* Policy list */}',
+  '{/* 버전 히스토리 */}': '{/* Version history */}',
+
+  // Extra console.* strings
+  "'게시글 작성 에러:'": "'failed to create post:'",
+  "'글 수정 에러:'": "'failed to update post:'",
+  "'반응 에러:'": "'reaction error:'",
+  "'세션 체크 에러:'": "'session check error:'",
+  "'글 작성 에러:'": "'failed to create post:'",
+  "'댓글 반응 에러:'": "'comment reaction error:'",
+  "'BoardCards 데이터 조회 에러:'": "'BoardCards fetch failed:'",
+  "'LatestPosts 데이터 조회 에러:'": "'LatestPosts fetch failed:'",
+  "'PopularBoards 데이터 조회 에러:'": "'PopularBoards fetch failed:'",
+  "'콘텐츠 수정 에러:'": "'failed to update content:'",
+  "'콘텐츠 생성 에러:'": "'failed to create content:'",
+  "'콘텐츠 저장 에러:'": "'failed to save content:'",
+  "'약관 수정 에러:'": "'failed to update policy:'",
+  "'약관 생성 에러:'": "'failed to create policy:'",
+  "'약관 저장 에러:'": "'failed to save policy:'",
+  "'카테고리 생성 에러:'": "'failed to create category:'",
+  "'카테고리 수정 에러:'": "'failed to update category:'",
+  "'카테고리 삭제 에러:'": "'failed to delete category:'",
+  "'배송비 정책 생성 에러:'": "'failed to create shipping policy:'",
+  "'배송비 정책 수정 에러:'": "'failed to update shipping policy:'",
+  "'배송비 정책 삭제 에러:'": "'failed to delete shipping policy:'",
+  "'배송 라벨 생성 에러:'": "'failed to create shipping label:'",
+  "'이니시스 취소 요청 (관리자):'": "'inicis cancellation request (admin):'",
+  "'카드 결제 취소 시도 (관리자 승인), tid:'":
+    "'card payment cancellation attempt (admin approval), tid:'",
+  "'카드 환불 처리 시도 (관리자 승인), tid:'":
+    "'card refund attempt (admin approval), tid:'",
+  "'PG 환불 결과:'": "'PG refund result:'",
+  "'관리자 주문 취소 - 카드 결제 취소 시도, tid:'":
+    "'admin order cancellation — card cancellation attempt, tid:'",
+  "'고객 취소 알림 발송 실패:'": "'failed to send customer cancellation notification:'",
+  "'관리자 카드 취소 결과:'": "'admin card cancellation result:'",
+  "'관리자 카드 환불 결과:'": "'admin card refund result:'",
+  "'주문 상태 변경 에러:'": "'failed to update order status:'",
 }
 
 function main() {

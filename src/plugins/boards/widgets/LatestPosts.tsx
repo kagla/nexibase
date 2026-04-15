@@ -33,7 +33,7 @@ export default function LatestPosts({ settings }: { settings?: Record<string, an
           setPosts(data.posts || [])
         }
       } catch (error) {
-        console.error('LatestPosts 데이터 조회 에러:', error)
+        console.error('LatestPosts fetch failed:', error)
       }
     }
     fetchPosts()

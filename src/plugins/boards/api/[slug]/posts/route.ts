@@ -58,7 +58,7 @@ export async function GET(
       ]
     }
 
-    // Sort 조건
+    // Sort conditions
     let orderBy: Record<string, string>[] = []
     switch (board.sortOrder) {
       case 'popular':
@@ -263,7 +263,7 @@ export async function POST(
         }
       })
 
-      // 첨부파일이 있으면 저장
+      // Save attachments if any
       if (attachments && Array.isArray(attachments) && attachments.length > 0 && board.useFile) {
         await tx.postAttachment.createMany({
           data: (attachments as AttachmentFile[]).map(file => ({
@@ -278,7 +278,7 @@ export async function POST(
         })
       }
 
-      // 게시판 글 수 업데이트
+      // Update the board's post count
       await tx.board.update({
         where: { id: board.id },
         data: { postCount: { increment: 1 } }
@@ -294,7 +294,7 @@ export async function POST(
     }, { status: 201 })
 
   } catch (error) {
-    console.error('게시글 작성 에러:', error)
+    console.error('failed to create post:', error)
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }

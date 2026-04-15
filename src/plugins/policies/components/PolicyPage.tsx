@@ -135,7 +135,7 @@ export default function PolicyPage() {
             )}
           </div>
 
-          {/* 버전 히스토리 */}
+          {/* Version history */}
           {showVersions && versions.length > 1 && (
             <div className="mt-4 p-4 bg-muted rounded-lg">
               <p className="text-sm font-medium mb-2">{t('versionHistory')}</p>

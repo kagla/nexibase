@@ -30,16 +30,16 @@ export async function POST(request: NextRequest) {
     // Delete the original image
     try {
       await unlink(filePath)
-      console.log(`이미지 삭제: ${imageUrl}`)
+      console.log(`image deleted: ${imageUrl}`)
     } catch (err) {
       // Ignore when the file does not exist
-      console.log(`이미지 삭제 실패 (파일 없음): ${imageUrl}`)
+      console.log(`image delete skipped (file missing): ${imageUrl}`)
     }
 
     // Delete the thumbnail image
     try {
       await unlink(thumbPath)
-      console.log(`썸네일 삭제: ${thumbPath}`)
+      console.log(`thumbnail deleted: ${thumbPath}`)
     } catch {
       // Ignore missing thumbnails
     }

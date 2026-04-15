@@ -73,7 +73,7 @@ function renderWidget(widget: WidgetData) {
 function renderWidgetContent(widget: WidgetData) {
   const definition = widgetRegistry[widget.widgetKey]
   if (!definition) {
-    console.warn(`위젯 레지스트리에 없는 키: ${widget.widgetKey}`)
+    console.warn(`widget key not in the registry: ${widget.widgetKey}`)
     return null
   }
 

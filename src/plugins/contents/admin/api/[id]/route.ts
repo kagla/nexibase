@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getAdminUser } from '@/lib/auth'
 
-// 콘텐츠 상세 조회
+// Fetch content detail
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -47,7 +47,7 @@ export async function GET(
   }
 }
 
-// 콘텐츠 수정
+// Edit content
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -105,7 +105,7 @@ export async function PUT(
     })
 
   } catch (error) {
-    console.error('콘텐츠 수정 에러:', error)
+    console.error('failed to update content:', error)
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }

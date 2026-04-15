@@ -62,15 +62,15 @@ async function fetchStats(): Promise<VisitorStatsData> {
 }
 
 /**
- * 홈 위젯용 GA4 방문자 통계.
- * - online: 현재 접속자 (Realtime API, 지난 30분)
- * - today: 오늘 activeUsers
- * - yesterday: 어제 activeUsers
- * - sevenDays: 오늘 포함 지난 7일 activeUsers
+ * GA4 visitor stats for the home widget.
+ * - online: current visitors (Realtime API, last 30 minutes)
+ * - today: active users today
+ * - yesterday: active users yesterday
+ * - sevenDays: active users over the last 7 days including today
  *
- * 설정 미완 시 configured: false 로 응답 (위젯이 자신을 숨김).
- * GA API 실패 시 configured: true + 모든 값 0 (위젯은 0으로 표시).
- * 인메모리 캐시(TTL 120s) + inflight promise guard로 GA 할당량/응답 시간 절약.
+ * When not fully configured, responds with configured: false (the widget hides itself).
+ * On GA API failure, responds with configured: true and all zeroes (widget renders zeros).
+ * An in-memory cache (TTL 120s) plus an inflight-promise guard saves GA quota and latency.
  */
 export async function GET() {
   // On cache hit, return immediately without hitting the DB or external APIs

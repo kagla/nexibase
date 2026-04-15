@@ -29,7 +29,7 @@ export default function PopularBoards({ settings }: { settings?: Record<string, 
           setBoards(data.boards || [])
         }
       } catch (error) {
-        console.error('PopularBoards 데이터 조회 에러:', error)
+        console.error('PopularBoards fetch failed:', error)
       }
     }
     fetchBoards()

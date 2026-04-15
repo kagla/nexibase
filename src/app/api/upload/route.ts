@@ -163,7 +163,7 @@ export async function POST(request: NextRequest) {
     const thumbnailUrl = `${urlPath}/${thumbFilename}`
 
     // Log the original and converted sizes
-    console.log(`이미지 업로드: ${file.name} (${(file.size / 1024).toFixed(1)}KB) → ${outputFilename} (${(outputBuffer.length / 1024).toFixed(1)}KB), 썸네일: ${thumbFilename} (${(thumbBuffer.length / 1024).toFixed(1)}KB)`)
+    console.log(`image upload: ${file.name} (${(file.size / 1024).toFixed(1)}KB) → ${outputFilename} (${(outputBuffer.length / 1024).toFixed(1)}KB), thumb: ${thumbFilename} (${(thumbBuffer.length / 1024).toFixed(1)}KB)`)
 
     return NextResponse.json({
       success: true,

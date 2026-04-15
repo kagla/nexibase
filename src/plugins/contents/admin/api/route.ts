@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
     }, { status: 201 })
 
   } catch (error) {
-    console.error('콘텐츠 생성 에러:', error)
+    console.error('failed to create content:', error)
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// 콘텐츠 일괄 삭제
+// Bulk delete contents
 export async function DELETE(request: NextRequest) {
   try {
     const admin = await getAdminUser()

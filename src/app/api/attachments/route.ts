@@ -115,14 +115,14 @@ export async function POST(request: NextRequest) {
           .toFile(thumbnailFilePath)
 
         thumbnailPath = `${urlPath}/${thumbnailName}`
-        console.log(`썸네일 생성: ${thumbnailName}`)
+        console.log(`thumbnail created: ${thumbnailName}`)
       } catch (thumbError) {
         console.error('thumbnail generation failed:', thumbError)
         // If thumbnail generation fails, the original is still uploaded
       }
     }
 
-    console.log(`파일 업로드: ${file.name} (${(file.size / 1024).toFixed(1)}KB) → ${storedName}`)
+    console.log(`file upload: ${file.name} (${(file.size / 1024).toFixed(1)}KB) → ${storedName}`)
 
     return NextResponse.json({
       success: true,

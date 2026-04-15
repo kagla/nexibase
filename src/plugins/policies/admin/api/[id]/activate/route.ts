@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getAdminUser } from '@/lib/auth'
 
-// 약관 활성화 (해당 슬러그의 다른 버전은 비활성화)
+// Activate policy (deactivates other versions of the same slug)
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -36,12 +36,12 @@ export async function POST(
 
     // Handle within a transaction: 같은 슬러그의 모든 버전 비활성화 후 해당 버전만 활성화
     await prisma.$transaction([
-      // 같은 슬러그의 모든 버전 비활성화
+      // Deactivate every version of the same slug
       prisma.policy.updateMany({
         where: { slug: policy.slug },
         data: { isActive: false }
       }),
-      // 해당 버전 활성화
+      // Activate the target version
       prisma.policy.update({
         where: { id: policyId },
         data: { isActive: true }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-// 공개 게시판 목록 조회 (활성 게시판만)
+// Fetch the public board list (active boards only)
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)

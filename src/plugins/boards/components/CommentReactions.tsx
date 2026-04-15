@@ -11,7 +11,7 @@ import {
 import { cn } from "@/lib/utils"
 import { SmilePlus } from "lucide-react"
 
-// 리액션 타입 정의
+// Reaction type definitions
 const REACTIONS = [
   { type: 'like', emoji: '👍' },
   { type: 'haha', emoji: '😂' },
@@ -72,21 +72,21 @@ export function CommentReactions({ slug, postId, commentId, isLoggedIn }: Commen
         setUserReactions(data.userReactions || [])
       }
     } catch (error) {
-      console.error('댓글 반응 에러:', error)
+      console.error('comment reaction error:', error)
     }
 
     setIsOpen(false)
   }
 
-  // 총 리액션 수
+  // Total reaction count
   const totalReactions = Object.values(reactions).reduce((a, b) => a + b, 0)
 
-  // 활성화된 리액션들 (수가 있는 것)
+  // Active reactions (those with a non-zero count)
   const activeReactions = REACTIONS.filter(r => reactions[r.type] > 0)
 
   return (
     <div className="flex items-center gap-1 mt-2">
-      {/* 기존 리액션 표시 */}
+      {/* Existing reactions */}
       {activeReactions.length > 0 && (
         <div className="flex items-center gap-1">
           {activeReactions.map(({ type, emoji }) => {
@@ -112,7 +112,7 @@ export function CommentReactions({ slug, postId, commentId, isLoggedIn }: Commen
         </div>
       )}
 
-      {/* 리액션 추가 버튼 */}
+      {/* Add reaction button */}
       <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
           <button

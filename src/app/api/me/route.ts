@@ -258,7 +258,7 @@ export async function DELETE(request: NextRequest) {
       try {
         if (existsSync(imagePath)) {
           unlinkSync(imagePath)
-          console.log(`프로필 이미지 삭제: ${user.image}`)
+          console.log(`profile image deleted: ${user.image}`)
         }
       } catch (e) {
         console.error('failed to delete profile image:', e)

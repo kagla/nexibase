@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
       data: { image: imageUrl }
     })
 
-    console.log(`프로필 이미지 업로드: user=${user.id}, file=${filename} (${(outputBuffer.length / 1024).toFixed(1)}KB)`)
+    console.log(`profile image upload: user=${user.id}, file=${filename} (${(outputBuffer.length / 1024).toFixed(1)}KB)`)
 
     return NextResponse.json({
       success: true,
