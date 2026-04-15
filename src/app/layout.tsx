@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import { ThemeProvider } from '@/components/theme-provider'
 import { SessionProvider } from '@/components/providers/SessionProvider'
 import ThemeLoader from '@/components/theme-loader'
+import { GoogleAnalytics } from '@/components/GoogleAnalytics'
 import './globals.css'
 import './custom.css'
 
@@ -21,6 +22,7 @@ export default function RootLayout({
     <html suppressHydrationWarning>
       <head>
         <ThemeLoader />
+        <GoogleAnalytics />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <SessionProvider>
