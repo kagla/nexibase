@@ -84,7 +84,7 @@ export default function BoardListPage() {
   const isLoggedIn = !!user
   const isAdmin = user?.role === 'admin'
 
-  // 사용자 정보 조회
+  // Fetch user info
   const fetchUser = useCallback(async () => {
     try {
       const response = await fetch('/api/me')
@@ -127,7 +127,7 @@ export default function BoardListPage() {
         setTotalPages(data.pagination.totalPages)
       }
     } catch (error) {
-      console.error('게시글 목록 조회 에러:', error)
+      console.error('failed to fetch posts:', error)
       setError(t('loadError'))
     } finally {
       setLoading(false)
@@ -279,7 +279,7 @@ export default function BoardListPage() {
                       onClick={(e) => handlePostClick(post, e)}
                       className="group cursor-pointer"
                     >
-                      {/* 썸네일 */}
+                      {/* Thumbnail */}
                       <div className="aspect-square relative rounded-lg overflow-hidden bg-muted mb-2">
                         {post.thumbnail ? (
                           <img

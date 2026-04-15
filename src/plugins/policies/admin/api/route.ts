@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
       }
     })
   } catch (error) {
-    console.error('약관 목록 조회 에러:', error)
+    console.error('failed to fetch policies:', error)
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 슬러그 형식 검증
+    // Validate slug format
     const slugRegex = /^[a-z0-9-]+$/
     if (!slugRegex.test(slug)) {
       return NextResponse.json(
@@ -174,7 +174,7 @@ export async function DELETE(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('약관 삭제 에러:', error)
+    console.error('failed to delete policy:', error)
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }

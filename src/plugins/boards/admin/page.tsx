@@ -58,7 +58,7 @@ interface BoardStats {
   totalPosts: number
 }
 
-// 카테고리 배지
+// Category badge
 function CategoryBadge({ category }: { category: string | null }) {
   if (!category) return null
 
@@ -77,7 +77,7 @@ function CategoryBadge({ category }: { category: string | null }) {
   )
 }
 
-// 게시판 모달
+// Board modal
 function BoardModal({
   isOpen,
   onClose,
@@ -385,7 +385,7 @@ function BoardModal({
 
           <Separator />
 
-          {/* 상태 설정 */}
+          {/* Status settings */}
           <div>
             <h3 className="text-sm font-medium text-muted-foreground mb-4">{t('admin.statusSection')}</h3>
             <label className="flex items-center space-x-2 cursor-pointer">
@@ -414,7 +414,7 @@ function BoardModal({
   )
 }
 
-// 통계 카드
+// Stats card
 function StatCard({ icon: Icon, label, value, color, href, onClick, isActive }: {
   icon: React.ElementType
   label: string
@@ -528,7 +528,7 @@ export default function BoardsPage() {
         setBoards(data.boards.map((b: Board) => ({ ...b, selected: false })))
         setTotalPages(data.pagination.totalPages)
 
-        // 통계 계산
+        // Compute stats
         const totalPosts = data.boards.reduce((sum: number, b: Board) => sum + (b.postCount || 0), 0)
         const activeBoards = data.boards.filter((b: Board) => b.isActive).length
 
@@ -549,7 +549,7 @@ export default function BoardsPage() {
     fetchBoards()
   }, [fetchBoards])
 
-  // 게시판 저장
+  // Save board
   const handleSaveBoard = async (formData: Partial<Board>) => {
     try {
       const url = editingBoard
@@ -572,7 +572,7 @@ export default function BoardsPage() {
         alert(data.error || t('admin.saveFailed'))
       }
     } catch (error) {
-      console.error('게시판 저장 에러:', error)
+      console.error('failed to save board:', error)
       alert(t('admin.saveError'))
     }
   }
@@ -649,7 +649,7 @@ export default function BoardsPage() {
     fetchBoards()
   }
 
-  // 필터링된 게시판 목록
+  // Filtered board list
   const filteredBoards = statusFilter === 'active'
     ? boards.filter(b => b.isActive)
     : boards
@@ -722,7 +722,7 @@ export default function BoardsPage() {
             </CardContent>
           </Card>
 
-          {/* 게시판 목록 */}
+          {/* Board list */}
           <Card id="board-list">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">

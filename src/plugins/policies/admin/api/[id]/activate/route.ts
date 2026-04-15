@@ -34,7 +34,7 @@ export async function POST(
       )
     }
 
-    // 트랜잭션으로 처리: 같은 슬러그의 모든 버전 비활성화 후 해당 버전만 활성화
+    // Handle within a transaction: 같은 슬러그의 모든 버전 비활성화 후 해당 버전만 활성화
     await prisma.$transaction([
       // 같은 슬러그의 모든 버전 비활성화
       prisma.policy.updateMany({
@@ -54,7 +54,7 @@ export async function POST(
     })
 
   } catch (error) {
-    console.error('약관 활성화 에러:', error)
+    console.error('failed to activate policy:', error)
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }

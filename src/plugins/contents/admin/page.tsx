@@ -182,7 +182,7 @@ export default function ContentsPage() {
   const [selectedAll, setSelectedAll] = useState(false)
   const [seedingContents, setSeedingContents] = useState(false)
 
-  // 기본 콘텐츠 생성
+  // Create default contents
   const handleSeedContents = async () => {
     if (!confirm(t('seedConfirm'))) return
 
@@ -200,14 +200,14 @@ export default function ContentsPage() {
         alert(data.error || t('seedFailed'))
       }
     } catch (error) {
-      console.error('기본 콘텐츠 생성 에러:', error)
+      console.error('failed to create default contents:', error)
       alert(t('seedError'))
     } finally {
       setSeedingContents(false)
     }
   }
 
-  // 콘텐츠 목록 조회
+  // Fetch content list
   const fetchContents = useCallback(async () => {
     setLoading(true)
     try {
@@ -225,7 +225,7 @@ export default function ContentsPage() {
         setTotalPages(data.pagination.totalPages)
       }
     } catch (error) {
-      console.error('콘텐츠 목록 조회 에러:', error)
+      console.error('failed to fetch contents:', error)
     } finally {
       setLoading(false)
     }
@@ -263,7 +263,7 @@ export default function ContentsPage() {
     }
   }
 
-  // 콘텐츠 삭제
+  // Delete content
   const handleDelete = async (content: Content) => {
     if (!confirm(t('deleteOneConfirm', { title: content.title }))) return
 
@@ -279,7 +279,7 @@ export default function ContentsPage() {
         alert(data.error || t('deleteFailed'))
       }
     } catch (error) {
-      console.error('콘텐츠 삭제 에러:', error)
+      console.error('failed to delete content:', error)
       alert(t('deleteError'))
     }
   }

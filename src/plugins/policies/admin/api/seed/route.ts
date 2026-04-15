@@ -93,7 +93,7 @@ const DEFAULT_POLICIES = [
   },
 ]
 
-// 기본 약관 생성
+// Create default policies
 export async function POST() {
   try {
     const admin = await getAdminUser()
@@ -142,7 +142,7 @@ export async function POST() {
     })
 
   } catch (error) {
-    console.error('기본 약관 생성 에러:', error)
+    console.error('failed to create default policies:', error)
     return NextResponse.json(
       { error: '기본 약관 생성에 실패했습니다.' },
       { status: 500 }

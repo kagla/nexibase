@@ -34,7 +34,7 @@ export async function POST(
       )
     }
 
-    // 댓글 권한 확인
+    // Comment authorization check
     if (board.commentMemberOnly && !user) {
       return NextResponse.json(
         { error: '댓글을 쓸 권한이 없습니다. 로그인이 필요합니다.', requireLogin: true },
@@ -42,7 +42,7 @@ export async function POST(
       )
     }
 
-    // 댓글 기능 확인
+    // Check whether comments are enabled
     if (!board.useComment) {
       return NextResponse.json(
         { error: '이 게시판은 댓글 기능을 사용하지 않습니다.' },
@@ -50,7 +50,7 @@ export async function POST(
       )
     }
 
-    // 게시글 확인
+    // Post check
     const post = await prisma.post.findUnique({
       where: { id: postId }
     })
@@ -62,7 +62,7 @@ export async function POST(
       )
     }
 
-    // 대댓글인 경우 부모 댓글 확인
+    // For nested comments, verify the parent comment
     if (parentId) {
       const parentComment = await prisma.comment.findUnique({
         where: { id: parseInt(parentId) }
@@ -76,7 +76,7 @@ export async function POST(
       }
     }
 
-    // 내용 검증
+    // Validate content
     if (!content || !content.trim()) {
       return NextResponse.json(
         { error: '댓글 내용을 입력해주세요.' },
@@ -103,7 +103,7 @@ export async function POST(
       }
     })
 
-    // 게시글 댓글 수 증가
+    // Increment the post's comment count
     await prisma.post.update({
       where: { id: postId },
       data: { commentCount: { increment: 1 } }
@@ -116,7 +116,7 @@ export async function POST(
     }, { status: 201 })
 
   } catch (error) {
-    console.error('댓글 작성 에러:', error)
+    console.error('failed to create comment:', error)
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }
@@ -163,7 +163,7 @@ export async function GET(
     })
 
   } catch (error) {
-    console.error('댓글 목록 조회 에러:', error)
+    console.error('failed to fetch comments:', error)
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }

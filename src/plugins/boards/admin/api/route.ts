@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 슬러그 형식 검증 (영문, 숫자, 하이픈만 허용)
+    // Validate slug format (only letters, digits, and hyphens allowed)
     const slugRegex = /^[a-z0-9-]+$/
     if (!slugRegex.test(slug)) {
       return NextResponse.json(
@@ -148,7 +148,7 @@ export async function POST(request: NextRequest) {
     }, { status: 201 })
 
   } catch (error) {
-    console.error('게시판 생성 에러:', error)
+    console.error('failed to create board:', error)
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }
@@ -156,7 +156,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// 게시판 일괄 삭제
+// Bulk delete boards
 export async function DELETE(request: NextRequest) {
   try {
     const admin = await getAdminUser()

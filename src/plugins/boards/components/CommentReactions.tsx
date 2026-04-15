@@ -33,7 +33,7 @@ export function CommentReactions({ slug, postId, commentId, isLoggedIn }: Commen
   const [userReactions, setUserReactions] = useState<string[]>([])
   const [isOpen, setIsOpen] = useState(false)
 
-  // 리액션 조회
+  // Fetch reactions
   const fetchReactions = useCallback(async () => {
     try {
       const response = await fetch(`/api/boards/${slug}/posts/${postId}/comments/${commentId}/reaction`)
@@ -43,7 +43,7 @@ export function CommentReactions({ slug, postId, commentId, isLoggedIn }: Commen
         setUserReactions(data.userReactions || [])
       }
     } catch (error) {
-      console.error('댓글 리액션 조회 에러:', error)
+      console.error('failed to fetch comment reactions:', error)
     }
   }, [slug, postId, commentId])
 
@@ -51,7 +51,7 @@ export function CommentReactions({ slug, postId, commentId, isLoggedIn }: Commen
     fetchReactions()
   }, [fetchReactions])
 
-  // 리액션 토글
+  // Toggle reaction
   const handleReaction = async (type: string) => {
     if (!isLoggedIn) {
       alert(t('errors.loginRequiredDot'))

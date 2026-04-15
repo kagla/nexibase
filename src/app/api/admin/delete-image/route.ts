@@ -5,7 +5,7 @@ import path from 'path'
 
 export async function POST(request: NextRequest) {
   try {
-    // 관리자 확인
+    // Admin check
     const session = await getSession()
     if (!session || session.role !== 'admin') {
       return NextResponse.json({ error: '권한이 없습니다.' }, { status: 403 })
@@ -17,12 +17,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '이미지 URL이 필요합니다.' }, { status: 400 })
     }
 
-    // URL 검증: /uploads/ 로 시작해야 함
+    // Validate URL: must start with /uploads/
     if (!imageUrl.startsWith('/uploads/')) {
       return NextResponse.json({ error: '잘못된 이미지 경로입니다.' }, { status: 400 })
     }
 
-    // 파일 경로 생성
+    // Build the file path
     const filePath = path.join(process.cwd(), 'public', imageUrl)
     // Thumbnail path: xxx.webp -> xxx-thumb.webp
     const thumbPath = filePath.replace(/(\.(webp|gif))$/i, '-thumb.webp')
@@ -41,12 +41,12 @@ export async function POST(request: NextRequest) {
       await unlink(thumbPath)
       console.log(`썸네일 삭제: ${thumbPath}`)
     } catch {
-      // 썸네일이 없어도 무시
+      // Ignore missing thumbnails
     }
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('이미지 삭제 에러:', error)
+    console.error('failed to delete image:', error)
     return NextResponse.json({ error: '이미지 삭제에 실패했습니다.' }, { status: 500 })
   }
 }

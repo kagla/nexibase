@@ -58,7 +58,7 @@ export default function PolicyPage() {
           setError(data.error || t('loadFailed'))
         }
       } catch (err) {
-        console.error('약관 조회 에러:', err)
+        console.error('failed to fetch policy:', err)
         setError(t('loadError'))
       } finally {
         setLoading(false)

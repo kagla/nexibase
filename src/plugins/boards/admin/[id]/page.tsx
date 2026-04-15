@@ -292,7 +292,7 @@ export default function BoardEditPage({ params }: { params: Promise<{ id: string
             </CardContent>
           </Card>
 
-          {/* 상태 + 저장 */}
+          {/* Status + save */}
           <Card className="mb-6">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">

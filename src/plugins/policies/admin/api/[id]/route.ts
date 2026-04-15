@@ -39,7 +39,7 @@ export async function GET(
       policy
     })
   } catch (error) {
-    console.error('약관 조회 에러:', error)
+    console.error('failed to fetch policy:', error)
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }
@@ -112,7 +112,7 @@ export async function PUT(
   }
 }
 
-// 약관 삭제
+// Delete policy
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -154,7 +154,7 @@ export async function DELETE(
     })
 
   } catch (error) {
-    console.error('약관 삭제 에러:', error)
+    console.error('failed to delete policy:', error)
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }

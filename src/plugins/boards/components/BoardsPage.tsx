@@ -51,7 +51,7 @@ export default function BoardsPage() {
         </p>
       </div>
 
-      {/* 게시판 목록 */}
+      {/* Board list */}
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />

@@ -26,7 +26,7 @@ export async function createNotification(params: CreateNotificationParams) {
       }
     })
   } catch (error) {
-    console.error('알림 생성 에러:', error)
+    console.error('failed to create notification:', error)
     return null
   }
 }
@@ -75,7 +75,7 @@ export async function createOrderStatusNotification(
       sendOrderStatusEmail(user.email, user.nickname || '고객', orderNo, newStatus, trackingNumber)
     }
   } catch (error) {
-    console.error('주문 상태 이메일 발송 에러:', error)
+    console.error('failed to send order status email:', error)
   }
 
   return createNotification({
@@ -112,7 +112,7 @@ export async function createOrderCompletedNotification(
       )
     }
   } catch (error) {
-    console.error('주문 완료 이메일 발송 에러:', error)
+    console.error('failed to send order completion email:', error)
   }
 
   return createNotification({
@@ -188,7 +188,7 @@ export async function createNewOrderNotificationForAdmins(
 
     return notifications.filter(n => n !== null)
   } catch (error) {
-    console.error('관리자 주문 알림 생성 에러:', error)
+    console.error('failed to create admin order notification:', error)
     return []
   }
 }
@@ -218,7 +218,7 @@ export async function createOrderCancelledNotification(
       )
     }
   } catch (error) {
-    console.error('주문 취소 이메일 발송 에러:', error)
+    console.error('failed to send order cancellation email:', error)
   }
 
   return createNotification({
@@ -312,7 +312,7 @@ export async function createOrderCancelledNotificationForAdmins(
 
     return notifications.filter(n => n !== null)
   } catch (error) {
-    console.error('관리자 주문 취소 알림 생성 에러:', error)
+    console.error('failed to create admin order cancellation notification:', error)
     return []
   }
 }
@@ -383,7 +383,7 @@ export async function createCancelRequestNotificationForAdmins(
 
     return notifications.filter(n => n !== null)
   } catch (error) {
-    console.error('관리자 취소/환불 요청 알림 생성 에러:', error)
+    console.error('failed to create admin cancel/refund request notification:', error)
     return []
   }
 }

@@ -124,7 +124,7 @@ function getFileIcon(mimeType: string): string {
   return '📄'
 }
 
-// 이미지 뷰어 모달 컴포넌트
+// Images 뷰어 모달 컴포넌트
 interface ImageViewerProps {
   images: Attachment[]
   initialIndex: number
@@ -145,12 +145,12 @@ function ImageViewer({ images, initialIndex, onClose }: ImageViewerProps) {
           onClose()
           break
         case 'ArrowLeft':
-          // 처음이면 마지막으로
+          // Wrap: first → last
           setCurrentIndex(prev => prev === 0 ? images.length - 1 : prev - 1)
           setScale(1)
           break
         case 'ArrowRight':
-          // 마지막이면 처음으로
+          // Wrap: last → first
           setCurrentIndex(prev => prev === images.length - 1 ? 0 : prev + 1)
           setScale(1)
           break
@@ -167,13 +167,13 @@ function ImageViewer({ images, initialIndex, onClose }: ImageViewerProps) {
   }, [images.length, onClose])
 
   const handlePrev = () => {
-    // 처음이면 마지막으로
+    // Wrap: first → last
     setCurrentIndex(prev => prev === 0 ? images.length - 1 : prev - 1)
     setScale(1)
   }
 
   const handleNext = () => {
-    // 마지막이면 처음으로
+    // Wrap: last → first
     setCurrentIndex(prev => prev === images.length - 1 ? 0 : prev + 1)
     setScale(1)
   }
@@ -351,7 +351,7 @@ export default function BoardPostPage() {
   const isLoggedIn = !!user
   const isAdmin = user?.role === 'admin'
 
-  // 사용자 정보 조회
+  // Fetch user info
   const fetchUser = useCallback(async () => {
     try {
       const response = await fetch('/api/me')
@@ -364,7 +364,7 @@ export default function BoardPostPage() {
     }
   }, [])
 
-  // 리액션 조회
+  // Fetch reactions
   const fetchReactions = useCallback(async () => {
     try {
       const response = await fetch(`/api/boards/${slug}/posts/${postId}/reaction`)
@@ -473,7 +473,7 @@ export default function BoardPostPage() {
     }
   }
 
-  // 리액션 토글
+  // Toggle reaction
   const handleReaction = async (type: string) => {
     if (!user) {
       alert(t('errors.loginRequiredDot'))
@@ -528,7 +528,7 @@ export default function BoardPostPage() {
         alert(data.error || t('comment.writeFailed'))
       }
     } catch (error) {
-      console.error('댓글 작성 에러:', error)
+      console.error('failed to create comment:', error)
       alert(t('comment.writeError'))
     } finally {
       setSubmittingComment(false)

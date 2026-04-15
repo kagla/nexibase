@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getAdminUser } from '@/lib/auth'
 
-// 기본 게시판 데이터
+// Default board data
 const DEFAULT_BOARDS = [
   {
     slug: 'free',
@@ -65,7 +65,7 @@ export async function POST() {
       return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 401 })
     }
 
-    // 이미 존재하는 게시판 slug 확인
+    // Check for an existing board slug
     const existingSlugs = await prisma.board.findMany({
       where: {
         slug: { in: DEFAULT_BOARDS.map(b => b.slug) }
@@ -75,7 +75,7 @@ export async function POST() {
 
     const existingSlugSet = new Set(existingSlugs.map(b => b.slug))
 
-    // 존재하지 않는 게시판만 생성
+    // Only create boards that do not already exist
     const boardsToCreate = DEFAULT_BOARDS.filter(b => !existingSlugSet.has(b.slug))
 
     if (boardsToCreate.length === 0) {

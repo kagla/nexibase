@@ -6,7 +6,7 @@ import { getAuthUser } from '@/lib/auth'
 const REACTION_TYPES = ['like', 'haha', 'agree', 'thanks', 'wow'] as const
 type ReactionType = typeof REACTION_TYPES[number]
 
-// 댓글 리액션 조회 (GET)
+// Fetch comment reactions (GET)
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string; postId: string; commentId: string }> }
@@ -15,7 +15,7 @@ export async function GET(
     const { commentId: commentIdParam } = await params
     const commentId = parseInt(commentIdParam)
 
-    // 사용자 확인
+    // User check
     const user = await getAuthUser()
 
     // Aggregate reactions
@@ -49,7 +49,7 @@ export async function GET(
     })
 
   } catch (error) {
-    console.error('댓글 리액션 조회 에러:', error)
+    console.error('failed to fetch comment reactions:', error)
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }
@@ -57,7 +57,7 @@ export async function GET(
   }
 }
 
-// 댓글 리액션 토글 (POST)
+// Toggle comment reaction (POST)
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string; postId: string; commentId: string }> }
@@ -105,7 +105,7 @@ export async function POST(
       )
     }
 
-    // 댓글 확인
+    // Comment check
     const comment = await prisma.comment.findUnique({
       where: { id: commentId }
     })
@@ -189,7 +189,7 @@ export async function POST(
     })
 
   } catch (error) {
-    console.error('댓글 반응 처리 에러:', error)
+    console.error('failed to process comment reaction:', error)
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }

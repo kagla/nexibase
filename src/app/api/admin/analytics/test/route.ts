@@ -27,7 +27,7 @@ export async function POST() {
 
     const { propertyId, dataClient } = client
 
-    // 최소 쿼리로 연결만 검증: 오늘 1일치 activeUsers
+    // Minimal query to verify the connection: today's activeUsers
     const [report] = await dataClient.runReport({
       property: `properties/${propertyId}`,
       dateRanges: [{ startDate: 'today', endDate: 'today' }],
@@ -43,7 +43,7 @@ export async function POST() {
     })
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
-    console.error('[analytics/test] GA API 호출 실패:', err)
+    console.error('[analytics/test] GA API call failed:', err)
     return NextResponse.json({ ok: false, error: msg })
   }
 }

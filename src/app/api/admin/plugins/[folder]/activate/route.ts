@@ -104,7 +104,7 @@ export async function POST(
       message: `메뉴 ${menuCount}개, 위젯 ${widgetCount}개 등록됨`,
     })
   } catch (error) {
-    console.error('플러그인 활성화 에러:', error)
+    console.error('failed to activate plugin:', error)
     return NextResponse.json({ error: '서버 오류' }, { status: 500 })
   }
 }

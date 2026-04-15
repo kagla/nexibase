@@ -113,7 +113,7 @@ export async function PUT(
   }
 }
 
-// 콘텐츠 삭제
+// Delete content
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -155,7 +155,7 @@ export async function DELETE(
     })
 
   } catch (error) {
-    console.error('콘텐츠 삭제 에러:', error)
+    console.error('failed to delete content:', error)
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }

@@ -202,7 +202,7 @@ export default function PoliciesPage() {
   const [activatingId, setActivatingId] = useState<number | null>(null)
   const [seedingPolicies, setSeedingPolicies] = useState(false)
 
-  // 기본 약관 생성
+  // Create default policies
   const handleSeedPolicies = async () => {
     if (!confirm(t('seedConfirm'))) return
 
@@ -220,7 +220,7 @@ export default function PoliciesPage() {
         alert(data.error || t('seedFailed'))
       }
     } catch (error) {
-      console.error('기본 약관 생성 에러:', error)
+      console.error('failed to create default policies:', error)
       alert(t('seedError'))
     } finally {
       setSeedingPolicies(false)
@@ -245,7 +245,7 @@ export default function PoliciesPage() {
         setTotalPages(data.pagination?.totalPages || 1)
       }
     } catch (error) {
-      console.error('약관 목록 조회 에러:', error)
+      console.error('failed to fetch policies:', error)
     } finally {
       setLoading(false)
     }
@@ -301,14 +301,14 @@ export default function PoliciesPage() {
         alert(data.error || t('activateFailed'))
       }
     } catch (error) {
-      console.error('약관 활성화 에러:', error)
+      console.error('failed to activate policy:', error)
       alert(t('activateError'))
     } finally {
       setActivatingId(null)
     }
   }
 
-  // 약관 삭제
+  // Delete policy
   const handleDelete = async (policy: Policy) => {
     if (!confirm(t('deleteOneConfirm', { title: policy.title, version: policy.version }))) return
 
@@ -324,7 +324,7 @@ export default function PoliciesPage() {
         alert(data.error || t('deleteFailed'))
       }
     } catch (error) {
-      console.error('약관 삭제 에러:', error)
+      console.error('failed to delete policy:', error)
       alert(t('deleteError'))
     }
   }

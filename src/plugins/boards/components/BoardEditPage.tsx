@@ -91,13 +91,13 @@ export default function BoardEditPage() {
   const [content, setContent] = useState("")
   const [isSecret, setIsSecret] = useState(false)
 
-  // 파일 첨부 상태
+  // File attachment state
   const [attachments, setAttachments] = useState<AttachmentFile[]>([])
   const [deletedAttachmentIds, setDeletedAttachmentIds] = useState<number[]>([])
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // 드래그 상태
+  // Drag state
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
 
@@ -140,12 +140,12 @@ export default function BoardEditPage() {
     fetchPost()
   }, [slug, postId, t])
 
-  // 파일 업로드 핸들러
+  // File upload handler
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (!files || files.length === 0) return
 
-    // 최대 5개까지
+    // Up to 5 items
     if (attachments.length + files.length > 5) {
       alert(t('post.maxAttachments'))
       return
@@ -183,7 +183,7 @@ export default function BoardEditPage() {
     }
   }
 
-  // 파일 삭제
+  // Delete file
   const handleRemoveFile = (index: number) => {
     const fileToRemove = attachments[index]
 
@@ -195,12 +195,12 @@ export default function BoardEditPage() {
     setAttachments(prev => prev.filter((_, i) => i !== index))
   }
 
-  // 드래그 시작
+  // Drag start
   const handleDragStart = (index: number) => {
     setDraggedIndex(index)
   }
 
-  // 드래그 오버
+  // Drag over
   const handleDragOver = (e: React.DragEvent, index: number) => {
     e.preventDefault()
     if (draggedIndex !== null && draggedIndex !== index) {
@@ -208,7 +208,7 @@ export default function BoardEditPage() {
     }
   }
 
-  // 드래그 종료
+  // Drag end
   const handleDragEnd = () => {
     if (draggedIndex !== null && dragOverIndex !== null && draggedIndex !== dragOverIndex) {
       const newAttachments = [...attachments]
@@ -220,7 +220,7 @@ export default function BoardEditPage() {
     setDragOverIndex(null)
   }
 
-  // 드래그 이탈
+  // Drag leave
   const handleDragLeave = () => {
     setDragOverIndex(null)
   }
@@ -318,7 +318,7 @@ export default function BoardEditPage() {
   return (
     <UserLayout>
       <div className="max-w-4xl mx-auto sm:px-4 py-2 sm:py-6">
-        {/* 페이지 헤더 */}
+        {/* Page header */}
         <div className="flex items-center gap-3 mb-6">
           <Link
             href={`/boards/${slug}/${postId}`}
@@ -360,7 +360,7 @@ export default function BoardEditPage() {
                 />
               </div>
 
-              {/* 파일 첨부 */}
+              {/* File attachment */}
               {board.useFile && (
                 <div className="space-y-3">
                   <Label className="flex items-center gap-2">
@@ -369,7 +369,7 @@ export default function BoardEditPage() {
                     <span className="text-xs text-muted-foreground">{t('post.fileAttachDesc')}</span>
                   </Label>
 
-                  {/* 파일 선택 버튼 */}
+                  {/* File picker button */}
                   <div className="flex items-center gap-2">
                     <input
                       ref={fileInputRef}
@@ -398,7 +398,7 @@ export default function BoardEditPage() {
                     </span>
                   </div>
 
-                  {/* 첨부된 파일 목록 */}
+                  {/* Attached file list */}
                   {attachments.length > 0 && (
                     <div className="border rounded-lg divide-y">
                       {attachments.map((file, index) => (

@@ -71,7 +71,7 @@ export async function GET(
         orderBy = [{ isNotice: 'desc' }, { createdAt: 'desc' }]
     }
 
-    // 갤러리 형식이면 첨부파일 정보도 함께 조회
+    // In gallery mode, also fetch attachment info
     const includeAttachments = board.displayType === 'gallery'
 
     // Fetch post list
@@ -102,7 +102,7 @@ export async function GET(
           _count: {
             select: { attachments: true }
           },
-          // 갤러리 형식이면 첫 번째 이미지를 썸네일로 사용
+          // In gallery mode, use the first image as the thumbnail
           ...(includeAttachments && {
             attachments: {
               where: {
@@ -123,8 +123,8 @@ export async function GET(
       prisma.post.count({ where })
     ])
 
-    // 갤러리 형식일 때 썸네일 정보 추가
-    // thumbnailPath가 있으면 사용, 없으면 원본 filePath 사용
+    // Attach thumbnail info in gallery mode
+    // Use thumbnailPath when available, otherwise fall back to filePath
     const postsWithThumbnail = includeAttachments
       ? posts.map(post => {
           const attachment = (post as { attachments?: { filePath: string; thumbnailPath?: string | null }[] }).attachments?.[0]
@@ -157,7 +157,7 @@ export async function GET(
       }
     })
   } catch (error) {
-    console.error('게시글 목록 조회 에러:', error)
+    console.error('failed to fetch posts:', error)
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }
@@ -165,7 +165,7 @@ export async function GET(
   }
 }
 
-// 첨부파일 인터페이스
+// Attachment interface
 interface AttachmentFile {
   filename: string
   storedName: string
@@ -175,7 +175,7 @@ interface AttachmentFile {
   mimeType: string
 }
 
-// 게시글 작성
+// Write post
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
@@ -204,10 +204,10 @@ export async function POST(
       )
     }
 
-    // 로그인 및 권한 확인
+    // Login and authorization check
     const user = await getAuthUser()
 
-    // 회원전용 게시판에서 비로그인 시
+    // Member-only board: unauthenticated request
     if (board.writeMemberOnly && !user) {
       return NextResponse.json(
         { error: '로그인이 필요합니다.' },
@@ -215,7 +215,7 @@ export async function POST(
       )
     }
 
-    // 비회원 게시판이더라도 글 작성 시에는 로그인 필요
+    // Even on a guest-friendly board, writing requires login
     if (!user) {
       return NextResponse.json(
         { error: '로그인이 필요합니다.' },
@@ -238,12 +238,12 @@ export async function POST(
       )
     }
 
-    // IP 주소
+    // IP address
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ||
                request.headers.get('x-real-ip') ||
                'unknown'
 
-    // Create post + 첨부파일을 트랜잭션으로 처리
+    // Create the post and attachments within a transaction
     const post = await prisma.$transaction(async (tx) => {
       // Create post
       const newPost = await tx.post.create({

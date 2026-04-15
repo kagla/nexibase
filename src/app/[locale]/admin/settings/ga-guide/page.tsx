@@ -45,7 +45,7 @@ function Screenshot({ src, alt, caption }: ScreenshotProps) {
           alt={alt}
           className="w-full h-auto"
           onError={(e) => {
-            // 이미지 없을 때 placeholder 박스
+            // Placeholder box when there is no image
             const target = e.currentTarget
             target.style.display = 'none'
             const placeholder = target.nextElementSibling as HTMLDivElement
@@ -93,7 +93,7 @@ export default function GaGuidePage() {
             </Link>
           </div>
 
-          {/* 개요 */}
+          {/* Overview */}
           <Card className="mb-6 border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-900">
             <CardContent className="p-4">
               <h2 className="font-semibold mb-2">시작하기 전에 알아두세요</h2>
@@ -106,7 +106,7 @@ export default function GaGuidePage() {
             </CardContent>
           </Card>
 
-          {/* 전체 단계 요약 */}
+          {/* Full step summary */}
           <Card className="mb-6">
             <CardHeader>
               <CardTitle className="text-base">전체 단계</CardTitle>
@@ -484,7 +484,7 @@ export default function GaGuidePage() {
               </div>
             </Step>
 
-            {/* 완료 */}
+            {/* Done */}
             <Card className="border-green-200 bg-green-50 dark:bg-green-950/30 dark:border-green-900">
               <CardContent className="p-6 text-center">
                 <h2 className="text-xl font-bold mb-2">🎉 설정 완료!</h2>
