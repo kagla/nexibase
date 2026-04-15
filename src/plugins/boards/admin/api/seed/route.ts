@@ -57,7 +57,7 @@ const DEFAULT_BOARDS = [
   },
 ]
 
-// 기본 게시판 생성
+// Create default boards
 export async function POST() {
   try {
     const admin = await getAdminUser()
@@ -86,7 +86,7 @@ export async function POST() {
       })
     }
 
-    // 게시판 생성
+    // Create board
     const result = await prisma.board.createMany({
       data: boardsToCreate
     })
@@ -99,7 +99,7 @@ export async function POST() {
     })
 
   } catch (error) {
-    console.error('기본 게시판 생성 에러:', error)
+    console.error('failed to create default boards:', error)
     return NextResponse.json(
       { error: '기본 게시판 생성에 실패했습니다.' },
       { status: 500 }

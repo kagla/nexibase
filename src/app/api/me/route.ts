@@ -62,7 +62,7 @@ export async function GET() {
     })
 
   } catch (error) {
-    console.error('사용자 정보 조회 에러:', error)
+    console.error('failed to fetch user:', error)
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }
@@ -129,7 +129,7 @@ export async function PUT(request: NextRequest) {
       updateData.nickname = nickname.trim()
     }
 
-    // 비밀번호 변경
+    // Change password
     if (newPassword) {
       if (!currentPassword) {
         return NextResponse.json(
@@ -261,7 +261,7 @@ export async function DELETE(request: NextRequest) {
           console.log(`프로필 이미지 삭제: ${user.image}`)
         }
       } catch (e) {
-        console.error('프로필 이미지 삭제 에러:', e)
+        console.error('failed to delete profile image:', e)
       }
     }
 

@@ -24,7 +24,7 @@ const MAX_SIZE = 10 * 1024 * 1024 // 10MB
 
 export async function POST(request: NextRequest) {
   try {
-    // 로그인 확인
+    // Login check
     const user = await getAuthUser()
     if (!user) {
       return NextResponse.json(
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 파일 크기 검증
+    // Validate file size
     if (file.size > MAX_SIZE) {
       return NextResponse.json(
         { error: '파일 크기는 10MB 이하여야 합니다.' },
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
     const uploadDir = path.join(process.cwd(), 'public', 'uploads', basePath, String(year), month)
     const urlPath = `/uploads/${basePath}/${year}/${month}`
 
-    // 디렉토리 생성
+    // Create directory
     if (!existsSync(uploadDir)) {
       await mkdir(uploadDir, { recursive: true })
     }
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
     const filePath = path.join(uploadDir, storedName)
     writeFileSync(filePath, buffer)
 
-    // URL 반환
+    // Return URL
     const url = `${urlPath}/${storedName}`
     let thumbnailPath: string | null = null
 
@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('파일 업로드 에러:', error)
+    console.error('file upload error:', error)
     return NextResponse.json(
       { error: '파일 업로드에 실패했습니다.' },
       { status: 500 }

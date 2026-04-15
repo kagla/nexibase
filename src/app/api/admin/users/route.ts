@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 import { getAdminUser } from '@/lib/auth'
 
-// 사용자 목록 조회
+// Fetch user list
 export async function GET(request: NextRequest) {
   try {
     const admin = await getAdminUser()
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
 
     const skip = (page - 1) * limit
 
-    // 검색 조건
+    // Search conditions
     const where: Record<string, unknown> = {}
 
     // 탈퇴 회원(withdrawn): status가 'withdrawn'인 사용자 (직접 탈퇴)
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
       where.role = role
     }
 
-    // 사용자 목록 조회
+    // Fetch user list
     const [users, total] = await Promise.all([
       prisma.user.findMany({
         where,
@@ -108,7 +108,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// 사용자 생성
+// Create user
 export async function POST(request: NextRequest) {
   try {
     const admin = await getAdminUser()
@@ -131,10 +131,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 비밀번호 해시
+    // Hash password
     const hashedPassword = password ? await bcrypt.hash(password, 10) : null
 
-    // 사용자 생성
+    // Create user
     const user = await prisma.user.create({
       data: {
         email,
@@ -202,7 +202,7 @@ export async function DELETE(request: NextRequest) {
       }
     }
 
-    // 소프트 삭제: deletedAt에 현재 시간 설정
+    // Soft delete: set deletedAt to now
     await prisma.user.updateMany({
       where: {
         id: { in: ids },

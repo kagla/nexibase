@@ -93,11 +93,11 @@ export default function BoardListPage() {
         setUser(data.user)
       }
     } catch (error) {
-      console.error('사용자 정보 조회 에러:', error)
+      console.error('failed to fetch user:', error)
     }
   }, [])
 
-  // 게시글 목록 조회
+  // Fetch post list
   const fetchPosts = useCallback(async () => {
     setLoading(true)
     setError(null)
@@ -142,7 +142,7 @@ export default function BoardListPage() {
     fetchPosts()
   }, [fetchPosts])
 
-  // 날짜 포맷
+  // Date format
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     const now = new Date()
@@ -298,7 +298,7 @@ export default function BoardListPage() {
                           </div>
                         )}
                       </div>
-                      {/* 정보 */}
+                      {/* Info */}
                       <div className="space-y-1">
                         <h3 className="font-medium text-sm truncate group-hover:text-primary transition-colors">
                           {post.title}
@@ -390,7 +390,7 @@ export default function BoardListPage() {
               </div>
             )}
 
-            {/* 페이지네이션 */}
+            {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex justify-center items-center gap-2 py-4 border-t">
                 <Button

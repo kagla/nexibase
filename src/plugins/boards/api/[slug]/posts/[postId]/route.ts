@@ -19,7 +19,7 @@ export async function GET(
       )
     }
 
-    // 게시판 정보 조회
+    // Fetch board info
     const board = await prisma.board.findUnique({
       where: { slug }
     })
@@ -31,7 +31,7 @@ export async function GET(
       )
     }
 
-    // 권한 확인
+    // Authorization check
     const user = await getAuthUser()
     if (board.readMemberOnly && !user) {
       return NextResponse.json(
@@ -40,7 +40,7 @@ export async function GET(
       )
     }
 
-    // 게시글 조회
+    // Fetch post
     const post = await prisma.post.findUnique({
       where: { id: postId },
       include: {
@@ -203,7 +203,7 @@ export async function GET(
 
     return response
   } catch (error) {
-    console.error('게시글 조회 에러:', error)
+    console.error('failed to fetch post:', error)
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }
@@ -211,7 +211,7 @@ export async function GET(
   }
 }
 
-// 게시글 수정
+// Edit post
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string; postId: string }> }
@@ -230,7 +230,7 @@ export async function PUT(
     const body = await request.json()
     const { title, content, isNotice, isSecret, attachments, deletedAttachmentIds, attachmentOrder } = body
 
-    // 로그인 확인
+    // Login check
     const user = await getAuthUser()
     if (!user) {
       return NextResponse.json(
@@ -239,7 +239,7 @@ export async function PUT(
       )
     }
 
-    // 게시판 정보 조회
+    // Fetch board info
     const board = await prisma.board.findUnique({
       where: { slug }
     })
@@ -251,7 +251,7 @@ export async function PUT(
       )
     }
 
-    // 게시글 조회
+    // Fetch post
     const post = await prisma.post.findUnique({
       where: { id: postId }
     })
@@ -263,7 +263,7 @@ export async function PUT(
       )
     }
 
-    // 권한 확인 (작성자 또는 관리자)
+    // Authorization check (작성자 또는 관리자)
     if (post.authorId !== user.id && user.role !== 'admin') {
       return NextResponse.json(
         { error: '수정 권한이 없습니다.' },
@@ -273,7 +273,7 @@ export async function PUT(
 
     // 트랜잭션으로 게시글과 첨부파일 수정
     const updatedPost = await prisma.$transaction(async (tx) => {
-      // 게시글 수정
+      // Edit post
       const updated = await tx.post.update({
         where: { id: postId },
         data: {
@@ -345,7 +345,7 @@ export async function PUT(
   }
 }
 
-// 게시글 삭제
+// Delete post
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string; postId: string }> }
@@ -361,7 +361,7 @@ export async function DELETE(
       )
     }
 
-    // 로그인 확인
+    // Login check
     const user = await getAuthUser()
     if (!user) {
       return NextResponse.json(
@@ -370,7 +370,7 @@ export async function DELETE(
       )
     }
 
-    // 게시판 정보 조회
+    // Fetch board info
     const board = await prisma.board.findUnique({
       where: { slug }
     })
@@ -382,7 +382,7 @@ export async function DELETE(
       )
     }
 
-    // 게시글 조회
+    // Fetch post
     const post = await prisma.post.findUnique({
       where: { id: postId }
     })
@@ -394,7 +394,7 @@ export async function DELETE(
       )
     }
 
-    // 권한 확인 (작성자 또는 관리자)
+    // Authorization check (작성자 또는 관리자)
     if (post.authorId !== user.id && user.role !== 'admin') {
       return NextResponse.json(
         { error: '삭제 권한이 없습니다.' },
@@ -402,7 +402,7 @@ export async function DELETE(
       )
     }
 
-    // 게시글 삭제 (soft delete)
+    // Delete post (soft delete)
     await prisma.post.update({
       where: { id: postId },
       data: { status: 'deleted' }

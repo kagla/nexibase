@@ -74,7 +74,7 @@ export default function GaGuidePage() {
       <div className="flex">
         <Sidebar activeMenu="settings" />
         <main className="flex-1 lg:ml-0 p-6">
-          {/* 헤더 */}
+          {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-2xl font-bold flex items-center gap-2">

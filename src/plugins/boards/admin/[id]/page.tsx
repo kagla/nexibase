@@ -158,7 +158,7 @@ export default function BoardEditPage({ params }: { params: Promise<{ id: string
       <Sidebar />
       <main className="flex-1 p-6">
         <div className="max-w-3xl mx-auto">
-          {/* 헤더 */}
+          {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <Link href="/admin/boards">
@@ -181,7 +181,7 @@ export default function BoardEditPage({ params }: { params: Promise<{ id: string
             </Button>
           </div>
 
-          {/* 기본 정보 */}
+          {/* Basic info */}
           <Card className="mb-6">
             <CardHeader><CardTitle className="text-base">{t('admin.basicInfo')}</CardTitle></CardHeader>
             <CardContent className="space-y-4">
@@ -217,7 +217,7 @@ export default function BoardEditPage({ params }: { params: Promise<{ id: string
             </CardContent>
           </Card>
 
-          {/* 권한 설정 */}
+          {/* Permission settings */}
           <Card className="mb-6">
             <CardHeader><CardTitle className="text-base">{t('admin.permissions')}</CardTitle></CardHeader>
             <CardContent>
@@ -243,7 +243,7 @@ export default function BoardEditPage({ params }: { params: Promise<{ id: string
             </CardContent>
           </Card>
 
-          {/* 기능 설정 */}
+          {/* Feature settings */}
           <Card className="mb-6">
             <CardHeader><CardTitle className="text-base">{t('admin.features')}</CardTitle></CardHeader>
             <CardContent>
@@ -268,7 +268,7 @@ export default function BoardEditPage({ params }: { params: Promise<{ id: string
             </CardContent>
           </Card>
 
-          {/* 표시 설정 */}
+          {/* Display settings */}
           <Card className="mb-6">
             <CardHeader><CardTitle className="text-base">{t('admin.displaySettings')}</CardTitle></CardHeader>
             <CardContent>

@@ -106,14 +106,14 @@ interface Post {
   attachments?: Attachment[]
 }
 
-// 파일 크기 포맷
+// Format file size
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-// 파일 아이콘 선택
+// Pick file icon
 function getFileIcon(mimeType: string): string {
   if (mimeType.startsWith('image/')) return '🖼️'
   if (mimeType.includes('pdf')) return '📕'
@@ -242,7 +242,7 @@ function ImageViewer({ images, initialIndex, onClose }: ImageViewerProps) {
         </div>
       </div>
 
-      {/* 이전 버튼 */}
+      {/* Previous button */}
       {images.length > 1 && (
         <Button
           variant="ghost"
@@ -254,7 +254,7 @@ function ImageViewer({ images, initialIndex, onClose }: ImageViewerProps) {
         </Button>
       )}
 
-      {/* 이미지 */}
+      {/* Image */}
       <div className="flex items-center justify-center w-full h-full p-16 overflow-auto">
         <img
           src={currentImage.filePath}
@@ -265,7 +265,7 @@ function ImageViewer({ images, initialIndex, onClose }: ImageViewerProps) {
         />
       </div>
 
-      {/* 다음 버튼 */}
+      {/* Next button */}
       {images.length > 1 && (
         <Button
           variant="ghost"
@@ -360,7 +360,7 @@ export default function BoardPostPage() {
         setUser(data.user)
       }
     } catch (error) {
-      console.error('사용자 정보 조회 에러:', error)
+      console.error('failed to fetch user:', error)
     }
   }, [])
 
@@ -374,11 +374,11 @@ export default function BoardPostPage() {
         setUserReactions(data.userReactions || [])
       }
     } catch (error) {
-      console.error('리액션 조회 에러:', error)
+      console.error('failed to fetch reactions:', error)
     }
   }, [slug, postId])
 
-  // 게시글 조회
+  // Fetch post
   const fetchPost = useCallback(async () => {
     setLoading(true)
     setError(null)
@@ -405,7 +405,7 @@ export default function BoardPostPage() {
         setNextPost(data.nextPost || null)
       }
     } catch (error) {
-      console.error('게시글 조회 에러:', error)
+      console.error('failed to fetch post:', error)
       setError(t('post.loadError'))
     } finally {
       setLoading(false)
@@ -441,7 +441,7 @@ export default function BoardPostPage() {
     }
   }, [board, fetchReactions])
 
-  // 날짜 포맷
+  // Date format
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString(undefined, {
       year: 'numeric',
@@ -452,7 +452,7 @@ export default function BoardPostPage() {
     })
   }
 
-  // 게시글 삭제
+  // Delete post
   const handleDelete = async () => {
     if (!confirm(t('post.reallyDelete'))) return
 
@@ -468,7 +468,7 @@ export default function BoardPostPage() {
         alert(data.error || t('post.deleteFailed'))
       }
     } catch (error) {
-      console.error('삭제 에러:', error)
+      console.error('delete error:', error)
       alert(t('post.deleteError'))
     }
   }
@@ -498,7 +498,7 @@ export default function BoardPostPage() {
     }
   }
 
-  // 댓글 작성
+  // Write comment
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -680,7 +680,7 @@ export default function BoardPostPage() {
               <h1 className="text-2xl font-bold">{post.title}</h1>
             </div>
 
-            {/* 작성자 정보 */}
+            {/* Author info */}
             <div className="flex items-center justify-between py-3 border-y mb-6">
               <div className="flex items-center gap-3">
                 <UserNickname userId={post.author.id} uuid={post.author.uuid} nickname={post.author.nickname} image={post.author.image} showAvatar avatarSize="md" />

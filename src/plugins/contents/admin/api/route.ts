@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 슬러그 중복 확인
+    // Check slug uniqueness
     const existing = await prisma.content.findUnique({
       where: { slug }
     })

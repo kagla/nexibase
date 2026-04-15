@@ -44,14 +44,14 @@ interface AttachmentFile {
   mimeType: string
 }
 
-// 파일 크기 포맷
+// Format file size
 function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-// 파일 아이콘 선택
+// Pick file icon
 function getFileIcon(mimeType: string): string {
   if (mimeType.startsWith('image/')) return '🖼️'
   if (mimeType.includes('pdf')) return '📕'
@@ -130,7 +130,7 @@ export default function BoardWritePage() {
 
         setBoard(data.board)
       } catch (err) {
-        console.error('게시판 조회 에러:', err)
+        console.error('failed to fetch board:', err)
         setError(t('loadError'))
       } finally {
         setLoading(false)
@@ -173,7 +173,7 @@ export default function BoardWritePage() {
         }
       }
     } catch (error) {
-      console.error('파일 업로드 에러:', error)
+      console.error('file upload error:', error)
       alert(t('post.uploadError'))
     } finally {
       setUploading(false)

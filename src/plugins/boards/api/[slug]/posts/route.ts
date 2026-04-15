@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { getAuthUser } from '@/lib/auth'
 import { sanitizeHtml } from '@/lib/sanitize'
 
-// 게시글 목록 조회
+// Fetch post list
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
@@ -14,7 +14,7 @@ export async function GET(
     const page = parseInt(searchParams.get('page') || '1')
     const search = searchParams.get('search') || ''
 
-    // 게시판 정보 조회
+    // Fetch board info
     const board = await prisma.board.findUnique({
       where: { slug }
     })
@@ -33,7 +33,7 @@ export async function GET(
       )
     }
 
-    // 권한 확인
+    // Authorization check
     const user = await getAuthUser()
     if (board.listMemberOnly && !user) {
       return NextResponse.json(
@@ -45,7 +45,7 @@ export async function GET(
     const limit = board.postsPerPage
     const skip = (page - 1) * limit
 
-    // 검색 조건
+    // Search conditions
     const where: Record<string, unknown> = {
       boardId: board.id,
       status: 'published'
@@ -74,7 +74,7 @@ export async function GET(
     // 갤러리 형식이면 첨부파일 정보도 함께 조회
     const includeAttachments = board.displayType === 'gallery'
 
-    // 게시글 목록 조회
+    // Fetch post list
     const [posts, total] = await Promise.all([
       prisma.post.findMany({
         where,
@@ -185,7 +185,7 @@ export async function POST(
     const body = await request.json()
     const { title, content, isNotice, isSecret, attachments } = body
 
-    // 게시판 정보 조회
+    // Fetch board info
     const board = await prisma.board.findUnique({
       where: { slug }
     })
@@ -223,7 +223,7 @@ export async function POST(
       )
     }
 
-    // 필수 필드 검증
+    // Validate required fields
     if (!title?.trim()) {
       return NextResponse.json(
         { error: '제목을 입력해주세요.' },
@@ -243,9 +243,9 @@ export async function POST(
                request.headers.get('x-real-ip') ||
                'unknown'
 
-    // 게시글 생성 + 첨부파일을 트랜잭션으로 처리
+    // Create post + 첨부파일을 트랜잭션으로 처리
     const post = await prisma.$transaction(async (tx) => {
-      // 게시글 생성
+      // Create post
       const newPost = await tx.post.create({
         data: {
           boardId: board.id,

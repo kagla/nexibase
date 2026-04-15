@@ -17,7 +17,7 @@ export async function GET(request: Request) {
 
     const where = {
       userId: session.id,
-      deletedAt: null,  // 소프트 삭제된 알림 제외
+      deletedAt: null,  // Soft delete된 알림 제외
       ...(unreadOnly && { isRead: false }),
     };
 

@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { email, password, nickname } = body
 
-    // 필수 필드 검증
+    // Validate required fields
     if (!email || !password || !nickname) {
       return NextResponse.json(
         { error: '모든 필드를 입력해주세요.' },
@@ -69,10 +69,10 @@ export async function POST(request: NextRequest) {
     const userCount = await prisma.user.count()
     const isFirstUser = userCount === 0
 
-    // 비밀번호 해시
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10)
 
-    // 사용자 생성
+    // Create user
     const user = await prisma.user.create({
       data: {
         email: email.toLowerCase(),

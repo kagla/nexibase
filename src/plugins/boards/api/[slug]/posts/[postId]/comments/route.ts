@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getAuthUser } from '@/lib/auth'
 
-// 댓글 작성
+// Write comment
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string; postId: string }> }
@@ -13,7 +13,7 @@ export async function POST(
     const body = await request.json()
     const { content, parentId } = body
 
-    // 로그인 확인
+    // Login check
     const user = await getAuthUser()
     if (!user) {
       return NextResponse.json(
@@ -22,7 +22,7 @@ export async function POST(
       )
     }
 
-    // 게시판 정보 조회
+    // Fetch board info
     const board = await prisma.board.findUnique({
       where: { slug }
     })
@@ -84,7 +84,7 @@ export async function POST(
       )
     }
 
-    // 댓글 생성
+    // Create comment
     const comment = await prisma.comment.create({
       data: {
         content: content.trim(),
@@ -124,7 +124,7 @@ export async function POST(
   }
 }
 
-// 댓글 목록 조회
+// Fetch comment list
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string; postId: string }> }

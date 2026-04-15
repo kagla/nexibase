@@ -29,7 +29,7 @@ export default function BoardsPage() {
           setBoards(data.boards || [])
         }
       } catch (error) {
-        console.error('게시판 목록 조회 에러:', error)
+        console.error('failed to fetch boards:', error)
       } finally {
         setIsLoading(false)
       }
@@ -40,7 +40,7 @@ export default function BoardsPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
-      {/* 헤더 */}
+      {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-2">
           <LayoutGrid className="h-6 w-6 text-primary" />

@@ -7,7 +7,7 @@ import { existsSync, unlinkSync } from 'fs'
 import path from 'path'
 import sharp from 'sharp'
 
-// 허용 이미지 타입
+// Allowed image types
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
 const MAX_SIZE = 2 * 1024 * 1024 // 2MB
 const AVATAR_SIZE = 200 // 프로필 이미지 크기 (정사각형)
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 파일 타입 검증
+    // Validate file type
     if (!ALLOWED_TYPES.includes(file.type)) {
       return NextResponse.json(
         { error: 'JPG, PNG, GIF, WebP 파일만 업로드 가능합니다.' },
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 파일 크기 검증
+    // Validate file size
     if (file.size > MAX_SIZE) {
       return NextResponse.json(
         { error: '파일 크기는 2MB 이하여야 합니다.' },
@@ -65,12 +65,12 @@ export async function POST(request: NextRequest) {
     // 프로필 이미지 저장 디렉토리
     const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'profiles')
 
-    // 디렉토리 생성
+    // Create directory
     if (!existsSync(uploadDir)) {
       await mkdir(uploadDir, { recursive: true })
     }
 
-    // 기존 프로필 이미지 삭제 (로컬 파일인 경우)
+    // Delete the existing profile image (only when it is a local file)
     if (user.image && user.image.startsWith('/uploads/profiles/')) {
       const oldPath = path.join(process.cwd(), 'public', user.image)
       try {
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
     const timestamp = Date.now()
     const filename = `${user.id}-${timestamp}.webp`
 
-    // 이미지 리사이징 및 WebP 변환
+    // Resize and convert to WebP
     const bytes = await file.arrayBuffer()
     const inputBuffer = Buffer.from(bytes)
 
@@ -141,7 +141,7 @@ export async function DELETE() {
       )
     }
 
-    // 기존 프로필 이미지 삭제 (로컬 파일인 경우)
+    // Delete the existing profile image (only when it is a local file)
     if (user.image && user.image.startsWith('/uploads/profiles/')) {
       const oldPath = path.join(process.cwd(), 'public', user.image)
       try {
@@ -149,7 +149,7 @@ export async function DELETE() {
           unlinkSync(oldPath)
         }
       } catch (e) {
-        console.error('프로필 이미지 삭제 에러:', e)
+        console.error('failed to delete profile image:', e)
       }
     }
 
@@ -165,7 +165,7 @@ export async function DELETE() {
     })
 
   } catch (error) {
-    console.error('프로필 이미지 삭제 에러:', error)
+    console.error('failed to delete profile image:', error)
     return NextResponse.json(
       { error: '이미지 삭제에 실패했습니다.' },
       { status: 500 }

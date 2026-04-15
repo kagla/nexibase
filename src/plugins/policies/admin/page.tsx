@@ -329,7 +329,7 @@ export default function PoliciesPage() {
     }
   }
 
-  // 선택 삭제
+  // Delete selected
   const handleBulkDelete = async () => {
     const selectedIds = policies.filter(p => p.selected).map(p => p.id)
     if (selectedIds.length === 0) {
@@ -354,19 +354,19 @@ export default function PoliciesPage() {
         alert(data.error || t('deleteFailed'))
       }
     } catch (error) {
-      console.error('일괄 삭제 에러:', error)
+      console.error('bulk delete error:', error)
       alert(t('deleteError'))
     }
   }
 
-  // 전체 선택
+  // Select all
   const handleSelectAll = () => {
     const newSelected = !selectedAll
     setSelectedAll(newSelected)
     setPolicies(policies.map(p => ({ ...p, selected: newSelected })))
   }
 
-  // 개별 선택
+  // Select one
   const handleSelect = (id: number) => {
     setPolicies(policies.map(p =>
       p.id === id ? { ...p, selected: !p.selected } : p
@@ -378,7 +378,7 @@ export default function PoliciesPage() {
       <div className="flex">
         <Sidebar activeMenu="policies" />
         <main className="flex-1 lg:ml-0 p-6">
-          {/* 헤더 */}
+          {/* Header */}
           <div className="mb-6">
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <Scale className="h-6 w-6" />
@@ -406,7 +406,7 @@ export default function PoliciesPage() {
             </div>
           )}
 
-          {/* 액션 */}
+          {/* Actions */}
           <Card className="mb-6">
             <CardContent className="p-4">
               <div className="flex flex-col sm:flex-row gap-4 justify-between">
@@ -566,7 +566,7 @@ export default function PoliciesPage() {
                     </table>
                   </div>
 
-                  {/* 페이지네이션 */}
+                  {/* Pagination */}
                   {totalPages > 1 && (
                     <div className="flex justify-center items-center gap-2 mt-6">
                       <Button
@@ -597,7 +597,7 @@ export default function PoliciesPage() {
         </main>
       </div>
 
-      {/* 모달 */}
+      {/* Modal */}
       <PolicyModal
         isOpen={modalOpen}
         onClose={() => { setModalOpen(false); setEditingPolicy(null); }}

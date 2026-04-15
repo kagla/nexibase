@@ -178,7 +178,7 @@ function BoardModal({
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* 기본 정보 */}
+          {/* Basic info */}
           <div>
             <h3 className="text-sm font-medium text-muted-foreground mb-4">{t('admin.basicInfo')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -255,7 +255,7 @@ function BoardModal({
 
           <Separator />
 
-          {/* 권한 설정 */}
+          {/* Permission settings */}
           <div>
             <h3 className="text-sm font-medium text-muted-foreground mb-4">{t('admin.permissions')}</h3>
             <p className="text-xs text-muted-foreground mb-4">{t('admin.permDesc')}</p>
@@ -301,7 +301,7 @@ function BoardModal({
 
           <Separator />
 
-          {/* 기능 설정 */}
+          {/* Feature settings */}
           <div>
             <h3 className="text-sm font-medium text-muted-foreground mb-4">{t('admin.features')}</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -346,7 +346,7 @@ function BoardModal({
 
           <Separator />
 
-          {/* 표시 설정 */}
+          {/* Display settings */}
           <div>
             <h3 className="text-sm font-medium text-muted-foreground mb-4">{t('admin.displaySettings')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -486,7 +486,7 @@ export default function BoardsPage() {
   const [seedingBoards, setSeedingBoards] = useState(false)
   const [statusFilter, setStatusFilter] = useState<'all' | 'active'>('all')
 
-  // 기본 게시판 생성
+  // Create default boards
   const handleSeedBoards = async () => {
     if (!confirm(t('admin.createDefaultConfirm'))) return
 
@@ -504,14 +504,14 @@ export default function BoardsPage() {
         alert(data.error || t('admin.createFailed'))
       }
     } catch (error) {
-      console.error('기본 게시판 생성 에러:', error)
+      console.error('failed to create default boards:', error)
       alert(t('admin.createError'))
     } finally {
       setSeedingBoards(false)
     }
   }
 
-  // 게시판 목록 조회
+  // Fetch board list
   const fetchBoards = useCallback(async () => {
     setLoading(true)
     try {
@@ -539,7 +539,7 @@ export default function BoardsPage() {
         })
       }
     } catch (error) {
-      console.error('게시판 목록 조회 에러:', error)
+      console.error('failed to fetch boards:', error)
     } finally {
       setLoading(false)
     }
@@ -577,7 +577,7 @@ export default function BoardsPage() {
     }
   }
 
-  // 게시판 삭제
+  // Delete board
   const handleDelete = async (board: Board) => {
     if (!confirm(t('admin.deleteBoardConfirm', { name: board.name }))) return
 
@@ -593,12 +593,12 @@ export default function BoardsPage() {
         alert(data.error || t('admin.deleteFailed'))
       }
     } catch (error) {
-      console.error('게시판 삭제 에러:', error)
+      console.error('failed to delete board:', error)
       alert(t('admin.deleteError'))
     }
   }
 
-  // 선택 삭제
+  // Delete selected
   const handleBulkDelete = async () => {
     const selectedIds = boards.filter(b => b.selected).map(b => b.id)
     if (selectedIds.length === 0) {
@@ -623,26 +623,26 @@ export default function BoardsPage() {
         alert(data.error || t('admin.deleteFailed'))
       }
     } catch (error) {
-      console.error('일괄 삭제 에러:', error)
+      console.error('bulk delete error:', error)
       alert(t('admin.deleteError'))
     }
   }
 
-  // 전체 선택
+  // Select all
   const handleSelectAll = () => {
     const newSelected = !selectedAll
     setSelectedAll(newSelected)
     setBoards(boards.map(b => ({ ...b, selected: newSelected })))
   }
 
-  // 개별 선택
+  // Select one
   const handleSelect = (id: string) => {
     setBoards(boards.map(b =>
       b.id === id ? { ...b, selected: !b.selected } : b
     ))
   }
 
-  // 검색
+  // Search
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     setPage(1)
@@ -659,7 +659,7 @@ export default function BoardsPage() {
       <div className="flex">
         <Sidebar activeMenu={activeMenu} onMenuChange={setActiveMenu} />
         <main className="flex-1 lg:ml-0 p-6">
-          {/* 헤더 */}
+          {/* Header */}
           <div className="mb-6">
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <Clipboard className="h-6 w-6" />
@@ -668,7 +668,7 @@ export default function BoardsPage() {
             <p className="text-muted-foreground mt-1">{t('admin.subtitle')}</p>
           </div>
 
-          {/* 통계 카드 */}
+          {/* Stats cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <StatCard
               icon={LayoutGrid}
@@ -695,7 +695,7 @@ export default function BoardsPage() {
             />
           </div>
 
-          {/* 검색 및 액션 */}
+          {/* Search and actions */}
           <Card className="mb-6">
             <CardContent className="p-4">
               <div className="flex flex-col sm:flex-row gap-4 justify-between">
@@ -872,7 +872,7 @@ export default function BoardsPage() {
                     </table>
                   </div>
 
-                  {/* 페이지네이션 */}
+                  {/* Pagination */}
                   {totalPages > 1 && (
                     <div className="flex justify-center items-center gap-2 mt-6">
                       <Button
@@ -903,7 +903,7 @@ export default function BoardsPage() {
         </main>
       </div>
 
-      {/* 모달 */}
+      {/* Modal */}
       <BoardModal
         isOpen={modalOpen}
         onClose={() => { setModalOpen(false); setEditingBoard(null); }}

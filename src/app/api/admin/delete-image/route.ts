@@ -24,19 +24,19 @@ export async function POST(request: NextRequest) {
 
     // 파일 경로 생성
     const filePath = path.join(process.cwd(), 'public', imageUrl)
-    // 썸네일 경로: xxx.webp -> xxx-thumb.webp
+    // Thumbnail path: xxx.webp -> xxx-thumb.webp
     const thumbPath = filePath.replace(/(\.(webp|gif))$/i, '-thumb.webp')
 
-    // 원본 이미지 삭제
+    // Delete the original image
     try {
       await unlink(filePath)
       console.log(`이미지 삭제: ${imageUrl}`)
     } catch (err) {
-      // 파일이 없어도 무시
+      // Ignore when the file does not exist
       console.log(`이미지 삭제 실패 (파일 없음): ${imageUrl}`)
     }
 
-    // 썸네일 이미지 삭제
+    // Delete the thumbnail image
     try {
       await unlink(thumbPath)
       console.log(`썸네일 삭제: ${thumbPath}`)

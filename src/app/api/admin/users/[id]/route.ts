@@ -112,7 +112,7 @@ export async function PUT(
       )
     }
 
-    // 관리자 최소 1명 유지 체크
+    // Guard: keep at least one admin
     if (existingUser.role === 'admin' && role !== 'admin') {
       const adminCount = await prisma.user.count({
         where: { role: 'admin', deletedAt: null }
@@ -236,7 +236,7 @@ export async function DELETE(
       return NextResponse.json({ success: true, message: '사용자가 영구 삭제되었습니다.' })
     }
 
-    // 소프트 삭제
+    // Soft delete
     const userToDelete = await prisma.user.findUnique({
       where: { id: userId, deletedAt: null }
     })
@@ -248,7 +248,7 @@ export async function DELETE(
       )
     }
 
-    // 관리자 최소 1명 유지 체크
+    // Guard: keep at least one admin
     if (userToDelete.role === 'admin') {
       const adminCount = await prisma.user.count({
         where: { role: 'admin', deletedAt: null }
@@ -261,7 +261,7 @@ export async function DELETE(
       }
     }
 
-    // 소프트 삭제: deletedAt에 현재 시간 설정
+    // Soft delete: set deletedAt to now
     await prisma.user.update({
       where: { id: userId },
       data: { deletedAt: new Date() }

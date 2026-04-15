@@ -284,7 +284,7 @@ export default function ContentsPage() {
     }
   }
 
-  // 선택 삭제
+  // Delete selected
   const handleBulkDelete = async () => {
     const selectedIds = contents.filter(c => c.selected).map(c => c.id)
     if (selectedIds.length === 0) {
@@ -309,26 +309,26 @@ export default function ContentsPage() {
         alert(data.error || t('deleteFailed'))
       }
     } catch (error) {
-      console.error('일괄 삭제 에러:', error)
+      console.error('bulk delete error:', error)
       alert(t('deleteError'))
     }
   }
 
-  // 전체 선택
+  // Select all
   const handleSelectAll = () => {
     const newSelected = !selectedAll
     setSelectedAll(newSelected)
     setContents(contents.map(c => ({ ...c, selected: newSelected })))
   }
 
-  // 개별 선택
+  // Select one
   const handleSelect = (id: number) => {
     setContents(contents.map(c =>
       c.id === id ? { ...c, selected: !c.selected } : c
     ))
   }
 
-  // 검색
+  // Search
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     setPage(1)
@@ -340,7 +340,7 @@ export default function ContentsPage() {
       <div className="flex">
         <Sidebar activeMenu="contents" />
         <main className="flex-1 lg:ml-0 p-6">
-          {/* 헤더 */}
+          {/* Header */}
           <div className="mb-6">
             <h1 className="text-2xl font-bold flex items-center gap-2">
               <FileEdit className="h-6 w-6" />
@@ -349,7 +349,7 @@ export default function ContentsPage() {
             <p className="text-muted-foreground mt-1">{t('headerDesc')}</p>
           </div>
 
-          {/* 검색 및 액션 */}
+          {/* Search and actions */}
           <Card className="mb-6">
             <CardContent className="p-4">
               <div className="flex flex-col sm:flex-row gap-4 justify-between">
@@ -501,7 +501,7 @@ export default function ContentsPage() {
                     </table>
                   </div>
 
-                  {/* 페이지네이션 */}
+                  {/* Pagination */}
                   {totalPages > 1 && (
                     <div className="flex justify-center items-center gap-2 mt-6">
                       <Button
@@ -532,7 +532,7 @@ export default function ContentsPage() {
         </main>
       </div>
 
-      {/* 모달 */}
+      {/* Modal */}
       <ContentModal
         isOpen={modalOpen}
         onClose={() => { setModalOpen(false); setEditingContent(null); }}

@@ -8,7 +8,7 @@ import { getAuthUser } from '@/lib/auth'
 // Path Traversal 방지: 안전한 경로 문자만 허용 (영숫자, 하이픈, 언더스코어)
 const SAFE_PATH_SEGMENT = /^[a-zA-Z0-9_-]+$/
 
-// 허용 이미지 타입
+// Allowed image types
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
 const MAX_SIZE = 2 * 1024 * 1024 // 2MB (리사이징 전)
 const MAX_WIDTH = 1200 // 최대 너비
@@ -18,7 +18,7 @@ const THUMB_QUALITY = 70 // 썸네일 압축 품질
 
 export async function POST(request: NextRequest) {
   try {
-    // 로그인 확인
+    // Login check
     const user = await getAuthUser()
     if (!user) {
       return NextResponse.json(
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 파일 타입 검증
+    // Validate file type
     if (!ALLOWED_TYPES.includes(file.type)) {
       return NextResponse.json(
         { error: 'JPG, PNG, GIF, WebP 파일만 업로드 가능합니다.' },
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 파일 크기 검증
+    // Validate file size
     if (file.size > MAX_SIZE) {
       return NextResponse.json(
         { error: '파일 크기는 2MB 이하여야 합니다.' },
@@ -110,12 +110,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 디렉토리 생성
+    // Create directory
     if (!existsSync(uploadDir)) {
       await mkdir(uploadDir, { recursive: true })
     }
 
-    // 이미지 리사이징 및 WebP 변환
+    // Resize and convert to WebP
     const bytes = await file.arrayBuffer()
     const inputBuffer = Buffer.from(bytes)
 
@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
     const thumbPath = path.join(uploadDir, thumbFilename)
     await sharp(thumbBuffer).toFile(thumbPath)
 
-    // URL 반환
+    // Return URL
     const url = `${urlPath}/${outputFilename}`
     const thumbnailUrl = `${urlPath}/${thumbFilename}`
 

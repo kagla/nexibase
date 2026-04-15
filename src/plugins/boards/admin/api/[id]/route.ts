@@ -37,7 +37,7 @@ export async function GET(
       board
     })
   } catch (error) {
-    console.error('게시판 조회 에러:', error)
+    console.error('failed to fetch board:', error)
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }
@@ -45,7 +45,7 @@ export async function GET(
   }
 }
 
-// 게시판 수정
+// Edit board
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -112,8 +112,8 @@ export async function PUT(
       }
     }
 
-    // 게시판 업데이트
-    // 글쓰기/댓글쓰기는 항상 회원만 가능 (비회원 글쓰기는 이름/비번 필드가 필요하므로 지원하지 않음)
+    // Update board
+    // Posting and commenting are member-only (guest posting requires name/password fields and is not supported)
     const updatedBoard = await prisma.board.update({
       where: { id: boardId },
       data: {
@@ -151,7 +151,7 @@ export async function PUT(
   }
 }
 
-// 게시판 삭제
+// Delete board
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -177,7 +177,7 @@ export async function DELETE(
       )
     }
 
-    // 게시판 삭제 (연관된 posts, comments, reactions는 CASCADE로 자동 삭제)
+    // Delete the board (related posts, comments, and reactions cascade automatically)
     await prisma.board.delete({
       where: { id: boardId }
     })
@@ -188,7 +188,7 @@ export async function DELETE(
     })
 
   } catch (error) {
-    console.error('게시판 삭제 에러:', error)
+    console.error('failed to delete board:', error)
     return NextResponse.json(
       { error: '서버 오류가 발생했습니다.' },
       { status: 500 }
