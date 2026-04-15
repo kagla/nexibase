@@ -58,7 +58,7 @@ export async function GET(
       ]
     }
 
-    // 정렬 조건
+    // Sort 조건
     let orderBy: Record<string, string>[] = []
     switch (board.sortOrder) {
       case 'popular':
