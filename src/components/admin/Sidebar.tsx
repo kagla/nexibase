@@ -101,7 +101,7 @@ const coreMenuItems = [
   { id: "settings", labelKey: "settings", icon: Settings, path: "/admin/settings" },
   { id: "plugins", labelKey: "plugins", icon: Puzzle, path: "/admin/plugins" },
   { id: "menus", labelKey: "menus", icon: MenuIcon, path: "/admin/menus" },
-  { id: "home-widgets", labelKey: "homeWidgets", icon: LayoutGrid, path: "/admin/home-widgets" },
+  { id: "pages", labelKey: "pages", icon: LayoutGrid, path: "/admin/pages" },
 ] as const
 
 // Returns cached user info (session-storage backed)
