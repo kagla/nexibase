@@ -10,6 +10,7 @@ import type { WidgetEditorProps } from './index'
 
 export default function RichTextEditor({ settings, onChange }: WidgetEditorProps) {
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit,
       LinkExtension.configure({ openOnClick: false }),
