@@ -3,38 +3,40 @@ import { prisma } from '@/lib/prisma'
 import { pluginManifest } from '@/plugins/_generated'
 import { isPluginEnabled } from '@/lib/plugins'
 
-// GET /api/home-widgets — active widgets by zone, sorted
+// GET /api/home-widgets — backward-compatible: returns Home page widgets grouped by zone
 export async function GET() {
   try {
-    const allWidgets = await prisma.homeWidget.findMany({
-      where: { isActive: true },
-      orderBy: [{ zone: 'asc' }, { sortOrder: 'asc' }],
+    const homePage = await prisma.widgetPage.findUnique({
+      where: { slug: '' },
+      include: {
+        widgets: {
+          where: { isActive: true },
+          orderBy: [{ zone: 'asc' }, { sortOrder: 'asc' }],
+        },
+      },
     })
 
-    // Build set of disabled plugin folder names
+    if (!homePage) {
+      return NextResponse.json({ widgets: {} })
+    }
+
     const disabledFolders = new Set<string>()
     for (const [folder] of Object.entries(pluginManifest)) {
       const enabled = await isPluginEnabled(folder)
-      if (!enabled) {
-        disabledFolders.add(folder)
-      }
+      if (!enabled) disabledFolders.add(folder)
     }
 
-    // Filter out widgets belonging to disabled plugins
-    const widgets = allWidgets.filter(widget => {
+    const widgets = homePage.widgets.filter(widget => {
+      if (widget.widgetType === 'content') return true
       return !Array.from(disabledFolders).some(folder =>
         widget.widgetKey.startsWith(`${folder}-`)
       )
     })
 
-    // Group by zone
     const grouped: Record<string, typeof widgets> = {}
     for (const widget of widgets) {
       if (!grouped[widget.zone]) grouped[widget.zone] = []
-      grouped[widget.zone].push({
-        ...widget,
-        settings: widget.settings ? widget.settings : null,
-      })
+      grouped[widget.zone].push(widget)
     }
 
     return NextResponse.json({ widgets: grouped })
