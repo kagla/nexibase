@@ -31,7 +31,7 @@ import {
 } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Pencil, Trash2, Loader2 } from "lucide-react"
+import { Plus, Pencil, Trash2, Loader2, ExternalLink } from "lucide-react"
 
 interface PageItem {
   id: number
@@ -215,7 +215,8 @@ export default function AdminPagesPage() {
                             rel="noopener noreferrer"
                             className="text-muted-foreground hover:text-primary hover:underline"
                           >
-                            {isHome(page) ? "/" : `/${page.slug}`} ↗
+                            {isHome(page) ? "/" : `/${page.slug}`}
+                            <ExternalLink className="inline h-3 w-3 ml-1" />
                           </a>
                         </TableCell>
                         <TableCell>
