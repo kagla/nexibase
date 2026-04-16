@@ -951,17 +951,35 @@ export default function PageEditor({
               onDragStart={handleDragStart}
               onDragEnd={handleDragEnd}
             >
-              <div className="space-y-2">
-                {zones.map((zone) => (
-                  <ZonePanel
-                    key={zone}
-                    zone={zone}
-                    widgets={widgetsByZone(zone)}
-                    selectedId={selectedId}
-                    onSelect={setSelectedId}
-                  />
-                ))}
-              </div>
+              {page.layoutTemplate === "with-sidebar" ? (
+                <div className="space-y-2">
+                  <div className="grid grid-cols-12 gap-2">
+                    <div className="col-span-3">
+                      <ZonePanel zone="left" widgets={widgetsByZone("left")} selectedId={selectedId} onSelect={setSelectedId} />
+                    </div>
+                    <div className="col-span-6 space-y-2">
+                      <ZonePanel zone="top" widgets={widgetsByZone("top")} selectedId={selectedId} onSelect={setSelectedId} />
+                      <ZonePanel zone="center" widgets={widgetsByZone("center")} selectedId={selectedId} onSelect={setSelectedId} />
+                      <ZonePanel zone="bottom" widgets={widgetsByZone("bottom")} selectedId={selectedId} onSelect={setSelectedId} />
+                    </div>
+                    <div className="col-span-3">
+                      <ZonePanel zone="right" widgets={widgetsByZone("right")} selectedId={selectedId} onSelect={setSelectedId} />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {zones.map((zone) => (
+                    <ZonePanel
+                      key={zone}
+                      zone={zone}
+                      widgets={widgetsByZone(zone)}
+                      selectedId={selectedId}
+                      onSelect={setSelectedId}
+                    />
+                  ))}
+                </div>
+              )}
 
               <DragOverlay>
                 {activeWidget ? (
