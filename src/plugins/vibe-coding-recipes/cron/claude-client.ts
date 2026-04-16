@@ -16,13 +16,15 @@ export async function callClaude(
 
   const model = process.env.VIBE_RECIPES_CLAUDE_MODEL || 'claude-sonnet-4-5-20250929'
 
-  const response = await client.messages.create({
+  const stream = await client.messages.stream({
     model,
-    max_tokens: 32768,
+    max_tokens: 16384,
     temperature: 0.8,
     system: systemPrompt,
     messages: [{ role: 'user', content: userPrompt }],
   })
+
+  const response = await stream.finalMessage()
 
   const textBlock = response.content.find((b) => b.type === 'text')
   if (!textBlock || textBlock.type !== 'text') {
