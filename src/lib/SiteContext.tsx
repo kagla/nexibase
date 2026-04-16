@@ -37,6 +37,7 @@ interface MenuItem {
 interface WidgetData {
   id: number
   widgetKey: string
+  widgetType?: string
   zone: string
   title: string
   settings: string | null
