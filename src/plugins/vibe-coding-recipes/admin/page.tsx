@@ -128,7 +128,7 @@ function RecipesTab() {
       if (difficulty) params.set('difficulty', difficulty)
       if (type) params.set('type', type)
 
-      const res = await fetch(`/api/vibe-coding-recipes/admin/api?${params}`)
+      const res = await fetch(`/api/admin/vibe-coding-recipes?${params}`)
       const data = await res.json()
       if (data.success) {
         setRecipes(data.recipes)
@@ -145,7 +145,7 @@ function RecipesTab() {
 
   const handleDelete = async (id: number) => {
     if (!confirm(t('deleteConfirm'))) return
-    const res = await fetch(`/api/vibe-coding-recipes/admin/api/${id}`, { method: 'DELETE' })
+    const res = await fetch(`/api/admin/vibe-coding-recipes/${id}`, { method: 'DELETE' })
     if (res.ok) {
       fetchRecipes(pagination.page)
     } else {
@@ -156,7 +156,7 @@ function RecipesTab() {
   const handleGenerate = async (genDifficulty: string, genType: string) => {
     setGenerating(true)
     try {
-      const res = await fetch('/api/vibe-coding-recipes/admin/api/generate', {
+      const res = await fetch('/api/admin/vibe-coding-recipes/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ difficulty: genDifficulty, type: genType }),
@@ -175,7 +175,7 @@ function RecipesTab() {
   }
 
   const handleViewDetail = async (id: number) => {
-    const res = await fetch(`/api/vibe-coding-recipes/admin/api/${id}`)
+    const res = await fetch(`/api/admin/vibe-coding-recipes/${id}`)
     const data = await res.json()
     if (data.success) setDetail(data.recipe)
   }
@@ -317,7 +317,7 @@ function LogsTab() {
       const params = new URLSearchParams({ page: String(page), limit: '30' })
       if (statusFilter) params.set('status', statusFilter)
 
-      const res = await fetch(`/api/vibe-coding-recipes/admin/api/logs?${params}`)
+      const res = await fetch(`/api/admin/vibe-coding-recipes/logs?${params}`)
       const data = await res.json()
       if (data.success) {
         setLogs(data.logs)
