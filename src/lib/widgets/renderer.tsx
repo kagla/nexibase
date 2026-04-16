@@ -1,10 +1,12 @@
 "use client"
 
 import { widgetRegistry } from './registry'
+import { contentRenderers } from './content-renderers'
 
 interface WidgetData {
   id: number
   widgetKey: string
+  widgetType?: string
   zone: string
   title: string
   settings: string | null
@@ -26,21 +28,19 @@ export default function WidgetRenderer({ zone, widgets }: WidgetRendererProps) {
 
   if (zoneWidgets.length === 0) return null
 
-  // Sidebar zones always stack vertically (colSpan ignored)
   const isSidebar = zone === 'left' || zone === 'right' || zone === 'sidebar'
-
-  // Stack simply when every widget is full-width (colSpan 12) or when we are in a sidebar zone
   const allFullWidth = isSidebar || zoneWidgets.every(w => w.colSpan >= 12)
 
   if (allFullWidth) {
     return (
       <div className="space-y-4">
-        {zoneWidgets.map((widget) => renderWidget(widget))}
+        {zoneWidgets.map((widget) => (
+          <div key={widget.id}>{renderWidgetContent(widget)}</div>
+        ))}
       </div>
     )
   }
 
-  // Mixed widths → 12-column grid (mobile: full-width stack; md+: apply configured span)
   const MD_SPAN_CLASS: Record<number, string> = {
     1: 'md:col-span-1', 2: 'md:col-span-2', 3: 'md:col-span-3',
     4: 'md:col-span-4', 5: 'md:col-span-5', 6: 'md:col-span-6',
@@ -62,22 +62,7 @@ export default function WidgetRenderer({ zone, widgets }: WidgetRendererProps) {
   )
 }
 
-function renderWidget(widget: WidgetData) {
-  return (
-    <div key={widget.id}>
-      {renderWidgetContent(widget)}
-    </div>
-  )
-}
-
 function renderWidgetContent(widget: WidgetData) {
-  const definition = widgetRegistry[widget.widgetKey]
-  if (!definition) {
-    console.warn(`widget key not in the registry: ${widget.widgetKey}`)
-    return null
-  }
-
-  const Component = definition.component
   let settings: Record<string, unknown> = {}
   try {
     settings = widget.settings ? JSON.parse(widget.settings) : {}
@@ -85,5 +70,19 @@ function renderWidgetContent(widget: WidgetData) {
     settings = {}
   }
 
-  return <Component settings={settings} />
+  if (widget.widgetType === 'content') {
+    const Renderer = contentRenderers[widget.widgetKey]
+    if (!Renderer) {
+      console.warn(`unknown content widget type: ${widget.widgetKey}`)
+      return null
+    }
+    return <Renderer settings={settings} />
+  }
+
+  const definition = widgetRegistry[widget.widgetKey]
+  if (!definition) {
+    console.warn(`widget key not in the registry: ${widget.widgetKey}`)
+    return null
+  }
+  return <definition.component settings={settings} />
 }
