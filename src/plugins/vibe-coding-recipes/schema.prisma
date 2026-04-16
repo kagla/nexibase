@@ -1,0 +1,42 @@
+// src/plugins/vibe-coding-recipes/schema.prisma
+model VibeRecipe {
+  id            Int      @id @default(autoincrement())
+  slug          String   @unique @db.VarChar(200)
+  difficulty    String   @db.VarChar(20)
+  type          String   @db.VarChar(30)
+
+  titleEn       String   @db.VarChar(300)
+  descriptionEn String   @db.Text
+  constraintsEn Json
+  stepsEn       Json
+
+  titleKo       String   @db.VarChar(300)
+  descriptionKo String   @db.Text
+  constraintsKo Json
+  stepsKo       Json
+
+  generatedAt   DateTime @default(now())
+  model         String   @db.VarChar(100)
+
+  @@index([difficulty])
+  @@index([type])
+  @@index([generatedAt])
+  @@map("vibe_recipes")
+}
+
+model VibeRecipeGenerationLog {
+  id           Int       @id @default(autoincrement())
+  startedAt    DateTime  @default(now())
+  finishedAt   DateTime?
+  status       String    @db.VarChar(20)
+  difficulty   String    @db.VarChar(20)
+  type         String    @db.VarChar(30)
+  slot         Int
+  recipeId     Int?
+  errorMessage String?   @db.Text
+  tokensUsed   Int?
+
+  @@index([startedAt])
+  @@index([status])
+  @@map("vibe_recipe_generation_logs")
+}
