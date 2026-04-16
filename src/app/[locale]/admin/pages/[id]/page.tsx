@@ -282,7 +282,7 @@ function AddWidgetDropdown({ onAdd, disabled }: AddWidgetDropdownProps) {
         Widget
       </Button>
       {open && (
-        <div className="absolute bottom-full mb-1 left-0 z-50 w-64 rounded-md border bg-popover shadow-md max-h-64 overflow-y-auto">
+        <div className="absolute top-full mt-1 left-0 z-50 w-64 rounded-md border bg-popover shadow-md max-h-64 overflow-y-auto">
           {keys.length === 0 ? (
             <p className="p-3 text-sm text-muted-foreground">No registry widgets</p>
           ) : (
@@ -344,7 +344,7 @@ function AddContentDropdown({ onAdd, disabled }: AddContentDropdownProps) {
         Content
       </Button>
       {open && (
-        <div className="absolute bottom-full mb-1 left-0 z-50 w-64 rounded-md border bg-popover shadow-md">
+        <div className="absolute top-full mt-1 left-0 z-50 w-64 rounded-md border bg-popover shadow-md">
           {CONTENT_WIDGET_TYPES.map((type) => (
             <button
               key={type.key}
@@ -954,6 +954,17 @@ export default function PageEditor({
         <div className="flex flex-1 overflow-hidden">
           {/* LEFT: Live Preview Panel */}
           <div className="flex-1 flex flex-col border-r">
+            {/* Add buttons — above zone layout */}
+            <div className="flex gap-2 p-3 border-b bg-card shrink-0">
+              <AddWidgetDropdown
+                onAdd={handleAddRegistryWidget}
+                disabled={saving}
+              />
+              <AddContentDropdown
+                onAdd={handleAddContentWidget}
+                disabled={saving}
+              />
+            </div>
             <div className="flex-1 overflow-y-auto p-4">
               <DndContext
                 sensors={sensors}
@@ -1000,18 +1011,6 @@ export default function PageEditor({
                   ) : null}
                 </DragOverlay>
               </DndContext>
-            </div>
-
-            {/* Add buttons — fixed at bottom, outside scroll container */}
-            <div className="flex gap-2 p-3 border-t bg-card shrink-0">
-              <AddWidgetDropdown
-                onAdd={handleAddRegistryWidget}
-                disabled={saving}
-              />
-              <AddContentDropdown
-                onAdd={handleAddContentWidget}
-                disabled={saving}
-              />
             </div>
           </div>
 
