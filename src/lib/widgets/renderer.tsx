@@ -35,7 +35,9 @@ export default function WidgetRenderer({ zone, widgets }: WidgetRendererProps) {
     return (
       <div className="space-y-4">
         {zoneWidgets.map((widget) => (
-          <div key={widget.id}>{renderWidgetContent(widget)}</div>
+          <div key={widget.id} className={slotMinHeightClass(widget)}>
+            {renderWidgetContent(widget)}
+          </div>
         ))}
       </div>
     )
@@ -53,13 +55,25 @@ export default function WidgetRenderer({ zone, widgets }: WidgetRendererProps) {
       {zoneWidgets.map((widget) => {
         const span = Math.min(Math.max(widget.colSpan || 12, 1), 12)
         return (
-          <div key={widget.id} className={`col-span-12 ${MD_SPAN_CLASS[span]}`}>
+          <div
+            key={widget.id}
+            className={`col-span-12 ${MD_SPAN_CLASS[span]} ${slotMinHeightClass(widget)}`}
+          >
             {renderWidgetContent(widget)}
           </div>
         )
       })}
     </div>
   )
+}
+
+// Reserve space per widget type to prevent layout shift while client-side
+// widgets fetch their data. Content widgets either size themselves from
+// settings (video via aspect-ratio, spacer via explicit height) or render
+// instantly, so they don't need a reservation.
+function slotMinHeightClass(widget: WidgetData): string {
+  if (widget.widgetType === 'content') return ''
+  return 'min-h-[140px]'
 }
 
 function renderWidgetContent(widget: WidgetData) {

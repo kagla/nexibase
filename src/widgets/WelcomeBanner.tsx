@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Sparkles, ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { useTranslations } from 'next-intl'
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface UserInfo {
   nickname: string | null
@@ -17,6 +18,7 @@ export default function WelcomeBanner() {
   const [siteName, setSiteName] = useState('NexiBase')
   const [siteDescription, setSiteDescription] = useState('')
   const [firstBoardSlug, setFirstBoardSlug] = useState('')
+  const [loading, setLoading] = useState(true)
 
   const fetchData = useCallback(async () => {
     try {
@@ -44,6 +46,8 @@ export default function WelcomeBanner() {
       }
     } catch (error) {
       console.error('WelcomeBanner fetch failed:', error)
+    } finally {
+      setLoading(false)
     }
   }, [])
 
@@ -55,6 +59,27 @@ export default function WelcomeBanner() {
     window.addEventListener('focus', handleFocus)
     return () => window.removeEventListener('focus', handleFocus)
   }, [fetchData])
+
+  if (loading) {
+    return (
+      <Card className="h-full bg-gradient-to-br from-primary/10 via-primary/5 to-background border-primary/20">
+        <CardContent className="p-6 h-full flex flex-col justify-between">
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <Skeleton className="h-5 w-5 rounded-full" />
+              <Skeleton className="h-4 w-16" />
+            </div>
+            <Skeleton className="h-8 w-3/4 mb-2" />
+            <Skeleton className="h-4 w-full" />
+          </div>
+          <div className="flex gap-2 mt-4">
+            <Skeleton className="h-9 w-28" />
+            <Skeleton className="h-9 w-24" />
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
 
   return (
     <Card className="h-full bg-gradient-to-br from-primary/10 via-primary/5 to-background border-primary/20">
