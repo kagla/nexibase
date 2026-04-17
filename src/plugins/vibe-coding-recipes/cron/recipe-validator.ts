@@ -76,36 +76,40 @@ export function validateRecipe(data: Record<string, unknown>): ValidatedRecipe {
   }
 }
 
-function concatStepsText(recipe: ValidatedRecipe): string {
-  return recipe.stepsEn
+function concatStepsText(steps: { prompt: string; expected: string }[]): string {
+  return steps
     .map((s) => `${s.prompt} ${s.expected}`)
     .join('\n')
     .toLowerCase()
 }
 
 export function validateRecipeCompleteness(recipe: ValidatedRecipe): void {
-  const haystack = concatStepsText(recipe)
+  const en = concatStepsText(recipe.stepsEn)
+  const ko = concatStepsText(recipe.stepsKo)
   const hasWidget = recipe.type === 'widget' || recipe.type === 'plugin_with_widget'
   const hasPlugin = recipe.type === 'plugin' || recipe.type === 'plugin_with_widget'
 
+  const hasSettingsSignature = (h: string) =>
+    h.includes('{ settings }') || h.includes('settings?:')
+
   if (hasWidget) {
-    if (!haystack.includes('.meta.ts')) {
+    if (!en.includes('.meta.ts') || !ko.includes('.meta.ts')) {
       throw new Error('Recipe is missing widget .meta.ts step')
     }
-    if (!haystack.includes('{ settings }') && !haystack.includes('settings?:')) {
+    if (!hasSettingsSignature(en) || !hasSettingsSignature(ko)) {
       throw new Error('Recipe is missing widget { settings } prop signature')
     }
   }
 
   if (hasPlugin) {
-    if (!haystack.includes('plugin.ts')) {
+    if (!en.includes('plugin.ts') || !ko.includes('plugin.ts')) {
       throw new Error('Recipe is missing plugin.ts step')
     }
   }
 
   if (recipe.difficulty === 'intermediate' && recipe.type === 'plugin') {
     for (const marker of ['schema.prisma', 'admin/', 'locales/']) {
-      if (!haystack.includes(marker)) {
+      if (!en.includes(marker) || !ko.includes(marker)) {
         console.warn(`[vibe-recipes] Intermediate plugin recipe missing marker: ${marker}`)
       }
     }
@@ -113,7 +117,7 @@ export function validateRecipeCompleteness(recipe: ValidatedRecipe): void {
 
   if (recipe.difficulty === 'advanced') {
     for (const marker of ['menus/', 'routes/']) {
-      if (!haystack.includes(marker)) {
+      if (!en.includes(marker) || !ko.includes(marker)) {
         console.warn(`[vibe-recipes] Advanced recipe missing marker: ${marker}`)
       }
     }
