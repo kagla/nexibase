@@ -33,10 +33,32 @@ Key rules:
 
 const WIDGET_ARCHITECTURE_CONTEXT = `## Nexibase Widget Architecture
 
-Widgets are plugin components that can be placed on any page via the admin widget editor.
-- Widget files live in src/plugins/<name>/widgets/<WidgetName>.tsx
-- Each widget is a React component that receives props from the widget config
-- Widgets are registered via the plugin scan system automatically`
+Widgets are plugin components placed on any page via the admin widget editor. Every widget is a PAIR of files in src/plugins/<name>/widgets/:
+
+1. <WidgetName>.tsx — the React component
+2. <WidgetName>.meta.ts — the registry entry (REQUIRED, not optional)
+
+If you omit .meta.ts, the plugin scan cannot register the widget and it will not appear in the admin widget editor.
+
+.meta.ts MUST export a default object with this exact shape:
+
+\`\`\`ts
+export default {
+  title: 'Human Readable Title',
+  defaultZone: 'right', // 'left' | 'right' | 'header' | 'footer' | 'main'
+  defaultColSpan: 4,
+  defaultRowSpan: 1,
+  settingsSchema: { /* default values keyed by setting name */ },
+}
+\`\`\`
+
+The widget component signature MUST be \`({ settings }: { settings?: {...} })\`. Individual props (e.g. \`{ city, apiKey }\`) are NOT supported — the renderer always passes a single \`settings\` object. Inside the component, destructure from settings with fallbacks:
+
+\`\`\`tsx
+const city = settings?.city ?? 'Seoul'
+\`\`\`
+
+Plugin scan runs at dev/build time (npm run dev triggers scripts/scan-plugins.js) and reads both files to register the widget.`
 
 export function buildSystemPrompt(): string {
   return SYSTEM_PROMPT
