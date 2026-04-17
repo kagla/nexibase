@@ -31,9 +31,13 @@ export async function shouldNotify(
   if (!PREFERENCE_CONTROLLED_TYPES.includes(type as NotificationTypeValue)) {
     return true
   }
-  const pref = await prisma.notificationPreference.findUnique({
-    where: { userId },
-  })
+  let pref
+  try {
+    pref = await prisma.notificationPreference.findUnique({ where: { userId } })
+  } catch (error) {
+    console.error('failed to read notification preference:', error)
+    return true
+  }
   if (!pref) return true
   switch (type) {
     case NotificationType.POST_COMMENT: return pref.postComment
@@ -51,9 +55,6 @@ export async function shouldEmail(
   userId: number,
   type: NotificationTypeValue | string,
 ): Promise<boolean> {
-  const pref = await prisma.notificationPreference.findUnique({
-    where: { userId },
-  })
   // Defaults when the row is absent. Keep in sync with schema defaults.
   const defaults: Record<string, boolean> = {
     [NotificationType.POST_COMMENT]: false,
@@ -61,6 +62,13 @@ export async function shouldEmail(
     [NotificationType.MENTION]: false,
     [NotificationType.ADMIN_MESSAGE]: true,
     [NotificationType.ORDER_STATUS]: true,
+  }
+  let pref
+  try {
+    pref = await prisma.notificationPreference.findUnique({ where: { userId } })
+  } catch (error) {
+    console.error('failed to read notification preference:', error)
+    return defaults[type] ?? false
   }
   if (!pref) return defaults[type] ?? false
   switch (type) {
