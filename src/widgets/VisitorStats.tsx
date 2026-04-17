@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Users, Activity } from "lucide-react"
 import type { VisitorStatsData } from "@/lib/gaTypes"
 import { useTranslations } from 'next-intl'
+import { Skeleton } from "@/components/ui/skeleton"
 
 const POLL_INTERVAL_MS = 120_000 // 120 seconds
 
@@ -56,8 +57,8 @@ export default function VisitorStats() {
 
   const formatNumber = (n: number) => n.toLocaleString()
 
-  const Skeleton = () => (
-    <div className="h-4 w-12 bg-muted animate-pulse rounded inline-block align-middle" />
+  const InlineSkeleton = () => (
+    <Skeleton className="h-4 w-12 inline-block align-middle" />
   )
 
   return (
@@ -75,7 +76,7 @@ export default function VisitorStats() {
           </div>
           <span className="text-sm text-muted-foreground">{t('now')}</span>
           <span className="ml-auto text-base font-bold text-green-700 dark:text-green-400">
-            {stats ? formatNumber(stats.online) : <Skeleton />}
+            {stats ? formatNumber(stats.online) : <InlineSkeleton />}
           </span>
         </div>
 
@@ -86,7 +87,7 @@ export default function VisitorStats() {
               {t('today')}
             </span>
             <span className="font-semibold">
-              {stats ? formatNumber(stats.today) : <Skeleton />}
+              {stats ? formatNumber(stats.today) : <InlineSkeleton />}
             </span>
           </div>
           <div className="flex items-center justify-between py-1 border-b">
@@ -95,7 +96,7 @@ export default function VisitorStats() {
               {t('yesterday')}
             </span>
             <span className="font-semibold">
-              {stats ? formatNumber(stats.yesterday) : <Skeleton />}
+              {stats ? formatNumber(stats.yesterday) : <InlineSkeleton />}
             </span>
           </div>
           <div className="flex items-center justify-between py-1">
@@ -104,7 +105,7 @@ export default function VisitorStats() {
               {t('last7days')}
             </span>
             <span className="font-semibold">
-              {stats ? formatNumber(stats.sevenDays) : <Skeleton />}
+              {stats ? formatNumber(stats.sevenDays) : <InlineSkeleton />}
             </span>
           </div>
         </div>

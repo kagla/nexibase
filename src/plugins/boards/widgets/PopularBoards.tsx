@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Flame } from "lucide-react"
 import Link from "next/link"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface Board {
   id: number
@@ -18,6 +19,7 @@ interface Board {
 export default function PopularBoards({ settings }: { settings?: Record<string, any> }) {
   const t = useTranslations('boards')
   const [boards, setBoards] = useState<Board[]>([])
+  const [loading, setLoading] = useState(true)
   const limit = settings?.limit || 5
 
   useEffect(() => {
@@ -30,10 +32,33 @@ export default function PopularBoards({ settings }: { settings?: Record<string, 
         }
       } catch (error) {
         console.error('PopularBoards fetch failed:', error)
+      } finally {
+        setLoading(false)
       }
     }
     fetchBoards()
   }, [limit])
+
+  if (loading) {
+    return (
+      <Card className="h-full">
+        <div className="border-b px-4 py-3">
+          <Skeleton className="h-5 w-36" />
+        </div>
+        <CardContent className="p-0">
+          <div className="divide-y">
+            {Array.from({ length: limit }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3 px-4 py-3">
+                <Skeleton className="w-6 h-6 rounded-lg shrink-0" />
+                <Skeleton className="h-4 flex-1" />
+                <Skeleton className="h-5 w-8 rounded-full shrink-0" />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
 
   if (boards.length === 0) return null
 
