@@ -20,7 +20,7 @@ export default function VideoEmbedRenderer({ settings }: { settings?: Record<str
     : `https://player.vimeo.com/video/${id}`
   return (
     <div
-      className="relative w-full overflow-hidden rounded-lg bg-muted"
+      className="relative w-full overflow-hidden rounded-lg bg-muted/60 animate-pulse"
       style={{ aspectRatio: ASPECT_RATIO[aspectRatio] ?? '16 / 9' }}
     >
       <iframe
@@ -30,6 +30,10 @@ export default function VideoEmbedRenderer({ settings }: { settings?: Record<str
         className="absolute inset-0 h-full w-full border-0"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         allowFullScreen
+        onLoad={(e) => {
+          const parent = e.currentTarget.parentElement
+          if (parent) parent.classList.remove('animate-pulse')
+        }}
       />
     </div>
   )
