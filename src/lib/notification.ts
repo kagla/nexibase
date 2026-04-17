@@ -143,7 +143,7 @@ export async function createOrderStatusNotification(
       where: { id: userId },
       select: { email: true, nickname: true }
     })
-    if (user?.email) {
+    if (user?.email && await shouldEmail(userId, NotificationType.ORDER_STATUS)) {
       sendOrderStatusEmail(user.email, user.nickname || '고객', orderNo, newStatus, trackingNumber)
     }
   } catch (error) {
@@ -174,7 +174,7 @@ export async function createOrderCompletedNotification(
       where: { id: userId },
       select: { email: true, nickname: true, name: true }
     })
-    if (user?.email && items) {
+    if (user?.email && items && await shouldEmail(userId, NotificationType.ORDER_STATUS)) {
       sendOrderCompletedEmail(
         user.email,
         user.name || user.nickname || '고객',
@@ -280,7 +280,7 @@ export async function createOrderCancelledNotification(
       where: { id: userId },
       select: { email: true, nickname: true, name: true }
     })
-    if (user?.email && cancelReason) {
+    if (user?.email && cancelReason && await shouldEmail(userId, NotificationType.ORDER_STATUS)) {
       sendOrderCancelledEmail(
         user.email,
         user.name || user.nickname || '고객',
