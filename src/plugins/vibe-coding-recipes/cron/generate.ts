@@ -7,7 +7,7 @@ import { PrismaClient } from '@prisma/client'
 import { resolveSlot } from './slot-resolver'
 import { buildSystemPrompt, buildUserPrompt } from './prompt-builder'
 import { callClaude } from './claude-client'
-import { parseClaudeResponse, validateRecipe, ensureUniqueSlug } from './recipe-validator'
+import { parseClaudeResponse, validateRecipe, validateRecipeCompleteness, ensureUniqueSlug } from './recipe-validator'
 
 async function main() {
   if (process.env.VIBE_RECIPES_ENABLED !== 'true') {
@@ -49,6 +49,7 @@ async function main() {
 
       const parsed = parseClaudeResponse(response.text)
       const validated = validateRecipe(parsed)
+      validateRecipeCompleteness(validated)
       const uniqueSlug = await ensureUniqueSlug(prisma, validated.slug)
 
       const model = process.env.VIBE_RECIPES_CLAUDE_MODEL || 'claude-sonnet-4-5-20250929'
