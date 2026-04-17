@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Clock, ArrowRight, Eye, MessageSquare } from "lucide-react"
 import Link from "next/link"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface LatestPost {
   id: number
@@ -22,6 +23,7 @@ export default function LatestPosts({ settings }: { settings?: Record<string, an
   const t = useTranslations('boards')
   const locale = useLocale()
   const [posts, setPosts] = useState<LatestPost[]>([])
+  const [loading, setLoading] = useState(true)
   const limit = settings?.limit || 6
 
   useEffect(() => {
@@ -34,6 +36,8 @@ export default function LatestPosts({ settings }: { settings?: Record<string, an
         }
       } catch (error) {
         console.error('LatestPosts fetch failed:', error)
+      } finally {
+        setLoading(false)
       }
     }
     fetchPosts()
@@ -51,6 +55,36 @@ export default function LatestPosts({ settings }: { settings?: Record<string, an
     if (diffHours < 24) return t('hoursAgo', { hours: diffHours })
     if (diffDays < 7) return t('daysAgo', { days: diffDays })
     return date.toLocaleDateString(locale)
+  }
+
+  if (loading) {
+    return (
+      <Card className="h-full">
+        <div className="border-b px-4 py-3 flex items-center justify-between">
+          <Skeleton className="h-5 w-32" />
+          <Skeleton className="h-4 w-12" />
+        </div>
+        <CardContent className="p-0">
+          <div className="divide-y">
+            {Array.from({ length: limit }).map((_, i) => (
+              <div key={i} className="px-4 py-3 flex items-start gap-3">
+                <div className="flex-1 min-w-0 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-5 w-14 shrink-0" />
+                    <Skeleton className="h-4 flex-1" />
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="h-3 w-16" />
+                    <Skeleton className="h-3 w-10" />
+                  </div>
+                </div>
+                <Skeleton className="h-3 w-12 shrink-0" />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (
