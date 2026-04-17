@@ -234,6 +234,38 @@ function SettingsSchemaForm({ schema, settings, onChange }: SettingsSchemaFormPr
       {keys.map((key) => {
         const val = settings[key] ?? schema[key]
         const isNumber = typeof schema[key] === "number"
+        const isBool = typeof schema[key] === "boolean"
+        const lowerKey = key.toLowerCase()
+        const isDateTime = /date|time|at$/.test(lowerKey) && !isNumber && !isBool
+        const inputType = isNumber ? "number" : isDateTime ? "datetime-local" : "text"
+
+        // datetime-local wants "YYYY-MM-DDTHH:mm" in LOCAL time (no timezone)
+        let displayValue = String(val ?? "")
+        if (isDateTime && val) {
+          const d = new Date(String(val))
+          if (!isNaN(d.getTime())) {
+            const pad = (n: number) => String(n).padStart(2, "0")
+            displayValue = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+          }
+        }
+
+        if (isBool) {
+          return (
+            <div key={key} className="flex items-center gap-2">
+              <input
+                id={`schema-${key}`}
+                type="checkbox"
+                checked={Boolean(val)}
+                onChange={(e) => onChange({ ...settings, [key]: e.target.checked })}
+                className="h-4 w-4"
+              />
+              <Label htmlFor={`schema-${key}`} className="text-sm">
+                {humanizeKey(key)}
+              </Label>
+            </div>
+          )
+        }
+
         return (
           <div key={key} className="space-y-1">
             <Label htmlFor={`schema-${key}`} className="text-sm">
@@ -241,10 +273,13 @@ function SettingsSchemaForm({ schema, settings, onChange }: SettingsSchemaFormPr
             </Label>
             <Input
               id={`schema-${key}`}
-              type={isNumber ? "number" : "text"}
-              value={String(val ?? "")}
+              type={inputType}
+              lang={isDateTime ? "en" : undefined}
+              value={displayValue}
               onChange={(e) => {
-                const newVal = isNumber ? Number(e.target.value) : e.target.value
+                let newVal: unknown = e.target.value
+                if (isNumber) newVal = Number(e.target.value)
+                else if (isDateTime) newVal = e.target.value ? new Date(e.target.value).toISOString() : ""
                 onChange({ ...settings, [key]: newVal })
               }}
             />
