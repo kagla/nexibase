@@ -896,22 +896,23 @@ export default function BoardPostPage() {
 
             {/* Edit / delete */}
             {canEdit && (
-              <div className="flex justify-end gap-2 pt-4 border-t">
+              <div className="flex justify-end gap-2 pt-3">
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
                   onClick={() => router.push(`/boards/${slug}/${postId}/edit`)}
+                  className="text-muted-foreground hover:text-foreground"
                 >
-                  <Pencil className="h-4 w-4 mr-1" />
+                  <Pencil className="h-3.5 w-3.5 mr-1" />
                   {t('edit')}
                 </Button>
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
                   onClick={handleDelete}
-                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                  className="text-muted-foreground hover:text-destructive"
                 >
-                  <Trash2 className="h-4 w-4 mr-1" />
+                  <Trash2 className="h-3.5 w-3.5 mr-1" />
                   {t('delete')}
                 </Button>
               </div>
