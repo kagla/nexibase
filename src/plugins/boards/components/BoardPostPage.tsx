@@ -1150,10 +1150,14 @@ export default function BoardPostPage() {
 
               {/* Write a new comment */}
               {canComment && !replyTo ? (
-                <div>
+                <div className="mt-6 rounded-2xl bg-muted/40 border border-border p-3">
                   <MiniEditor content={commentText} onChange={setCommentText} placeholder={t('comment.placeholder')} />
                   <div className="flex justify-end mt-2">
-                    <Button size="sm" onClick={(e) => { setReplyTo(null); handleCommentSubmit(e) }} disabled={submittingComment || !commentText || commentText === '<p></p>'}>
+                    <Button
+                      size="sm"
+                      onClick={(e) => { setReplyTo(null); handleCommentSubmit(e) }}
+                      disabled={submittingComment || !commentText || commentText === '<p></p>'}
+                    >
                       {submittingComment ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Send className="h-4 w-4 mr-1" />}
                       {t('comment.write')}
                     </Button>
