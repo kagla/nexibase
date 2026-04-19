@@ -11,8 +11,6 @@ import { UserLayout } from "@/components/layout/UserLayout"
 import { UserNickname } from "@/components/UserNickname"
 import {
   Loader2,
-  ChevronLeft,
-  ChevronRight,
   Eye,
   ThumbsUp,
   Lock,
