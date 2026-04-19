@@ -121,7 +121,6 @@ model NotificationPreference {
   emailPostComment  Boolean  @default(false)
   emailCommentReply Boolean  @default(false)
   emailMention      Boolean  @default(false)
-  emailAdminMessage Boolean  @default(true)
   emailOrderStatus    Boolean  @default(true)
   emailDirectMessage  Boolean  @default(false)
   updatedAt           DateTime @updatedAt

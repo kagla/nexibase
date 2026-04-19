@@ -60,7 +60,6 @@ export async function shouldEmail(
     [NotificationType.POST_COMMENT]: false,
     [NotificationType.COMMENT_REPLY]: false,
     [NotificationType.MENTION]: false,
-    [NotificationType.ADMIN_MESSAGE]: true,
     [NotificationType.DIRECT_MESSAGE]: false,
     [NotificationType.ORDER_STATUS]: true,
   }
@@ -76,7 +75,6 @@ export async function shouldEmail(
     case NotificationType.POST_COMMENT: return pref.emailPostComment
     case NotificationType.COMMENT_REPLY: return pref.emailCommentReply
     case NotificationType.MENTION: return pref.emailMention
-    case NotificationType.ADMIN_MESSAGE: return pref.emailAdminMessage
     case NotificationType.DIRECT_MESSAGE: return pref.emailDirectMessage
     case NotificationType.ORDER_STATUS: return pref.emailOrderStatus
     default: return defaults[type] ?? false
@@ -516,31 +514,3 @@ export async function createMentionNotification(params: MentionParams) {
   })
 }
 
-interface AdminMessageParams {
-  userId: number
-  title: string
-  message: string
-  link?: string
-}
-
-/**
- * Admin free-form notification. Bypasses in-app preferences (see
- * shouldNotify). Caller is responsible for sending the email separately
- * after consulting shouldEmail + user's email.
- */
-export async function createAdminMessageNotification(params: AdminMessageParams) {
-  try {
-    return await prisma.notification.create({
-      data: {
-        userId: params.userId,
-        type: NotificationType.ADMIN_MESSAGE,
-        title: params.title,
-        message: params.message,
-        link: params.link || null,
-      },
-    })
-  } catch (error) {
-    console.error('failed to create admin notification:', error)
-    return null
-  }
-}
