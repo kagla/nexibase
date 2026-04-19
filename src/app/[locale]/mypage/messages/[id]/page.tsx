@@ -4,7 +4,7 @@ import { use, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { ConversationView } from "@/components/messaging/ConversationView"
 
-interface Me { id: number }
+interface Me { id: number; nickname: string; image: string | null }
 
 export default function ThreadPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -24,7 +24,7 @@ export default function ThreadPage({ params }: { params: Promise<{ id: string }>
   if (!me || !Number.isFinite(conversationId)) return null
   return (
     <div className="max-w-3xl mx-auto w-full">
-      <ConversationView conversationId={conversationId} selfId={me.id} />
+      <ConversationView conversationId={conversationId} self={me} />
     </div>
   )
 }

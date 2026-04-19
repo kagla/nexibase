@@ -2,12 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import { useTranslations, useLocale } from "next-intl"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { ChevronLeft, EyeOff, Eye, Send } from "lucide-react"
-import { formatDistanceToNow } from "date-fns"
-import { ko, enUS } from "date-fns/locale"
+import { Thread, ThreadItemData } from "@/components/thread/Thread"
 
 interface Message {
   id: number
@@ -22,17 +21,21 @@ interface ConversationMeta {
   hiddenByMe: boolean
 }
 
-interface Props {
-  conversationId: number
-  selfId: number
+interface Self {
+  id: number
+  nickname: string
+  image: string | null
 }
 
-export function ConversationView({ conversationId, selfId }: Props) {
+interface Props {
+  conversationId: number
+  self: Self
+}
+
+export function ConversationView({ conversationId, self }: Props) {
   const t = useTranslations('mypage.messagesThread')
   const tMessages = useTranslations('mypage.messages')
   const tc = useTranslations('common')
-  const locale = useLocale()
-  const dfLocale = locale === 'ko' ? ko : enUS
   const router = useRouter()
 
   const [meta, setMeta] = useState<ConversationMeta | null>(null)
@@ -66,37 +69,20 @@ export function ConversationView({ conversationId, selfId }: Props) {
       setHasMore(data.hasMore)
       setLoading(false)
       markRead()
-      queueMicrotask(() => {
-        const el = scrollRef.current
-        if (el) el.scrollTo({ top: el.scrollHeight })
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const el = scrollRef.current
+          if (el) el.scrollTo({ top: el.scrollHeight })
+        })
       })
     })()
     return () => { cancelled = true }
   }, [conversationId, markRead, router])
 
-  // polling for new messages
-  useEffect(() => {
-    if (loading) return
-    const interval = setInterval(async () => {
-      if (messages.length === 0) return
-      const lastId = messages[messages.length - 1].id
-      const res = await fetch(`/api/messages/${conversationId}?after=${lastId}`)
-      if (!res.ok) return
-      const data = await res.json()
-      if (data.messages.length > 0) {
-        setMessages(prev => [...prev, ...data.messages])
-        markRead()
-        queueMicrotask(() => {
-          const el = scrollRef.current
-          if (!el) return
-          // Only auto-scroll if we're near the bottom
-          const distance = el.scrollHeight - el.scrollTop - el.clientHeight
-          if (distance < 200) el.scrollTo({ top: el.scrollHeight })
-        })
-      }
-    }, 5000)
-    return () => clearInterval(interval)
-  }, [loading, messages, conversationId, markRead])
+  // No polling — traditional 쪽지 style. New messages appear only on
+  // page mount or after the user sends one (see send()). Header Bell
+  // notification count updates on route change, which is the cue that
+  // a new message has arrived.
 
   // load earlier when the top sentinel appears
   useEffect(() => {
@@ -116,10 +102,12 @@ export function ConversationView({ conversationId, selfId }: Props) {
       const data = await res.json()
       setMessages(prev => [...data.messages, ...prev])
       setHasMore(data.hasMore)
-      queueMicrotask(() => {
-        if (!el) return
-        const diff = el.scrollHeight - prevScrollHeight
-        el.scrollTop = diff
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (!el) return
+          const diff = el.scrollHeight - prevScrollHeight
+          el.scrollTop = diff
+        })
       })
     })
     obs.observe(sentinel)
@@ -140,8 +128,8 @@ export function ConversationView({ conversationId, selfId }: Props) {
       })
       if (!res.ok) return
       setDraft('')
-      // Let the next poll pick it up (no need to fetch immediately)
-      // but bump faster by re-polling after 300ms
+      // One-shot refetch to pick up the canonical server row (with id +
+      // createdAt) for the message we just sent. Not polling.
       setTimeout(async () => {
         const lastId = messages[messages.length - 1]?.id ?? 0
         const r2 = await fetch(`/api/messages/${conversationId}?after=${lastId}`)
@@ -149,9 +137,11 @@ export function ConversationView({ conversationId, selfId }: Props) {
           const d2 = await r2.json()
           if (d2.messages.length > 0) {
             setMessages(prev => [...prev, ...d2.messages])
-            queueMicrotask(() => {
-              const el = scrollRef.current
-              if (el) el.scrollTo({ top: el.scrollHeight })
+            requestAnimationFrame(() => {
+              requestAnimationFrame(() => {
+                const el = scrollRef.current
+                if (el) el.scrollTo({ top: el.scrollHeight })
+              })
             })
           }
         }
@@ -176,8 +166,18 @@ export function ConversationView({ conversationId, selfId }: Props) {
     return <div className="py-12 text-center text-muted-foreground">{tc('loading')}</div>
   }
 
+  // Map Message → ThreadItemData for the generic Thread component.
+  const threadItems: ThreadItemData[] = messages.map(m => ({
+    id: m.id,
+    author: m.senderId === self.id
+      ? { id: self.id, nickname: self.nickname, image: self.image }
+      : { id: meta.opponent.id, nickname: meta.opponent.nickname, image: meta.opponent.image },
+    content: m.content,
+    createdAt: m.createdAt,
+  }))
+
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)]">
+    <div className="flex flex-col h-[calc(100vh-64px)] md:h-[70vh] md:max-h-[720px] md:border md:rounded-lg md:overflow-hidden md:my-4">
       {/* Header */}
       <div className="flex items-center justify-between gap-2 p-3 border-b">
         <div className="flex items-center gap-2 min-w-0">
@@ -198,32 +198,17 @@ export function ConversationView({ conversationId, selfId }: Props) {
         </Button>
       </div>
 
-      {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
-        {hasMore && <div ref={topSentinelRef} className="text-center text-xs text-muted-foreground py-2">{tc('loading')}</div>}
-        {messages.map(m => {
-          const mine = m.senderId === selfId
-          return (
-            <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
-              <div className="max-w-[75%]">
-                <div
-                  className={`px-3 py-2 rounded-2xl text-sm whitespace-pre-wrap break-words ${
-                    mine ? 'bg-primary text-primary-foreground rounded-br-sm' : 'bg-muted text-foreground rounded-bl-sm'
-                  }`}
-                >
-                  {m.content}
-                </div>
-                <div
-                  className={`text-[10px] text-muted-foreground mt-0.5 ${mine ? 'text-right' : 'text-left'}`}
-                  title={new Date(m.createdAt).toLocaleString(locale)}
-                >
-                  {formatDistanceToNow(new Date(m.createdAt), { addSuffix: true, locale: dfLocale })}
-                </div>
-              </div>
-            </div>
-          )
-        })}
-      </div>
+      {/* Message list — rendered by the shared Thread primitive */}
+      <Thread
+        ref={scrollRef}
+        items={threadItems}
+        isMine={item => item.author.id === self.id}
+        header={hasMore ? (
+          <div ref={topSentinelRef} className="text-center text-xs text-muted-foreground py-2">
+            {tc('loading')}
+          </div>
+        ) : null}
+      />
 
       {/* Input */}
       <form onSubmit={send} className="p-3 border-t flex items-end gap-2">
