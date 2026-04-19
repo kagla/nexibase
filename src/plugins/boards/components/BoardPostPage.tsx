@@ -38,18 +38,13 @@ import { CommentReactions } from "@/plugins/boards/components/CommentReactions"
 import { MiniEditor } from "@/components/editors/MiniEditor"
 import { UserNickname } from "@/components/UserNickname"
 
-// Emoji reaction component
-const EmojiIcon = ({ emoji, className }: { emoji: string; className?: string }) => (
-  <span className={cn("text-base leading-none", className)}>{emoji}</span>
-)
-
 // Reaction type definitions (positive only)
 const REACTIONS = [
-  { type: 'like', emoji: '👍', color: 'text-blue-500', bgActive: 'bg-blue-500 hover:bg-blue-600 ring-blue-500' },
-  { type: 'haha', emoji: '😂', color: 'text-yellow-500', bgActive: 'bg-yellow-500 hover:bg-yellow-600 ring-yellow-500 text-black' },
-  { type: 'agree', emoji: '👌', color: 'text-green-500', bgActive: 'bg-green-500 hover:bg-green-600 ring-green-500' },
-  { type: 'thanks', emoji: '🙏', color: 'text-pink-500', bgActive: 'bg-pink-500 hover:bg-pink-600 ring-pink-500' },
-  { type: 'wow', emoji: '😮', color: 'text-purple-500', bgActive: 'bg-purple-500 hover:bg-purple-600 ring-purple-500' },
+  { type: 'like',   emoji: '👍', activeClass: 'bg-blue-500/10   border-blue-500   text-blue-400'   },
+  { type: 'haha',   emoji: '😂', activeClass: 'bg-amber-500/10  border-amber-500  text-amber-400'  },
+  { type: 'agree',  emoji: '👌', activeClass: 'bg-emerald-500/10 border-emerald-500 text-emerald-400' },
+  { type: 'thanks', emoji: '🙏', activeClass: 'bg-pink-500/10   border-pink-500   text-pink-400'   },
+  { type: 'wow',    emoji: '😮', activeClass: 'bg-purple-500/10 border-purple-500 text-purple-400' },
 ] as const
 
 interface Board {
@@ -871,35 +866,29 @@ export default function BoardPostPage() {
 
             {/* Reaction buttons */}
             {board.useReaction && (
-              <div className="flex flex-wrap items-center gap-2 py-4 border-t">
-                {REACTIONS.map(({ type, emoji, bgActive }) => {
+              <div className="flex flex-wrap items-center gap-1.5 pt-4 border-t">
+                {REACTIONS.map(({ type, emoji, activeClass }) => {
                   const count = reactions[type] || 0
                   const isActive = userReactions.includes(type)
 
                   return (
-                    <Button
+                    <button
                       key={type}
                       type="button"
-                      variant={isActive ? "default" : "outline"}
-                      size="sm"
                       onClick={() => handleReaction(type)}
                       className={cn(
-                        "gap-1.5 transition-all",
-                        isActive && "ring-2 ring-offset-2 ring-offset-background",
-                        isActive && bgActive,
+                        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[13px] transition-colors",
+                        isActive
+                          ? activeClass
+                          : "border-border text-muted-foreground hover:bg-muted"
                       )}
                     >
-                      <EmojiIcon emoji={emoji} />
-                      <span className="text-xs">{t(`reactions.${type}`)}</span>
+                      <span className="text-[15px] leading-none">{emoji}</span>
+                      <span className="hidden sm:inline">{t(`reactions.${type}`)}</span>
                       {count > 0 && (
-                        <span className={cn(
-                          "ml-1 px-1.5 py-0.5 rounded-full text-xs font-medium",
-                          isActive ? "bg-white/20" : "bg-muted"
-                        )}>
-                          {count}
-                        </span>
+                        <span className="font-semibold text-[12px] min-w-[1ch] text-center">{count}</span>
                       )}
-                    </Button>
+                    </button>
                   )
                 })}
               </div>
