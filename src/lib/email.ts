@@ -462,12 +462,12 @@ export async function sendDirectMessageEmail(
   to: string,
   senderName: string,
   content: string,
-  conversationId: number,
+  conversationUuid: string,
 ) {
   try {
     const shopName = await getShopName()
     const transporter = createTransporter()
-    const threadUrl = `${process.env.NEXT_PUBLIC_APP_URL}/mypage/messages/${conversationId}`
+    const threadUrl = `${process.env.NEXT_PUBLIC_APP_URL}/mypage/messages/${conversationUuid}`
 
     const escapedSender = senderName.replace(/</g, '&lt;').replace(/>/g, '&gt;')
     const preview = content.slice(0, 200)

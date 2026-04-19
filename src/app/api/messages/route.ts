@@ -48,7 +48,7 @@ export async function GET(request: Request) {
         select: { content: true, createdAt: true, senderId: true },
       })
       return {
-        id: c.id,
+        uuid: c.uuid,
         opponent: amIUser1 ? c.user2 : c.user1,
         lastMessage,
         unreadCount,

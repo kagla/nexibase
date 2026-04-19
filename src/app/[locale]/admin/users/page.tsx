@@ -755,7 +755,7 @@ function UsersPageContent() {
                                       })
                                       if (!res.ok) { alert(t('messages.send.failure')); return }
                                       const data = await res.json()
-                                      window.open(`/mypage/messages/${data.conversationId}`, '_blank')
+                                      window.open(`/mypage/messages/${data.conversationUuid}`, '_blank')
                                     }}
                                     title={t('messages.send.title')}
                                   >

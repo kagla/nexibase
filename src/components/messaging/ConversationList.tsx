@@ -10,7 +10,7 @@ import { formatDistanceToNow } from "date-fns"
 import { ko, enUS } from "date-fns/locale"
 
 interface Conversation {
-  id: number
+  uuid: string
   opponent: { id: number; nickname: string; image: string | null }
   lastMessage: { content: string; createdAt: string; senderId: number } | null
   unreadCount: number
@@ -51,13 +51,13 @@ export function ConversationList() {
 
   async function toggleHide(c: Conversation) {
     const next = !c.hiddenByMe
-    await fetch(`/api/messages/${c.id}/hide`, {
+    await fetch(`/api/messages/${c.uuid}/hide`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ hidden: next }),
     })
     // remove from current view (filter will drop it)
-    setItems(prev => prev.filter(x => x.id !== c.id))
+    setItems(prev => prev.filter(x => x.uuid !== c.uuid))
   }
 
   return (
@@ -83,8 +83,8 @@ export function ConversationList() {
       ) : (
         <div className="space-y-2">
           {items.map(c => (
-            <div key={c.id} className="group flex items-start gap-3 p-4 border rounded-lg hover:bg-muted/30 transition-colors">
-              <Link href={`/mypage/messages/${c.id}`} className="flex-1 min-w-0 flex items-start gap-3">
+            <div key={c.uuid} className="group flex items-start gap-3 p-4 border rounded-lg hover:bg-muted/30 transition-colors">
+              <Link href={`/mypage/messages/${c.uuid}`} className="flex-1 min-w-0 flex items-start gap-3">
                 <div className="w-10 h-10 shrink-0 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
                   {c.opponent.image ? (
                     <img src={c.opponent.image} alt={c.opponent.nickname} className="w-full h-full object-cover" />

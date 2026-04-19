@@ -92,7 +92,7 @@ export async function sendMessageTo(args: SendArgs) {
       type: NotificationType.DIRECT_MESSAGE,
       title: `💬 ${args.fromUserName}님의 쪽지`,
       message: args.content.slice(0, 80),
-      link: `/mypage/messages/${conversation.id}`,
+      link: `/mypage/messages/${conversation.uuid}`,
     },
   })
 
@@ -101,7 +101,7 @@ export async function sendMessageTo(args: SendArgs) {
   if (args.recipientEmail) {
     const shouldSend = adminForcingEmail || (await shouldEmail(args.toUserId, NotificationType.DIRECT_MESSAGE))
     if (shouldSend) {
-      sendDirectMessageEmail(args.recipientEmail, args.fromUserName, args.content, conversation.id)
+      sendDirectMessageEmail(args.recipientEmail, args.fromUserName, args.content, conversation.uuid)
     }
   }
 
@@ -115,7 +115,7 @@ export async function markConversationRead(conversationId: number, viewerId: num
   const isUser1 = conv.user1Id === viewerId
   if (!isUser1 && conv.user2Id !== viewerId) return // not a participant
 
-  const link = `/mypage/messages/${conversationId}`
+  const link = `/mypage/messages/${conv.uuid}`
   await prisma.$transaction([
     prisma.conversation.update({
       where: { id: conversationId },

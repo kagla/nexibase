@@ -211,6 +211,7 @@ model LoginAttempt {
 
 model Conversation {
   id              Int       @id @default(autoincrement())
+  uuid            String    @unique @default(uuid()) @db.VarChar(36)
   user1Id         Int
   user2Id         Int
   lastMessageAt   DateTime?

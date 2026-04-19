@@ -29,11 +29,11 @@ interface Self {
 }
 
 interface Props {
-  conversationId: number
+  conversationUuid: string
   self: Self
 }
 
-export function ConversationView({ conversationId, self }: Props) {
+export function ConversationView({ conversationUuid, self }: Props) {
   const t = useTranslations('mypage.messagesThread')
   const tMessages = useTranslations('mypage.messages')
   const tc = useTranslations('common')
@@ -53,14 +53,14 @@ export function ConversationView({ conversationId, self }: Props) {
   const topSentinelRef = useRef<HTMLDivElement | null>(null)
 
   const markRead = useCallback(() => {
-    fetch(`/api/messages/${conversationId}/read`, { method: 'PUT' }).catch(() => {})
-  }, [conversationId])
+    fetch(`/api/messages/${conversationUuid}/read`, { method: 'PUT' }).catch(() => {})
+  }, [conversationUuid])
 
   // Initial load
   useEffect(() => {
     let cancelled = false
     ;(async () => {
-      const res = await fetch(`/api/messages/${conversationId}`)
+      const res = await fetch(`/api/messages/${conversationUuid}`)
       if (!res.ok) {
         if (res.status === 403 || res.status === 404) router.replace('/mypage/messages')
         return
@@ -80,7 +80,7 @@ export function ConversationView({ conversationId, self }: Props) {
       })
     })()
     return () => { cancelled = true }
-  }, [conversationId, markRead, router])
+  }, [conversationUuid, markRead, router])
 
   // Polling for new messages — scoped to this page only.
   // Pauses when the tab is not visible (no background polling).
@@ -90,7 +90,7 @@ export function ConversationView({ conversationId, self }: Props) {
     const poll = async () => {
       if (messages.length === 0) return
       const lastId = messages[messages.length - 1].id
-      const res = await fetch(`/api/messages/${conversationId}?after=${lastId}`)
+      const res = await fetch(`/api/messages/${conversationUuid}?after=${lastId}`)
       if (!res.ok) return
       const data = await res.json()
       if (data.messages.length > 0) {
@@ -129,7 +129,7 @@ export function ConversationView({ conversationId, self }: Props) {
       document.removeEventListener('visibilitychange', onVis)
       stop()
     }
-  }, [loading, messages, conversationId, markRead])
+  }, [loading, messages, conversationUuid, markRead])
 
   // Load earlier when the top sentinel appears
   useEffect(() => {
@@ -143,7 +143,7 @@ export function ConversationView({ conversationId, self }: Props) {
       const firstId = messages[0].id
       const el = scrollRef.current
       const prevScrollHeight = el?.scrollHeight ?? 0
-      const res = await fetch(`/api/messages/${conversationId}?before=${firstId}`)
+      const res = await fetch(`/api/messages/${conversationUuid}?before=${firstId}`)
       setLoadingEarlier(false)
       if (!res.ok) return
       const data = await res.json()
@@ -159,7 +159,7 @@ export function ConversationView({ conversationId, self }: Props) {
     })
     obs.observe(sentinel)
     return () => obs.disconnect()
-  }, [loading, hasMore, messages, conversationId, loadingEarlier])
+  }, [loading, hasMore, messages, conversationUuid, loadingEarlier])
 
   async function send(e: React.FormEvent) {
     e.preventDefault()
@@ -177,7 +177,7 @@ export function ConversationView({ conversationId, self }: Props) {
       setDraft('')
       setTimeout(async () => {
         const lastId = messages[messages.length - 1]?.id ?? 0
-        const r2 = await fetch(`/api/messages/${conversationId}?after=${lastId}`)
+        const r2 = await fetch(`/api/messages/${conversationUuid}?after=${lastId}`)
         if (r2.ok) {
           const d2 = await r2.json()
           if (d2.messages.length > 0) {
@@ -199,7 +199,7 @@ export function ConversationView({ conversationId, self }: Props) {
   async function toggleHide() {
     if (!meta) return
     const next = !meta.hiddenByMe
-    await fetch(`/api/messages/${conversationId}/hide`, {
+    await fetch(`/api/messages/${conversationUuid}/hide`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ hidden: next }),

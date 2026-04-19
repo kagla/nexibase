@@ -6,9 +6,8 @@ import { ConversationView } from "@/components/messaging/ConversationView"
 
 interface Me { id: number; nickname: string; image: string | null }
 
-export default function ThreadPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params)
-  const conversationId = parseInt(id)
+export default function ThreadPage({ params }: { params: Promise<{ uuid: string }> }) {
+  const { uuid } = use(params)
   const router = useRouter()
   const [me, setMe] = useState<Me | null>(null)
 
@@ -21,10 +20,10 @@ export default function ThreadPage({ params }: { params: Promise<{ id: string }>
       })
   }, [router])
 
-  if (!me || !Number.isFinite(conversationId)) return null
+  if (!me || !uuid) return null
   return (
     <div className="max-w-3xl mx-auto w-full">
-      <ConversationView conversationId={conversationId} self={me} />
+      <ConversationView conversationUuid={uuid} self={me} />
     </div>
   )
 }

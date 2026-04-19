@@ -69,8 +69,8 @@ export function SendMessageDialog({
       }
       const data = await res.json()
       onOpenChange(false)
-      if (redirectAfter === 'thread' && data.conversationId) {
-        router.push(`/mypage/messages/${data.conversationId}`)
+      if (redirectAfter === 'thread' && data.conversationUuid) {
+        router.push(`/mypage/messages/${data.conversationUuid}`)
       } else {
         alert(t('success'))
       }

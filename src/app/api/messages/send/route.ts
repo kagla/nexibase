@@ -69,7 +69,7 @@ export async function POST(request: Request) {
 
   return NextResponse.json({
     success: true,
-    conversationId: conversation.id,
+    conversationUuid: conversation.uuid,
     messageId: message.id,
   })
 }

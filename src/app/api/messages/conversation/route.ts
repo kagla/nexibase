@@ -28,5 +28,5 @@ export async function POST(request: Request) {
   }
 
   const conversation = await findOrCreateConversation(session.id, toUserId)
-  return NextResponse.json({ conversationId: conversation.id })
+  return NextResponse.json({ conversationUuid: conversation.uuid })
 }

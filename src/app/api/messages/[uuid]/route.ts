@@ -4,19 +4,16 @@ import { getSession } from '@/lib/auth'
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ uuid: string }> },
 ) {
   const session = await getSession()
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { id } = await params
-  const conversationId = parseInt(id)
-  if (!Number.isFinite(conversationId)) {
-    return NextResponse.json({ error: 'bad id' }, { status: 400 })
-  }
+  const { uuid } = await params
+  if (!uuid) return NextResponse.json({ error: 'bad uuid' }, { status: 400 })
 
   const conv = await prisma.conversation.findUnique({
-    where: { id: conversationId },
+    where: { uuid },
     include: {
       user1: { select: { id: true, nickname: true, image: true } },
       user2: { select: { id: true, nickname: true, image: true } },
@@ -34,13 +31,11 @@ export async function GET(
   const limit = Math.min(parseInt(searchParams.get('limit') || '30'), 100)
 
   let where: { conversationId: number; id?: { lt?: number; gt?: number } } = {
-    conversationId,
+    conversationId: conv.id,
   }
   if (before) where = { ...where, id: { lt: parseInt(before) } }
   else if (after) where = { ...where, id: { gt: parseInt(after) } }
 
-  // For `after` we want ascending (new messages in order); for
-  // `before`/none we want descending (newest first) then reverse later.
   const orderBy: { createdAt: 'asc' | 'desc' } = after ? { createdAt: 'asc' } : { createdAt: 'desc' }
 
   const rows = await prisma.message.findMany({
@@ -56,7 +51,7 @@ export async function GET(
   const amIUser1 = conv.user1Id === me
   return NextResponse.json({
     conversation: {
-      id: conv.id,
+      uuid: conv.uuid,
       opponent: amIUser1 ? conv.user2 : conv.user1,
       hiddenByMe: (amIUser1 ? conv.user1HiddenAt : conv.user2HiddenAt) != null,
     },
