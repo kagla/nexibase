@@ -213,7 +213,7 @@ export default function BoardListPage() {
 
   return (
     <UserLayout>
-      <div className="max-w-4xl mx-auto sm:px-4 py-2 sm:py-6">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-3 sm:py-6">
         {/* Board header */}
         <div className="mb-6">
           <div className="flex items-center justify-between">
