@@ -37,7 +37,7 @@ import {
   UsersRound,
   Send,
 } from "lucide-react"
-import { SendNotificationDialog } from "@/components/admin/SendNotificationDialog"
+import { SendMessageDialog } from "@/components/messaging/SendMessageDialog"
 
 interface User {
   id: string
@@ -845,11 +845,13 @@ function UsersPageContent() {
       />
 
       {sendDialogUser && (
-        <SendNotificationDialog
+        <SendMessageDialog
           open={!!sendDialogUser}
           onOpenChange={(open) => { if (!open) setSendDialogUser(null) }}
           userId={Number(sendDialogUser.id)}
           userLabel={`${sendDialogUser.nickname ?? ''} (${sendDialogUser.email})`}
+          redirectAfter="none"
+          showEmailOption
         />
       )}
     </div>
