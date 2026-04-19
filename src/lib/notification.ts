@@ -61,6 +61,7 @@ export async function shouldEmail(
     [NotificationType.COMMENT_REPLY]: false,
     [NotificationType.MENTION]: false,
     [NotificationType.ADMIN_MESSAGE]: true,
+    [NotificationType.DIRECT_MESSAGE]: false,
     [NotificationType.ORDER_STATUS]: true,
   }
   let pref
@@ -76,6 +77,7 @@ export async function shouldEmail(
     case NotificationType.COMMENT_REPLY: return pref.emailCommentReply
     case NotificationType.MENTION: return pref.emailMention
     case NotificationType.ADMIN_MESSAGE: return pref.emailAdminMessage
+    case NotificationType.DIRECT_MESSAGE: return pref.emailDirectMessage
     case NotificationType.ORDER_STATUS: return pref.emailOrderStatus
     default: return defaults[type] ?? false
   }
