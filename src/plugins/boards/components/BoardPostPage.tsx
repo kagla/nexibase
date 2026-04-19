@@ -921,8 +921,7 @@ export default function BoardPostPage() {
 
         {/* Comments */}
         {board.useComment && (
-          <Card className="rounded-none sm:rounded-lg">
-            <CardContent className="p-3 sm:p-6">
+          <section className="pt-6 sm:pt-8 border-t">
               <h3 className="font-semibold mb-4 flex items-center gap-2">
                 <MessageSquare className="h-5 w-5" />
                 {t('comment.titleWithCount', { count: post.comments?.length || 0 })}
@@ -986,7 +985,7 @@ export default function BoardPostPage() {
                               <div className="flex items-center justify-between mb-1">
                                 <div className="flex items-center gap-2">
                                   <UserNickname userId={comment.author.id} uuid={comment.author.uuid} nickname={comment.author.nickname} image={comment.author.image} showAvatar />
-                                  <span className="text-xs text-muted-foreground">{formatDate(comment.createdAt)}</span>
+                                  <span className="text-[12px] text-muted-foreground">{formatDate(comment.createdAt)}</span>
                                 </div>
                                 {user && (
                                   <Popover>
@@ -1025,7 +1024,7 @@ export default function BoardPostPage() {
                                   </div>
                                 </div>
                               ) : (
-                                <div className="text-sm prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: comment.content }} />
+                                <div className="text-[15px] prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: comment.content }} />
                               )}
                               <div className="flex items-center gap-2 mt-1">
                                 {board.useReaction && (
@@ -1059,13 +1058,13 @@ export default function BoardPostPage() {
                         {/* Reply (indented one level, shows @nickname) */}
                         {replyMap.get(comment.id)?.map((reply) => (
                           <div key={reply.id}>
-                            <div id={`comment-${reply.id}`} className="border-b py-3 pl-11 scroll-mt-20">
+                            <div id={`comment-${reply.id}`} className="border-b py-3 pl-11 scroll-mt-20 relative before:content-[''] before:absolute before:left-[19px] before:top-4 before:bottom-4 before:w-[2px] before:bg-border">
                               <div className="flex items-start gap-2">
                                 <div className="flex-1">
                                   <div className="flex items-center justify-between mb-1">
                                     <div className="flex items-center gap-2">
                                       <UserNickname userId={reply.author.id} uuid={reply.author.uuid} nickname={reply.author.nickname} image={reply.author.image} showAvatar />
-                                      <span className="text-xs text-muted-foreground">{formatDate(reply.createdAt)}</span>
+                                      <span className="text-[12px] text-muted-foreground">{formatDate(reply.createdAt)}</span>
                                     </div>
                                     {user && (
                                       <Popover>
@@ -1102,7 +1101,7 @@ export default function BoardPostPage() {
                                       <Button size="sm" variant="ghost" onClick={() => setEditingComment(null)}>{t('post.cancel')}</Button>
                                     </div>
                                   ) : (
-                                    <div className="text-sm">
+                                    <div className="text-[15px]">
                                       {reply.parent?.author?.nickname && (
                                         <span className="text-primary font-medium">@{reply.parent.author.nickname} </span>
                                       )}
@@ -1167,8 +1166,7 @@ export default function BoardPostPage() {
                   </Link>
                 </div>
               ) : null}
-            </CardContent>
-          </Card>
+            </section>
         )}
 
         {/* Attachment image viewer modal */}
