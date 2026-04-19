@@ -660,52 +660,72 @@ export default function BoardPostPage() {
         </div>
 
         {/* Post */}
-        <Card className="mb-4 sm:mb-6 rounded-none sm:rounded-lg">
-          <CardContent className="p-3 sm:p-6">
-            {/* Title */}
-            <div className="mb-4">
-              <div className="flex items-center gap-2 mb-2">
-                {post.isNotice && (
-                  <Badge variant="destructive">
-                    <Pin className="h-3 w-3 mr-1" />
-                    {t('noticeBadge')}
-                  </Badge>
-                )}
-                {post.isSecret && (
-                  <Badge variant="secondary">
-                    <Lock className="h-3 w-3 mr-1" />
-                    {t('post.secret')}
-                  </Badge>
-                )}
-              </div>
-              <h1 className="text-2xl font-bold">{post.title}</h1>
-            </div>
+        <section className="mb-6 sm:mb-8">
+          {/* Title badges */}
+          <div className="flex items-center gap-2 mb-3">
+            {post.isNotice && (
+              <Badge variant="destructive">
+                <Pin className="h-3 w-3 mr-1" />
+                {t('noticeBadge')}
+              </Badge>
+            )}
+            {post.isSecret && (
+              <Badge variant="secondary">
+                <Lock className="h-3 w-3 mr-1" />
+                {t('post.secret')}
+              </Badge>
+            )}
+          </div>
 
-            {/* Author info */}
-            <div className="flex items-center justify-between py-3 border-y mb-6">
-              <div className="flex items-center gap-3">
-                <UserNickname userId={post.author.id} uuid={post.author.uuid} nickname={post.author.nickname} image={post.author.image} showAvatar avatarSize="md" />
-                <span className="text-sm text-muted-foreground">{formatDate(post.createdAt)}</span>
-              </div>
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                <span className="flex items-center gap-1">
-                  <Eye className="h-4 w-4" />
+          {/* Author header */}
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-[14px] font-semibold shrink-0 overflow-hidden">
+              {post.author.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={post.author.image} alt="" className="w-full h-full object-cover" />
+              ) : (
+                (post.author.nickname || post.author.name || '?').charAt(0).toUpperCase()
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <UserNickname
+                userId={post.author.id}
+                uuid={post.author.uuid}
+                nickname={post.author.nickname}
+                image={post.author.image}
+                className="font-semibold text-[15px]"
+              />
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-muted-foreground mt-0.5">
+                <span>{formatDate(post.createdAt)}</span>
+                <span className="opacity-50">·</span>
+                <span className="inline-flex items-center gap-1">
+                  <Eye className="h-3.5 w-3.5" />
                   {post.viewCount}
                 </span>
-                {board.useReaction && (
-                  <span className="flex items-center gap-1">
-                    <ThumbsUp className="h-4 w-4" />
-                    {totalReactions}
-                  </span>
+                {board.useReaction && totalReactions > 0 && (
+                  <>
+                    <span className="opacity-50">·</span>
+                    <span className="inline-flex items-center gap-1">
+                      <ThumbsUp className="h-3.5 w-3.5" />
+                      {totalReactions}
+                    </span>
+                  </>
                 )}
-                {board.useComment && (
-                  <span className="flex items-center gap-1">
-                    <MessageSquare className="h-4 w-4" />
-                    {post.commentCount}
-                  </span>
+                {board.useComment && post.commentCount > 0 && (
+                  <>
+                    <span className="opacity-50">·</span>
+                    <span className="inline-flex items-center gap-1">
+                      <MessageSquare className="h-3.5 w-3.5" />
+                      {post.commentCount}
+                    </span>
+                  </>
                 )}
               </div>
             </div>
+          </div>
+
+          {/* Title */}
+          <h1 className="text-[22px] sm:text-[28px] font-bold leading-tight mb-4">{post.title}</h1>
 
             {/* Body */}
             <div
@@ -907,8 +927,7 @@ export default function BoardPostPage() {
                 </Button>
               </div>
             )}
-          </CardContent>
-        </Card>
+        </section>
 
         {/* Comments */}
         {board.useComment && (
