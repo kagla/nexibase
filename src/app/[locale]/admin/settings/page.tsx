@@ -102,6 +102,9 @@ export default function SettingsPage() {
   const [hasSettings, setHasSettings] = useState(false)
   const [layouts, setLayouts] = useState<LayoutInfo[]>([])
   const [themes, setThemes] = useState<ThemeInfo[]>([])
+  // Last site_locale seen from the server. Written by every successful
+  // fetchSettings (initial mount and post-seed refetch), read by handleSave
+  // to decide whether to reload after the locale changes.
   const localeOnLoadRef = useRef<string | null>(null)
 
   // Local state for the Google Analytics section
