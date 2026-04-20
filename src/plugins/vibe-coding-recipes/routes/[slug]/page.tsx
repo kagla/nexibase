@@ -1,7 +1,5 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
 import { prisma } from '@/lib/prisma'
 import { getLocale } from 'next-intl/server'
 import { RecipeSteps } from '@/plugins/vibe-coding-recipes/components/RecipeSteps'
@@ -95,7 +93,9 @@ export default async function RecipeDetailPage({
       </div>
 
       <div className="prose dark:prose-invert max-w-none mb-8">
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{description}</ReactMarkdown>
+        {description.split('\n').map((line, i) => (
+          <p key={i}>{line}</p>
+        ))}
       </div>
 
       {constraints.length > 0 && (
