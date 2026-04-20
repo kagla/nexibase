@@ -8,6 +8,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
@@ -26,6 +33,12 @@ import {
   ImageIcon,
   BarChart3,
 } from "lucide-react"
+import { SUPPORTED_LOCALES } from "@/i18n/_generated-locales"
+
+const LOCALE_LABELS: Record<string, string> = {
+  ko: '한국어',
+  en: 'English',
+}
 
 interface FooterLink {
   label: string
@@ -371,6 +384,28 @@ export default function SettingsPage() {
                     onChange={(e) => handleChange('site_name', e.target.value)}
                     placeholder="NexiBase"
                   />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="site_locale">{t('siteLocale')}</Label>
+                  <Select
+                    value={settings.site_locale}
+                    onValueChange={(value) => handleChange('site_locale', value)}
+                  >
+                    <SelectTrigger id="site_locale">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SUPPORTED_LOCALES.map((loc) => (
+                        <SelectItem key={loc} value={loc}>
+                          {LOCALE_LABELS[loc] ?? loc}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-sm text-muted-foreground">
+                    {t('siteLocaleDescription')}
+                  </p>
                 </div>
 
                 <div className="grid gap-2">
