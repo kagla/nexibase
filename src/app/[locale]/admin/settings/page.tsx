@@ -232,6 +232,10 @@ export default function SettingsPage() {
         alert(data.message)
         setHasSettings(true)
         setGaTestResult({ status: 'idle' })
+        if (localeOnLoadRef.current !== null && settings.site_locale !== localeOnLoadRef.current) {
+          window.location.reload()
+          return
+        }
       } else {
         alert(data.error || t('settingsSaveFailed'))
       }
