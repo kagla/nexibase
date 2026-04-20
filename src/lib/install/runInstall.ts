@@ -83,10 +83,25 @@ export async function runInstall(params: InstallParams): Promise<void> {
       })
     }
 
+    // Home page (slug="") holds the default widget layout. Other pages can be
+    // added later from admin. HomeWidget was replaced by WidgetPage + PageWidget
+    // in migration 20260416.
+    const homePage = await tx.widgetPage.create({
+      data: {
+        title: 'Home',
+        slug: '',
+        layoutTemplate: 'with-sidebar',
+        isActive: true,
+        sortOrder: 0,
+      },
+    })
+
     for (const w of seed.widgets) {
-      await tx.homeWidget.create({
+      await tx.pageWidget.create({
         data: {
+          pageId: homePage.id,
           widgetKey: w.widgetKey,
+          widgetType: 'registry',
           zone: w.zone,
           title: w.title,
           colSpan: w.colSpan,
