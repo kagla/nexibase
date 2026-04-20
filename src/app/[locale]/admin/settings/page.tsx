@@ -392,7 +392,7 @@ export default function SettingsPage() {
                     value={settings.site_locale}
                     onValueChange={(value) => handleChange('site_locale', value)}
                   >
-                    <SelectTrigger id="site_locale">
+                    <SelectTrigger id="site_locale" className="w-full">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
