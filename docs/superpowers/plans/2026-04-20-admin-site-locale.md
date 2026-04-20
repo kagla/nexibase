@@ -17,8 +17,8 @@
 One component file and two message files are modified. Nothing is created.
 
 - Modify: `src/app/[locale]/admin/settings/page.tsx` (state, save handler, UI block, imports)
-- Modify: `src/messages/ko.json` (two new keys in `admin` namespace, near the existing `siteName` entry at line 786)
-- Modify: `src/messages/en.json` (matching keys)
+- Modify: `src/locales/ko.json` (two new keys in `admin` namespace, near the existing `siteName` entry). NOTE: `src/messages/*.json` are gitignored auto-generated outputs of `scripts/scan-plugins.js` — always edit `src/locales/*.json` (the tracked source of truth).
+- Modify: `src/locales/en.json` (matching keys)
 
 Unchanged (explicit non-goals, do not touch):
 - `src/app/api/admin/settings/route.ts` — already accepts arbitrary keys
@@ -52,12 +52,12 @@ Expected: `Switched to a new branch 'feat/admin-site-locale'`
 ## Task 2: Add i18n keys to message files
 
 **Files:**
-- Modify: `src/messages/ko.json` — insert two keys after line 786 (the `siteName` entry)
-- Modify: `src/messages/en.json` — insert two keys at the matching position
+- Modify: `src/locales/ko.json` — insert two keys after the `siteName` entry (around line 787). NOTE: `src/messages/*.json` are gitignored generated outputs; always edit `src/locales/*.json`.
+- Modify: `src/locales/en.json` — insert two keys at the matching position
 
 - [ ] **Step 1: Add Korean strings**
 
-Using Edit tool on `src/messages/ko.json`. Replace:
+Using Edit tool on `src/locales/ko.json`. Replace:
 
 ```json
     "siteName": "사이트 이름",
@@ -75,7 +75,7 @@ with:
 
 - [ ] **Step 2: Add English strings**
 
-Using Edit tool on `src/messages/en.json`. Replace:
+Using Edit tool on `src/locales/en.json`. Replace:
 
 ```json
     "siteName": "Site name",
@@ -93,14 +93,14 @@ with:
 
 - [ ] **Step 3: Verify JSON is still valid**
 
-Run: `node -e "JSON.parse(require('fs').readFileSync('/home/kagla/nexibase/src/messages/ko.json','utf8')); JSON.parse(require('fs').readFileSync('/home/kagla/nexibase/src/messages/en.json','utf8')); console.log('ok')"`
+Run: `node -e "JSON.parse(require('fs').readFileSync('/home/kagla/nexibase/src/locales/ko.json','utf8')); JSON.parse(require('fs').readFileSync('/home/kagla/nexibase/src/locales/en.json','utf8')); console.log('ok')"`
 Expected: `ok`. If it throws, fix the comma/brace before proceeding.
 
 - [ ] **Step 4: Commit**
 
 Run:
 ```bash
-git -C /home/kagla/nexibase add src/messages/ko.json src/messages/en.json
+git -C /home/kagla/nexibase add src/locales/ko.json src/locales/en.json
 git -C /home/kagla/nexibase commit -m "i18n(admin): add siteLocale label and description"
 ```
 
@@ -462,7 +462,7 @@ If any scenario fails, DO NOT proceed to Task 7. Fix, amend the relevant commit 
 - [ ] **Step 1: Review the full diff once more**
 
 Run: `git -C /home/kagla/nexibase diff origin/main...HEAD`
-Expected: Changes span exactly three files: `src/app/[locale]/admin/settings/page.tsx`, `src/messages/ko.json`, `src/messages/en.json`. No stray edits.
+Expected: Changes span exactly three files: `src/app/[locale]/admin/settings/page.tsx`, `src/locales/ko.json`, `src/locales/en.json`. No stray edits.
 
 - [ ] **Step 2: Push branch**
 
