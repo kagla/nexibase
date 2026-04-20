@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import Link from "next/link"
 import { useTranslations } from "next-intl"
 import { Sidebar } from "@/components/admin/Sidebar"
@@ -8,6 +8,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
@@ -26,6 +33,12 @@ import {
   ImageIcon,
   BarChart3,
 } from "lucide-react"
+import { SUPPORTED_LOCALES } from "@/i18n/_generated-locales"
+
+const LOCALE_LABELS: Record<string, string> = {
+  ko: '한국어',
+  en: 'English',
+}
 
 interface FooterLink {
   label: string
@@ -35,6 +48,7 @@ interface FooterLink {
 interface SettingsData {
   // Site basics
   site_name: string
+  site_locale: string
   site_description: string
   site_logo: string
 
@@ -74,6 +88,7 @@ interface LayoutInfo {
 
 const DEFAULT_SETTINGS: SettingsData = {
   site_name: 'NexiBase',
+  site_locale: 'en',
   site_description: '',
   site_logo: '',
   signup_enabled: 'true',
@@ -100,6 +115,10 @@ export default function SettingsPage() {
   const [hasSettings, setHasSettings] = useState(false)
   const [layouts, setLayouts] = useState<LayoutInfo[]>([])
   const [themes, setThemes] = useState<ThemeInfo[]>([])
+  // Last site_locale seen from the server. Written by every successful
+  // fetchSettings (initial mount and post-seed refetch), read by handleSave
+  // to decide whether to reload after the locale changes.
+  const localeOnLoadRef = useRef<string | null>(null)
 
   // Local state for the Google Analytics section
   const [gaJsonEditing, setGaJsonEditing] = useState(false)
@@ -177,6 +196,7 @@ export default function SettingsPage() {
         }
         setSettings(newSettings)
         setFooterLinks(parseFooterLinks(newSettings.footer_links))
+        localeOnLoadRef.current = newSettings.site_locale
       }
     } catch (error) {
       console.error('failed to fetch settings:', error)
@@ -225,6 +245,10 @@ export default function SettingsPage() {
         alert(data.message)
         setHasSettings(true)
         setGaTestResult({ status: 'idle' })
+        if (localeOnLoadRef.current !== null && settings.site_locale !== localeOnLoadRef.current) {
+          window.location.reload()
+          return
+        }
       } else {
         alert(data.error || t('settingsSaveFailed'))
       }
@@ -360,6 +384,28 @@ export default function SettingsPage() {
                     onChange={(e) => handleChange('site_name', e.target.value)}
                     placeholder="NexiBase"
                   />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="site_locale">{t('siteLocale')}</Label>
+                  <Select
+                    value={settings.site_locale}
+                    onValueChange={(value) => handleChange('site_locale', value)}
+                  >
+                    <SelectTrigger id="site_locale" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SUPPORTED_LOCALES.map((loc) => (
+                        <SelectItem key={loc} value={loc}>
+                          {LOCALE_LABELS[loc] ?? loc}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-sm text-muted-foreground">
+                    {t('siteLocaleDescription')}
+                  </p>
                 </div>
 
                 <div className="grid gap-2">
