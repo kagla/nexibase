@@ -79,7 +79,11 @@ export function PostListRow({
   const href = blocked ? '#' : `/boards/${board.slug}/${post.id}`
 
   const onClick = (e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).closest('[data-user-nickname]')) return
+    if ((e.target as HTMLElement).closest('[data-user-nickname]')) {
+      // UserNickname opens its own popover; don't navigate to the post.
+      e.preventDefault()
+      return
+    }
     if (blocked) {
       e.preventDefault()
       onSecretBlocked()
