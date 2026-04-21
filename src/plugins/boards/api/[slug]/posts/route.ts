@@ -45,20 +45,22 @@ export async function GET(
     const limit = board.postsPerPage
     const skip = (page - 1) * limit
 
-    // Search conditions
-    const where: Record<string, unknown> = {
+    // Base filter shared by notice and regular queries
+    const baseWhere: Record<string, unknown> = {
       boardId: board.id,
-      status: 'published'
+      status: 'published',
     }
 
-    if (search) {
-      where.OR = [
-        { title: { contains: search } },
-        { content: { contains: search } }
-      ]
-    }
+    const searchFilter: Record<string, unknown> = search
+      ? {
+          OR: [
+            { title: { contains: search } },
+            { content: { contains: search } },
+          ],
+        }
+      : {}
 
-    // Sort conditions
+    // Non-notice sort (notice sort field is dropped because notices are fetched separately)
     let orderBy: Record<string, string>[] = []
     switch (board.sortOrder) {
       case 'popular':
@@ -68,73 +70,80 @@ export async function GET(
         orderBy = [{ createdAt: 'asc' }]
         break
       default:
-        orderBy = [{ isNotice: 'desc' }, { createdAt: 'desc' }]
+        orderBy = [{ createdAt: 'desc' }]
     }
 
     // In gallery mode, also fetch attachment info
     const includeAttachments = board.displayType === 'gallery'
 
-    // Fetch post list
-    const [posts, total] = await Promise.all([
+    const postSelect = {
+      id: true,
+      title: true,
+      status: true,
+      isNotice: true,
+      isSecret: true,
+      viewCount: true,
+      likeCount: true,
+      commentCount: true,
+      createdAt: true,
+      author: {
+        select: {
+          id: true,
+          uuid: true,
+          nickname: true,
+          image: true,
+        },
+      },
+      _count: {
+        select: { attachments: true },
+      },
+      ...(includeAttachments && {
+        attachments: {
+          where: { mimeType: { startsWith: 'image/' } },
+          take: 1,
+          orderBy: [{ sortOrder: 'asc' as const }, { id: 'asc' as const }],
+          select: {
+            id: true,
+            filePath: true,
+            thumbnailPath: true,
+            mimeType: true,
+          },
+        },
+      }),
+    }
+
+    const noticeWhere = { ...baseWhere, isNotice: true }
+    const postWhere = { ...baseWhere, isNotice: false, ...searchFilter }
+
+    const [notices, posts, total] = await Promise.all([
       prisma.post.findMany({
-        where,
+        where: noticeWhere,
+        orderBy: [{ createdAt: 'desc' }],
+        select: postSelect,
+      }),
+      prisma.post.findMany({
+        where: postWhere,
         skip,
         take: limit,
         orderBy,
-        select: {
-          id: true,
-          title: true,
-          status: true,
-          isNotice: true,
-          isSecret: true,
-          viewCount: true,
-          likeCount: true,
-          commentCount: true,
-          createdAt: true,
-          author: {
-            select: {
-              id: true,
-              uuid: true,
-              nickname: true,
-              image: true
-            }
-          },
-          _count: {
-            select: { attachments: true }
-          },
-          // In gallery mode, use the first image as the thumbnail
-          ...(includeAttachments && {
-            attachments: {
-              where: {
-                mimeType: { startsWith: 'image/' }
-              },
-              take: 1,
-              orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
-              select: {
-                id: true,
-                filePath: true,
-                thumbnailPath: true,
-                mimeType: true
-              }
-            }
-          })
-        }
+        select: postSelect,
       }),
-      prisma.post.count({ where })
+      prisma.post.count({ where: postWhere }),
     ])
 
-    // Attach thumbnail info in gallery mode
-    // Use thumbnailPath when available, otherwise fall back to filePath
-    const postsWithThumbnail = includeAttachments
-      ? posts.map(post => {
-          const attachment = (post as { attachments?: { filePath: string; thumbnailPath?: string | null }[] }).attachments?.[0]
-          return {
-            ...post,
-            thumbnail: attachment?.thumbnailPath || attachment?.filePath || null,
-            attachments: undefined // 불필요한 배열 제거
-          }
-        })
-      : posts
+    // Attach thumbnail info in gallery mode (applies to both arrays)
+    const attachThumbnail = <T extends { attachments?: { filePath: string; thumbnailPath?: string | null }[] }>(list: T[]) =>
+      list.map(p => {
+        const attachment = p.attachments?.[0]
+        return {
+          ...p,
+          thumbnail: attachment?.thumbnailPath || attachment?.filePath || null,
+          attachments: undefined,
+        }
+      })
+
+    const finalNotices = includeAttachments ? attachThumbnail(notices as never) : notices
+    const finalPosts   = includeAttachments ? attachThumbnail(posts as never)   : posts
 
     return NextResponse.json({
       success: true,
@@ -146,15 +155,18 @@ export async function GET(
         writeMemberOnly: board.writeMemberOnly,
         useComment: board.useComment,
         useReaction: board.useReaction,
-        displayType: board.displayType
+        postsPerPage: board.postsPerPage,
+        displayType: board.displayType,
+        showPostNumber: board.showPostNumber,
       },
-      posts: postsWithThumbnail,
+      notices: finalNotices,
+      posts: finalPosts,
       pagination: {
         page,
         limit,
         total,
-        totalPages: Math.ceil(total / limit)
-      }
+        totalPages: Math.ceil(total / limit),
+      },
     })
   } catch (error) {
     console.error('failed to fetch posts:', error)

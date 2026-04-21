@@ -30,6 +30,7 @@ interface Board {
   postsPerPage: number
   sortOrder: string
   displayType: string
+  showPostNumber: boolean
   isActive: boolean
   postCount: number
 }
@@ -56,6 +57,7 @@ export default function BoardEditPage({ params }: { params: Promise<{ id: string
     postsPerPage: 20,
     sortOrder: 'latest',
     displayType: 'list',
+    showPostNumber: false,
     isActive: true,
   })
 
@@ -81,6 +83,7 @@ export default function BoardEditPage({ params }: { params: Promise<{ id: string
             postsPerPage: b.postsPerPage ?? 20,
             sortOrder: b.sortOrder || 'latest',
             displayType: b.displayType || 'list',
+            showPostNumber: b.showPostNumber ?? false,
             isActive: b.isActive ?? true,
           })
         }
@@ -271,7 +274,7 @@ export default function BoardEditPage({ params }: { params: Promise<{ id: string
           {/* Display settings */}
           <Card className="mb-6">
             <CardHeader><CardTitle className="text-base">{t('admin.displaySettings')}</CardTitle></CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>{t('admin.displayType')}</Label>
@@ -289,6 +292,18 @@ export default function BoardEditPage({ params }: { params: Promise<{ id: string
                   </select>
                 </div>
               </div>
+              <label className="flex items-start space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="mt-1 rounded border-gray-300"
+                  checked={formData.showPostNumber}
+                  onChange={e => setFormData({ ...formData, showPostNumber: e.target.checked })}
+                />
+                <span>
+                  <span className="block text-sm font-medium">{t('admin.showPostNumberLabel')}</span>
+                  <span className="block text-xs text-muted-foreground">{t('admin.showPostNumberHelp')}</span>
+                </span>
+              </label>
             </CardContent>
           </Card>
 

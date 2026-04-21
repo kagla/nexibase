@@ -19,6 +19,7 @@ model Board {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
   displayType       String   @default("list") @db.VarChar(20)
+  showPostNumber    Boolean  @default(false)
   posts             Post[]
 
   @@index([slug])
