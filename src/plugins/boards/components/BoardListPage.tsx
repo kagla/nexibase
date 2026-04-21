@@ -35,6 +35,7 @@ interface Board {
   useReaction: boolean
   postsPerPage: number
   displayType: string
+  showPostNumber: boolean
 }
 
 interface Post {
@@ -79,6 +80,7 @@ export default function BoardListPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [page, setPage] = useState(1)
+  const [total, setTotal] = useState(0)
   const [totalPages, setTotalPages] = useState(1)
   const [loadingMore, setLoadingMore] = useState(false)
   const isLoggedIn = !!user
@@ -125,6 +127,7 @@ export default function BoardListPage() {
         setBoard(data.board)
         setPosts(prev => append ? [...prev, ...data.posts] : data.posts)
         if (!append) setNotices(data.notices || [])
+        setTotal(data.pagination.total)
         setTotalPages(data.pagination.totalPages)
       }
     } catch (error) {
