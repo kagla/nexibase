@@ -235,7 +235,7 @@ export default function SettingsPage() {
       return
     }
     const urlValue = settings.site_url.trim()
-    if (urlValue !== '' && !/^https?:\/\//.test(urlValue)) {
+    if (urlValue !== '' && !/^https?:\/\//i.test(urlValue)) {
       alert(t('siteUrlInvalid'))
       return
     }
