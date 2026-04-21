@@ -447,12 +447,11 @@ export default function SettingsPage() {
 
                 <div className="grid gap-2">
                   <Label htmlFor="site_description">{t('siteDescription')}</Label>
-                  <Textarea
+                  <Input
                     id="site_description"
                     value={settings.site_description}
                     onChange={(e) => handleChange('site_description', e.target.value)}
                     placeholder={t('siteDescriptionPlaceholder')}
-                    rows={3}
                   />
                   <p className="text-sm text-muted-foreground">
                     {t('seoMetaDesc')}
