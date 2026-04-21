@@ -88,7 +88,7 @@ export function PostListRow({
       href={href}
       onClick={onClick}
       className={[
-        "grid gap-x-3 gap-y-1 items-center px-3 py-2.5 border-b border-border hover:bg-muted/40 transition-colors",
+        "grid gap-x-3 gap-y-1 items-center py-2.5 border-b border-border hover:bg-muted/40 transition-colors",
         "[grid-template-columns:1fr] [grid-template-areas:'title']",
         "md:px-2 md:py-2",
         gridDesktop,
