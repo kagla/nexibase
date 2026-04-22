@@ -164,6 +164,7 @@ function scanPlugins() {
   generateAppWrappers(plugins)
   mergeSchemas(plugins)
   generateWithdrawalPolicies(plugins)
+  require('./validate-withdrawal-policy')
   mergeLocales(plugins)
   scanInstallLocales()
 }
