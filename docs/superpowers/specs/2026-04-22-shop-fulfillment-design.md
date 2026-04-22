@@ -147,6 +147,16 @@ ALTER TABLE orders
 
 Migration fills `paymentGateway='inicis'` for existing paid orders, null for legacy bank-transfer orders (which will be migrated separately or left null as they never need refund).
 
+**Existing `paymentMethod` column (already in schema)** — reused to store the specific payment method selected by the customer. Values standardized in §3.1 `PayMethod` enum:
+- `card` — 신용카드
+- `bank` — 실시간 계좌이체 (via PG)
+- `virtual_account` — 가상계좌
+- `mobile` — 휴대폰 결제
+- `easypay_kakao`, `easypay_naver`, `easypay_toss` — 간편결제
+- `bank_transfer` — 무통장입금 (manual deposit, no PG)
+
+**Persistence timing:** at `handleCallback()` success, `/api/shop/payment/callback/[adapterId]` writes `paymentGateway`, `pgTransactionId`, `paymentMethod`, `paidAt`, `paymentInfo` (raw JSON), and transitions status `pending → paid`, all in one transaction along with an `order_activities` `payment_succeeded` row.
+
 ### 1.5 `shop_settings` new entries
 
 | Key | Type | Default | Purpose |
@@ -254,7 +264,15 @@ export interface PaymentAdapter {
   inquire?(pgTransactionId: string): Promise<InquireResult>
 }
 
-export type PayMethod = 'card' | 'virtual_account' | 'easypay' | 'bank'
+export type PayMethod =
+  | 'card'              // 신용카드
+  | 'bank'              // 실시간 계좌이체 (PG 경유)
+  | 'virtual_account'   // 가상계좌
+  | 'mobile'            // 휴대폰 결제
+  | 'easypay_kakao'     // 카카오페이
+  | 'easypay_naver'     // 네이버페이
+  | 'easypay_toss'      // 토스페이
+  | 'bank_transfer'     // 무통장입금 (PG 외, 관리자가 수동 확인)
 
 export interface PrepareResult {
   kind: 'redirect' | 'form' | 'manual'
@@ -302,9 +320,13 @@ Each adapter module imports and self-registers at load time.
 ### 3.3 Checkout method resolution
 
 1. Client calls `GET /api/shop/payment/methods` → returns enabled adapters with `{id, displayName, supportedMethods}`.
-2. Customer selects a method (e.g., `card`, `bank_transfer`).
-3. `card` routes to `shop_settings.default_card_gateway`; `bank_transfer` uses the `bank_transfer` adapter.
+2. Customer selects a method (e.g., `card`, `virtual_account`, `easypay_kakao`, `bank_transfer`).
+3. Server resolves method → adapter:
+   - **Standard methods** (`card`, `bank`, `virtual_account`, `mobile`) → `shop_settings.default_card_gateway` (e.g., `inicis` or `toss` — the primary PG handles all of these).
+   - **Easypay methods** → dedicated adapter per method (`easypay_kakao` → KakaoPay adapter, etc.). If a standard PG adapter (e.g., Toss) also handles easypay natively, `default_card_gateway` can route those as well.
+   - **`bank_transfer`** → built-in `bank_transfer` adapter (manual flow).
 4. Client calls `POST /api/shop/payment/init` with `{orderItems, buyer, shipping, method}`; server resolves adapter and calls `adapter.prepare(order)`.
+5. After callback success, server persists `paymentGateway`, `paymentMethod`, `pgTransactionId` — `paymentMethod` captures what the customer chose, `paymentGateway` captures which adapter processed it.
 
 ### 3.4 Callback endpoint
 
