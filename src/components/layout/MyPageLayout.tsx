@@ -9,13 +9,13 @@ import { Badge } from "@/components/ui/badge"
 import {
   User, Pencil, Bell,
   ClipboardList, Heart, MapPin, Gavel, ShoppingBag, Package,
-  FileText, ScrollText, MessageSquare, Settings,
+  FileText, ScrollText, MessageSquare, Settings, UserMinus,
   type LucideIcon,
 } from "lucide-react"
 
 const iconMap: Record<string, LucideIcon> = {
   ClipboardList, Heart, MapPin, Gavel, ShoppingBag, Package,
-  FileText, ScrollText, MessageSquare, Settings, Bell, User, Pencil,
+  FileText, ScrollText, MessageSquare, Settings, Bell, User, Pencil, UserMinus,
 }
 
 interface UserInfo {
@@ -108,6 +108,7 @@ export function MyPageLayout({ children }: { children: React.ReactNode }) {
       items.push({ label: t('notifications.label'), icon: 'Bell', path: '/mypage/notifications' })
       items.push({ label: t('messages.label'), icon: 'MessageSquare', path: '/mypage/messages' })
       items.push({ label: t('notificationSettings'), icon: 'Settings', path: '/mypage/settings/notifications' })
+      items.push({ label: t('withdraw'), icon: 'UserMinus', path: '/mypage/account/withdraw' })
       setNavItems(items)
     }).finally(() => setLoading(false))
   }, [router])
