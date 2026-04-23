@@ -61,9 +61,16 @@ export default function WithdrawPage() {
 
   useEffect(() => {
     fetch('/api/me/withdraw/preview')
-      .then(r => r.ok ? r.json() : Promise.reject(r))
+      .then(async r => {
+        if (r.ok) return r.json()
+        const body = await r.json().catch(() => ({}))
+        if (body?.error === 'admin_cannot_withdraw') {
+          throw new Error('관리자/부관리자 계정은 직접 탈퇴할 수 없습니다. 다른 관리자에게 역할 해제를 요청하신 뒤 일반 회원 상태에서 탈퇴해 주세요.')
+        }
+        throw new Error('미리보기를 불러오지 못했습니다. 다시 로그인해주세요.')
+      })
       .then(setPreview)
-      .catch(() => setError('미리보기를 불러오지 못했습니다. 다시 로그인해주세요.'))
+      .catch(err => setError(err.message))
       .finally(() => setLoading(false))
   }, [])
 
@@ -90,6 +97,7 @@ export default function WithdrawPage() {
       invalid_password: '비밀번호가 일치하지 않습니다.',
       password_required: '비밀번호를 입력해주세요.',
       unauthorized: '로그인이 필요합니다.',
+      admin_cannot_withdraw: '관리자/부관리자 계정은 직접 탈퇴할 수 없습니다.',
     }
     setError(map[err.error] || '탈퇴 처리 중 오류가 발생했습니다.')
     setSubmitting(false)

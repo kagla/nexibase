@@ -10,6 +10,9 @@ export async function POST(req: NextRequest) {
   if (!user) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   }
+  if (user.role === 'admin' || user.role === 'manager') {
+    return NextResponse.json({ error: 'admin_cannot_withdraw' }, { status: 403 })
+  }
 
   const body = await req.json().catch(() => null)
   if (!body || typeof body !== 'object') {
