@@ -245,10 +245,10 @@ export default function MyPage() {
         {/* Withdraw — discreet secondary action placed where the (removed)
             logout button used to live. Header already has a sign-out option,
             so a duplicate logout here was redundant. */}
-        <div className="pt-4 text-center">
+        <div className="pt-4">
           <Link
             href="/mypage/account/withdraw"
-            className="text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground"
+            className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
           >
             {t('withdraw')}
           </Link>
