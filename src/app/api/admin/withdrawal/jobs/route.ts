@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getAdminUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { pluginWithdrawalPolicies } from '@/lib/withdrawal/_generated-policies'
 
 export async function GET() {
   const admin = await getAdminUser()
@@ -11,8 +10,5 @@ export async function GET() {
     orderBy: { id: 'desc' },
     take: 100,
   })
-  return NextResponse.json({
-    jobs,
-    policies: pluginWithdrawalPolicies,
-  })
+  return NextResponse.json({ jobs })
 }

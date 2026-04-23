@@ -18,18 +18,8 @@ type Job = {
   completedAt: string | null
 }
 
-type PolicyEntry = {
-  model: string
-  policy: string
-  reason?: string
-  parent?: string
-  handler?: string
-  field?: string
-}
-
 type Data = {
   jobs: Job[]
-  policies: Record<string, PolicyEntry[]>
 }
 
 const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
@@ -44,13 +34,6 @@ const STATUS_LABEL: Record<string, string> = {
   failed: '실패',
   running: '진행 중',
   pending: '대기',
-}
-
-const POLICY_LABEL: Record<string, string> = {
-  retain: '유지 (익명화)',
-  delete: '삭제',
-  'retain-via-parent': '부모 따라 유지',
-  custom: '커스텀 처리',
 }
 
 const REASON_LABEL: Record<string, string> = {
@@ -86,26 +69,16 @@ export default function WithdrawalPolicyAdminPage() {
     setRetrying(null)
   }
 
-  const grouped: Record<string, Array<{ plugin: string } & PolicyEntry>> = {
-    retain: [],
-    delete: [],
-    'retain-via-parent': [],
-    custom: [],
-  }
-
-  if (data) {
-    for (const [plugin, entries] of Object.entries(data.policies)) {
-      for (const e of entries) {
-        ;(grouped[e.policy] ||= []).push({ plugin, ...e })
-      }
-    }
-  }
-
   return (
     <div className="flex">
       <Sidebar />
-      <main className="flex-1 p-6 space-y-8 overflow-auto">
-        <h1 className="text-2xl font-bold">탈퇴 정책 감사</h1>
+      <main className="flex-1 p-6 space-y-6 overflow-auto">
+        <div>
+          <h1 className="text-2xl font-bold">탈퇴 기록</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            최근 100건까지 보관됩니다.
+          </p>
+        </div>
 
         {loading && (
           <div className="flex items-center justify-center h-40">
@@ -118,59 +91,7 @@ export default function WithdrawalPolicyAdminPage() {
         )}
 
         {!loading && data && (
-          <>
-            {/* Policy declarations */}
-            <section>
-              <h2 className="font-semibold text-lg mb-4">선언된 정책</h2>
-              {(['retain', 'retain-via-parent', 'delete', 'custom'] as const).map(policy => (
-                <div key={policy} className="mb-6">
-                  <h3 className="font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    {POLICY_LABEL[policy] ?? policy}{' '}
-                    <span className="font-mono text-xs text-muted-foreground">{policy}</span>{' '}
-                    <span className="text-sm text-muted-foreground">
-                      ({grouped[policy]?.length || 0}건)
-                    </span>
-                  </h3>
-                  <div className="rounded-md border overflow-hidden">
-                    <table className="w-full text-sm">
-                      <thead className="bg-muted/50 text-left">
-                        <tr>
-                          <th className="p-2 font-medium">플러그인</th>
-                          <th className="p-2 font-medium">모델</th>
-                          <th className="p-2 font-medium">메모</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(grouped[policy] || []).length === 0 ? (
-                          <tr>
-                            <td colSpan={3} className="p-2 text-muted-foreground text-center">
-                              항목 없음
-                            </td>
-                          </tr>
-                        ) : (
-                          (grouped[policy] || []).map((r, i) => (
-                            <tr key={`${r.plugin}/${r.model}/${i}`} className="border-t">
-                              <td className="p-2 text-muted-foreground">{r.plugin}</td>
-                              <td className="p-2 font-mono">{r.model}</td>
-                              <td className="p-2 text-muted-foreground text-xs">
-                                {r.reason || (r.parent ? `부모 모델 ${r.parent} 에 종속` : r.handler ? `핸들러: ${r.handler}` : '—')}
-                              </td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              ))}
-            </section>
-
-            {/* Recent withdrawal jobs */}
-            <section>
-              <h2 className="font-semibold text-lg mb-4">
-                최근 탈퇴 기록{' '}
-                <span className="text-sm font-normal text-muted-foreground">(최대 100건)</span>
-              </h2>
+          <section>
               <div className="rounded-md border overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-muted/50 text-left">
@@ -236,8 +157,7 @@ export default function WithdrawalPolicyAdminPage() {
                   </tbody>
                 </table>
               </div>
-            </section>
-          </>
+          </section>
         )}
       </main>
     </div>
