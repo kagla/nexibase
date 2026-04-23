@@ -9,13 +9,13 @@ import { Badge } from "@/components/ui/badge"
 import {
   User, Pencil, Bell,
   ClipboardList, Heart, MapPin, Gavel, ShoppingBag, Package,
-  FileText, ScrollText, MessageSquare, Settings,
+  FileText, ScrollText, MessageSquare, Settings, UserMinus,
   type LucideIcon,
 } from "lucide-react"
 
 const iconMap: Record<string, LucideIcon> = {
   ClipboardList, Heart, MapPin, Gavel, ShoppingBag, Package,
-  FileText, ScrollText, MessageSquare, Settings, Bell, User, Pencil,
+  FileText, ScrollText, MessageSquare, Settings, Bell, User, Pencil, UserMinus,
 }
 
 interface UserInfo {

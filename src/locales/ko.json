@@ -194,6 +194,7 @@
     "myPosts": "내 게시글",
     "myComments": "내 댓글",
     "notificationSettings": "알림 설정",
+    "withdraw": "회원 탈퇴",
     "notifications": {
       "label": "알림",
       "filter": {

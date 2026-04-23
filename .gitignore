@@ -63,6 +63,7 @@ next-env.d.ts
 /src/lib/widgets/_generated-registry.ts
 /src/lib/widgets/_generated-metadata.ts
 /src/lib/widgets/_generated-header-widgets.ts
+/src/lib/withdrawal/_generated-policies.ts
 
 # scan-plugins가 자동 생성하는 install locale 파일
 /src/i18n/_generated-locales.ts

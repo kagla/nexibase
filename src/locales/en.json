@@ -194,6 +194,7 @@
     "myPosts": "My posts",
     "myComments": "My comments",
     "notificationSettings": "Notification settings",
+    "withdraw": "Delete account",
     "notifications": {
       "label": "Notifications",
       "filter": {

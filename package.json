@@ -1,6 +1,6 @@
 {
   "name": "nexibase",
-  "version": "0.27.0",
+  "version": "0.28.0",
   "private": true,
   "scripts": {
     "dev": "node scripts/scan-plugins.js && node scripts/scan-layouts.js && node scripts/scan-themes.js && prisma generate && next dev --turbopack",
@@ -10,6 +10,8 @@
     "start": "next start",
     "lint": "next lint",
     "cron:shop-auto-confirm": "tsx scripts/cron/shop-auto-confirm.ts",
+    "cron:withdrawal-retry": "tsx scripts/cron/withdrawal-retry.ts",
+    "cron:withdrawal-verify": "tsx scripts/cron/withdrawal-verify.ts",
     "db:setup": "prisma migrate deploy && prisma generate",
     "db:migrate": "prisma migrate deploy",
     "db:push": "prisma db push",
