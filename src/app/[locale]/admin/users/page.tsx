@@ -547,10 +547,19 @@ function UsersPageContent() {
                 {t('usersDescription')}
               </p>
             </div>
-            <Button onClick={() => { setEditingUser(null); setIsModalOpen(true) }}>
-              <Plus className="mr-2 h-4 w-4" />
-              {t('newUser')}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => router.push('/admin/privacy/withdrawal-policy')}
+              >
+                <UserMinus className="mr-2 h-4 w-4" />
+                탈퇴 기록
+              </Button>
+              <Button onClick={() => { setEditingUser(null); setIsModalOpen(true) }}>
+                <Plus className="mr-2 h-4 w-4" />
+                {t('newUser')}
+              </Button>
+            </div>
           </div>
 
           {/* Stats */}
