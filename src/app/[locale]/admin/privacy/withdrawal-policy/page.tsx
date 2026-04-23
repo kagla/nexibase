@@ -39,6 +39,28 @@ const STATUS_VARIANT: Record<string, 'default' | 'secondary' | 'destructive' | '
   pending: 'outline',
 }
 
+const STATUS_LABEL: Record<string, string> = {
+  done: '완료',
+  failed: '실패',
+  running: '진행 중',
+  pending: '대기',
+}
+
+const POLICY_LABEL: Record<string, string> = {
+  retain: '유지 (익명화)',
+  delete: '삭제',
+  'retain-via-parent': '부모 따라 유지',
+  custom: '커스텀 처리',
+}
+
+const REASON_LABEL: Record<string, string> = {
+  rarely_used: '서비스를 잘 사용하지 않음',
+  no_feature: '원하는 기능이 없음',
+  moved_service: '비슷한 다른 서비스로 이동',
+  privacy: '개인정보 걱정',
+  other: '기타',
+}
+
 export default function WithdrawalPolicyAdminPage() {
   const [data, setData] = useState<Data | null>(null)
   const [loading, setLoading] = useState(true)
@@ -103,7 +125,8 @@ export default function WithdrawalPolicyAdminPage() {
               {(['retain', 'retain-via-parent', 'delete', 'custom'] as const).map(policy => (
                 <div key={policy} className="mb-6">
                   <h3 className="font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    <span className="font-mono">{policy}</span>{' '}
+                    {POLICY_LABEL[policy] ?? policy}{' '}
+                    <span className="font-mono text-xs text-muted-foreground">{policy}</span>{' '}
                     <span className="text-sm text-muted-foreground">
                       ({grouped[policy]?.length || 0}건)
                     </span>
@@ -130,7 +153,7 @@ export default function WithdrawalPolicyAdminPage() {
                               <td className="p-2 text-muted-foreground">{r.plugin}</td>
                               <td className="p-2 font-mono">{r.model}</td>
                               <td className="p-2 text-muted-foreground text-xs">
-                                {r.reason || (r.parent ? `via parent ${r.parent}` : r.handler ? `handler: ${r.handler}` : '—')}
+                                {r.reason || (r.parent ? `부모 모델 ${r.parent} 에 종속` : r.handler ? `핸들러: ${r.handler}` : '—')}
                               </td>
                             </tr>
                           ))
@@ -153,14 +176,14 @@ export default function WithdrawalPolicyAdminPage() {
                   <thead className="bg-muted/50 text-left">
                     <tr>
                       <th className="p-2 font-medium">ID</th>
-                      <th className="p-2 font-medium">userId</th>
+                      <th className="p-2 font-medium">회원 ID</th>
                       <th className="p-2 font-medium">상태</th>
                       <th className="p-2 font-medium">시도</th>
                       <th className="p-2 font-medium">사유</th>
-                      <th className="p-2 font-medium">생성</th>
-                      <th className="p-2 font-medium">완료</th>
+                      <th className="p-2 font-medium">신청 시각</th>
+                      <th className="p-2 font-medium">완료 시각</th>
                       <th className="p-2 font-medium">오류</th>
-                      <th className="p-2 font-medium">액션</th>
+                      <th className="p-2 font-medium">관리</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -177,13 +200,13 @@ export default function WithdrawalPolicyAdminPage() {
                           <td className="p-2">{j.userId}</td>
                           <td className="p-2">
                             <Badge variant={STATUS_VARIANT[j.status] ?? 'outline'}>
-                              {j.status}
+                              {STATUS_LABEL[j.status] ?? j.status}
                             </Badge>
                           </td>
-                          <td className="p-2">{j.attempts}</td>
+                          <td className="p-2">{j.attempts}회</td>
                           <td className="p-2 text-xs">
-                            {j.reasonCode}
-                            {j.reasonText ? ` / ${j.reasonText}` : ''}
+                            {j.reasonCode ? (REASON_LABEL[j.reasonCode] ?? j.reasonCode) : ''}
+                            {j.reasonText ? ` — ${j.reasonText}` : ''}
                             {!j.reasonCode && !j.reasonText ? '—' : ''}
                           </td>
                           <td className="p-2 text-xs whitespace-nowrap">
