@@ -1,15 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
 import { useTranslations, useLocale } from "next-intl"
 import Link from "next/link"
 import { MyPageLayout } from "@/components/layout/MyPageLayout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
-  LogOut, MessageSquare, FileText, Eye, ThumbsUp, Clock, User, Calendar, Mail, Phone, Shield, Monitor,
+  MessageSquare, FileText, Eye, ThumbsUp, Clock, User, Calendar, Mail, Phone, Shield, Monitor,
 } from "lucide-react"
 
 interface UserInfo {
@@ -57,7 +55,6 @@ export default function MyPage() {
   const t = useTranslations('mypage')
   const locale = useLocale()
   const tc = useTranslations('common')
-  const router = useRouter()
   const [user, setUser] = useState<UserInfo | null>(null)
   const [myPosts, setMyPosts] = useState<MyPost[]>([])
   const [myComments, setMyComments] = useState<MyComment[]>([])
@@ -77,12 +74,6 @@ export default function MyPage() {
       if (loginData?.logs) setLoginLogs(loginData.logs)
     }).finally(() => setLoading(false))
   }, [])
-
-  const handleLogout = async () => {
-    await fetch('/api/auth/signout', { method: 'POST' })
-    router.push('/')
-    router.refresh()
-  }
 
   const formatTimeAgo = (dateStr: string) => {
     const diff = Date.now() - new Date(dateStr).getTime()
@@ -251,14 +242,10 @@ export default function MyPage() {
           </>
         )}
 
-        {/* Logout */}
-        <Button variant="outline" onClick={handleLogout} className="w-full text-red-500">
-          <LogOut className="h-4 w-4 mr-2" />
-          {t('logout')}
-        </Button>
-
-        {/* Withdraw — discreet secondary action, intentionally not a prominent button */}
-        <div className="pt-8 text-center">
+        {/* Withdraw — discreet secondary action placed where the (removed)
+            logout button used to live. Header already has a sign-out option,
+            so a duplicate logout here was redundant. */}
+        <div className="pt-4 text-center">
           <Link
             href="/mypage/account/withdraw"
             className="text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground"
