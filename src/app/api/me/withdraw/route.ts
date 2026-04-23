@@ -57,5 +57,12 @@ export async function POST(req: NextRequest) {
     console.error(`[withdrawal] Phase 2 failed for job ${jobId}:`, err)
   })
 
-  return NextResponse.json({ ok: true })
+  const res = NextResponse.json({ ok: true })
+  // Clear NextAuth session cookies so the client side no longer has a usable
+  // JWT. The server-side session lookup already refuses withdrawn users via
+  // the status filter in src/lib/auth.ts, but clearing here prevents the
+  // brief window where a client component still reads a decoded-but-stale JWT.
+  res.cookies.delete('next-auth.session-token')
+  res.cookies.delete('__Secure-next-auth.session-token')
+  return res
 }
